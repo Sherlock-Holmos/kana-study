@@ -480,6 +480,60 @@
     }
 
 
+    .study-settings {
+      margin-bottom: 14px;
+    }
+
+    .study-settings-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 42px;
+      margin: -4px 0 12px;
+      padding: 8px 2px;
+      color: #4d5156;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+
+    .study-settings-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .study-settings-summary::after {
+      content: "⌄";
+      flex: 0 0 auto;
+      color: #92969d;
+      font-size: 18px;
+      transform: rotate(0deg);
+      transition: transform 0.15s ease;
+    }
+
+    .study-settings[open] > .study-settings-summary::after {
+      transform: rotate(180deg);
+    }
+
+    .study-settings-title {
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .study-settings-current {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #92969d;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .study-settings-body {
+      padding-top: 2px;
+    }
+
     /* ==============================
        设置区
        ============================== */
@@ -490,7 +544,7 @@
       grid-template-columns:
         repeat(
           auto-fit,
-          minmax(min(220px, 100%), 1fr)
+          minmax(min(180px, 100%), 1fr)
         );
 
       gap: 12px;
@@ -798,6 +852,61 @@
       color: #34703c;
     }
 
+    .answer-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 9px;
+      margin-top: 2px;
+    }
+
+    .answer-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 48px;
+      padding: 10px 14px;
+      background: #fff;
+      color: #202124;
+      border: 1px solid #d8dbe0;
+      border-radius: 11px;
+      font: inherit;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .answer-input:focus {
+      border-color: #777d87;
+      box-shadow: 0 0 0 4px rgba(31, 35, 42, 0.07);
+    }
+
+    .answer-submit {
+      padding: 0 18px;
+      background: #222;
+      color: #fff;
+    }
+
+    .answer-skip {
+      padding: 0 16px;
+      background: #f7f7f8;
+      color: #676b72;
+      border: 1px solid #e2e3e6;
+    }
+
+    .answer-feedback {
+      min-height: 22px;
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .answer-feedback.correct-feedback {
+      color: #34703c;
+    }
+
+    .answer-feedback.wrong-feedback {
+      color: #9b3434;
+    }
+
 
     /* ==============================
        统计
@@ -838,6 +947,25 @@
     .stats-row strong {
       color: #222;
       font-variant-numeric: tabular-nums;
+    }
+
+    .today-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f8f9fa;
+      border: 1px solid #eceef1;
+      border-radius: 10px;
+      color: #70757c;
+      font-size: 12px;
+    }
+
+    .today-summary strong {
+      color: #35383d;
+      font-weight: 650;
     }
 
     .weak-title {
@@ -936,6 +1064,14 @@
         padding: 14px;
       }
 
+      .study-settings {
+        margin-bottom: 10px;
+      }
+
+      .study-settings-summary {
+        margin-bottom: 8px;
+      }
+
       .settings {
         grid-template-columns: 1fr;
 
@@ -961,6 +1097,14 @@
 
       .stats {
         margin-top: 16px;
+      }
+
+      .answer-form {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .answer-input {
+        grid-column: 1 / -1;
       }
     }
 
@@ -1231,6 +1375,14 @@
            设置
            ============================== -->
 
+      <details id="studySettings" class="study-settings" open>
+        <summary class="study-settings-summary">
+          <span class="study-settings-title">学习设置</span>
+          <span id="settingsSummary" class="study-settings-current">あ・か・さ · 自评</span>
+        </summary>
+
+        <div class="study-settings-body">
+
       <div class="settings">
 
         <div class="setting-item">
@@ -1267,13 +1419,26 @@
           <select id="weightMode">
 
             <option value="weighted">
-              掌握度优先
+              智能复习
             </option>
 
             <option value="pure">
               完全随机
             </option>
 
+          </select>
+
+        </div>
+
+        <div class="setting-item">
+
+          <label for="answerMode">
+            作答方式
+          </label>
+
+          <select id="answerMode">
+            <option value="self">自评认识 / 不认识</option>
+            <option value="input">输入答案（推荐）</option>
           </select>
 
         </div>
@@ -1415,6 +1580,9 @@
         id="selectedInfo"
       ></div>
 
+        </div>
+      </details>
+
 
       <!-- ==============================
            卡片
@@ -1451,10 +1619,31 @@
 
 
       <!-- ==============================
-           操作按钮
+           输入作答
            ============================== -->
 
-      <div class="buttons">
+      <form id="answerForm" class="answer-form" hidden>
+        <input
+          id="answerInput"
+          class="answer-input"
+          type="text"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          placeholder="输入答案后按 Enter"
+          aria-label="输入答案"
+        >
+        <button id="submitAnswer" class="answer-submit" type="submit">提交</button>
+        <button id="dontKnowInput" class="answer-skip" type="button">不会</button>
+      </form>
+
+      <div id="answerFeedback" class="answer-feedback" aria-live="polite" hidden></div>
+
+      <!-- ==============================
+           自评操作按钮
+           ============================== -->
+
+      <div class="buttons" id="selfButtons">
 
         <button
           class="show-answer"
@@ -1518,6 +1707,10 @@
 
         </div>
 
+        <div class="today-summary">
+          <span id="todaySummary">今日 0 题 · 正确率 0%</span>
+          <strong id="studyStreak">连续 0 天</strong>
+        </div>
 
         <div class="weak-title">
           当前薄弱假名
@@ -1535,11 +1728,10 @@
 
 
       <div class="footer-tip">
-        空格：显示答案　
-        ←：不认识　
-        →：认识
+        自评模式：空格显示答案，← 不认识，→ 认识。
+        输入模式：输入答案后按 Enter，答错会显示正确答案。
         <br>
-        建议每学完一行，再开启下一行。
+        智能复习会优先安排薄弱和到期假名。
       </div>
 
     </section>
@@ -2037,7 +2229,7 @@ async function saveCloudProgress(
   /*
    * 防止 await 期间切换了账号。
    */
-  const snapshotToSave =
+  let snapshotToSave =
     typeof structuredClone === "function"
       ? structuredClone(snapshot)
       : JSON.parse(
@@ -2058,8 +2250,20 @@ async function saveCloudProgress(
   }
 
   try {
+    const latestCloud =
+      await fetchCloudProgress(
+        userId
+      );
+
+    if (latestCloud?.progress) {
+      snapshotToSave =
+        mergeSnapshots(
+          snapshotToSave,
+          latestCloud.progress
+        );
+    }
+
     const updatedAt =
-      snapshotToSave.updatedAt ||
       new Date().toISOString();
 
     snapshotToSave.updatedAt =
@@ -2091,6 +2295,23 @@ async function saveCloudProgress(
 
     if (error) {
       throw error;
+    }
+
+    if (
+      currentUser?.id ===
+      userId
+    ) {
+      isApplyingExternalState = true;
+      applyStateSnapshot(
+        snapshotToSave,
+        false
+      );
+      isApplyingExternalState = false;
+
+      writeLocalSnapshot(
+        getUserStorageKey(userId),
+        snapshotToSave
+      );
     }
 
     /*
@@ -2316,74 +2537,36 @@ async function activateUserContext(
     cloudRow?.progress ?? null;
 
   /*
-   * 云端有记录 + 本机有该账号记录：
-   * 使用更新时间更新的一份。
+   * 云端 + 本机都有记录：
+   * 不再整份覆盖，而是合并每台设备的答题计数，
+   * 每个假名的掌握状态采用最近复习的一份。
    */
   if (
     cloudSnapshot &&
     userLocalSnapshot
   ) {
-    const cloudTime =
-      parseTimestamp(
-        cloudRow.updated_at ||
-        cloudSnapshot.updatedAt
-      );
-
-    const localTime =
-      parseTimestamp(
-        userLocalSnapshot.updatedAt
-      );
-
-    if (
-      localTime > cloudTime
-    ) {
-      isApplyingExternalState =
-        true;
-
-      applyStateSnapshot(
-        userLocalSnapshot
-      );
-
-      isApplyingExternalState =
-        false;
-
-      await saveCloudProgress(
-        createStateSnapshot(
-          userLocalSnapshot.updatedAt ||
-          new Date().toISOString()
-        )
-      );
-    } else {
-      isApplyingExternalState =
-        true;
-
-      applyStateSnapshot(
+    const mergedSnapshot =
+      mergeSnapshots(
+        userLocalSnapshot,
         cloudSnapshot
       );
 
-      isApplyingExternalState =
-        false;
+    isApplyingExternalState =
+      true;
+    applyStateSnapshot(
+      mergedSnapshot
+    );
+    isApplyingExternalState =
+      false;
 
-      const normalizedCloud =
-        createStateSnapshot(
-          cloudRow.updated_at ||
-          cloudSnapshot.updatedAt ||
-          new Date().toISOString()
-        );
+    writeLocalSnapshot(
+      userStorageKey,
+      mergedSnapshot
+    );
 
-      writeLocalSnapshot(
-        userStorageKey,
-        normalizedCloud
-      );
-
-      completeGuestMigrationIfPending(
-        user.id
-      );
-
-      setSyncStatus(
-        "云端已同步"
-      );
-    }
+    await saveCloudProgress(
+      mergedSnapshot
+    );
 
     return;
   }
@@ -3212,7 +3395,7 @@ window.addEventListener(
     const STORAGE_KEY =
       "kanaFlashcardState";
 
-    const STORAGE_VERSION = 3;
+    const STORAGE_VERSION = 4;
 
     const MAX_MASTERY = 5;
 
@@ -3228,6 +3411,18 @@ window.addEventListener(
 
     const CLOUD_SYNC_DELAY_MS =
       1000;
+
+    const DEVICE_ID_KEY =
+      `${STORAGE_KEY}:device-id`;
+
+    const REVIEW_INTERVAL_MS = [
+      10 * 60 * 1000,
+      60 * 60 * 1000,
+      8 * 60 * 60 * 1000,
+      24 * 60 * 60 * 1000,
+      3 * 24 * 60 * 60 * 1000,
+      7 * 24 * 60 * 60 * 1000
+    ];
 
 
     /* ========================================
@@ -3261,6 +3456,17 @@ window.addEventListener(
 
 
     let kanaStats = {};
+
+    let syncCounters = {};
+
+    let dailyCounters = {};
+
+    let settingsUpdatedAt =
+      new Date().toISOString();
+
+    let inputAnswerRecorded = false;
+
+    let deviceId = null;
 
 
     /* ========================================
@@ -3300,7 +3506,13 @@ window.addEventListener(
           /*
            * 最近一次结果
            */
-          lastResult: null
+          lastResult: null,
+
+          /*
+           * 最近复习时间 / 下次建议复习时间
+           */
+          lastReviewedAt: null,
+          nextReviewAt: null
 
         };
 
@@ -3385,42 +3597,557 @@ window.addEventListener(
         ".group-button"
       );
 
+    const answerModeEl =
+      document.getElementById(
+        "answerMode"
+      );
+
+    const answerFormEl =
+      document.getElementById(
+        "answerForm"
+      );
+
+    const answerInputEl =
+      document.getElementById(
+        "answerInput"
+      );
+
+    const submitAnswerEl =
+      document.getElementById(
+        "submitAnswer"
+      );
+
+    const dontKnowInputEl =
+      document.getElementById(
+        "dontKnowInput"
+      );
+
+    const answerFeedbackEl =
+      document.getElementById(
+        "answerFeedback"
+      );
+
+    const selfButtonsEl =
+      document.getElementById(
+        "selfButtons"
+      );
+
+    const todaySummaryEl =
+      document.getElementById(
+        "todaySummary"
+      );
+
+    const studyStreakEl =
+      document.getElementById(
+        "studyStreak"
+      );
+
+    const studySettingsEl =
+      document.getElementById(
+        "studySettings"
+      );
+
+    const settingsSummaryEl =
+      document.getElementById(
+        "settingsSummary"
+      );
+
 
     /* ========================================
        保存状态
        ======================================== */
 
+    function cloneValue(value) {
+      if (typeof structuredClone === "function") {
+        return structuredClone(value);
+      }
+
+      return JSON.parse(
+        JSON.stringify(value)
+      );
+    }
+
+
+    function getOrCreateDeviceId() {
+      if (deviceId) {
+        return deviceId;
+      }
+
+      try {
+        const existing =
+          localStorage.getItem(
+            DEVICE_ID_KEY
+          );
+
+        if (existing) {
+          deviceId = existing;
+          return deviceId;
+        }
+
+        deviceId =
+          typeof crypto?.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        localStorage.setItem(
+          DEVICE_ID_KEY,
+          deviceId
+        );
+      } catch (error) {
+        deviceId =
+          `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+
+      return deviceId;
+    }
+
+
+    function getLocalDateKey(
+      date = new Date()
+    ) {
+      const year =
+        date.getFullYear();
+
+      const month =
+        String(
+          date.getMonth() + 1
+        ).padStart(2, "0");
+
+      const day =
+        String(
+          date.getDate()
+        ).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+
+    function sumDeviceCounters(
+      deviceMap
+    ) {
+      return Object.values(
+        deviceMap || {}
+      ).reduce(
+        (total, entry) => ({
+          correct:
+            total.correct +
+            (Number(entry?.correct) || 0),
+          wrong:
+            total.wrong +
+            (Number(entry?.wrong) || 0)
+        }),
+        {
+          correct: 0,
+          wrong: 0
+        }
+      );
+    }
+
+
+    function recalculateCountsFromCounters() {
+      let correct = 0;
+      let wrong = 0;
+
+      kanaData.forEach(item => {
+        const totals =
+          sumDeviceCounters(
+            syncCounters[
+              item.kana
+            ]
+          );
+
+        kanaStats[
+          item.kana
+        ].correct =
+          totals.correct;
+
+        kanaStats[
+          item.kana
+        ].wrong =
+          totals.wrong;
+
+        correct +=
+          totals.correct;
+
+        wrong +=
+          totals.wrong;
+      });
+
+      stats = {
+        total:
+          correct + wrong,
+        correct,
+        wrong
+      };
+    }
+
+
+    function migrateLegacyCounters(
+      saved
+    ) {
+      const counters =
+        cloneValue(
+          saved?.syncCounters || {}
+        );
+
+      if (saved?.syncCounters) {
+        return counters;
+      }
+
+      kanaData.forEach(item => {
+        const old =
+          saved?.kanaStats?.[
+            item.kana
+          ];
+
+        const correct =
+          Number(old?.correct) || 0;
+
+        const wrong =
+          Number(old?.wrong) || 0;
+
+        if (
+          correct === 0 &&
+          wrong === 0
+        ) {
+          return;
+        }
+
+        counters[
+          item.kana
+        ] = {
+          legacy: {
+            correct,
+            wrong
+          }
+        };
+      });
+
+      return counters;
+    }
+
+
+    function mergeDeviceCounterMap(
+      first,
+      second
+    ) {
+      const merged = {};
+      const deviceIds =
+        new Set([
+          ...Object.keys(first || {}),
+          ...Object.keys(second || {})
+        ]);
+
+      deviceIds.forEach(id => {
+        merged[id] = {
+          correct:
+            Math.max(
+              Number(first?.[id]?.correct) || 0,
+              Number(second?.[id]?.correct) || 0
+            ),
+          wrong:
+            Math.max(
+              Number(first?.[id]?.wrong) || 0,
+              Number(second?.[id]?.wrong) || 0
+            )
+        };
+      });
+
+      return merged;
+    }
+
+
+    function mergeSyncCounters(
+      first,
+      second
+    ) {
+      const merged = {};
+
+      kanaData.forEach(item => {
+        const deviceMap =
+          mergeDeviceCounterMap(
+            first?.[item.kana],
+            second?.[item.kana]
+          );
+
+        if (
+          Object.keys(deviceMap).length > 0
+        ) {
+          merged[item.kana] =
+            deviceMap;
+        }
+      });
+
+      return merged;
+    }
+
+
+    function mergeDailyCounters(
+      first,
+      second
+    ) {
+      const merged = {};
+      const dates =
+        new Set([
+          ...Object.keys(first || {}),
+          ...Object.keys(second || {})
+        ]);
+
+      dates.forEach(date => {
+        merged[date] =
+          mergeDeviceCounterMap(
+            first?.[date],
+            second?.[date]
+          );
+      });
+
+      return merged;
+    }
+
+
+    function normalizedKanaState(
+      snapshot,
+      item
+    ) {
+      const old =
+        snapshot?.kanaStats?.[
+          item.kana
+        ] || {};
+
+      const correct =
+        Number(old.correct) || 0;
+
+      const wrong =
+        Number(old.wrong) || 0;
+
+      const mastery =
+        old.mastery !== undefined &&
+        Number.isFinite(
+          Number(old.mastery)
+        )
+          ? Math.max(
+              0,
+              Math.min(
+                MAX_MASTERY,
+                Number(old.mastery)
+              )
+            )
+          : inferMastery(
+              correct,
+              wrong
+            );
+
+      return {
+        correct,
+        wrong,
+        streak:
+          Number(old.streak) || 0,
+        mastery,
+        lastResult:
+          [
+            "correct",
+            "wrong"
+          ].includes(old.lastResult)
+            ? old.lastResult
+            : null,
+        lastReviewedAt:
+          old.lastReviewedAt || null,
+        nextReviewAt:
+          old.nextReviewAt || null
+      };
+    }
+
+
+    function mergeSnapshots(
+      first,
+      second
+    ) {
+      if (!first) {
+        return cloneValue(second);
+      }
+
+      if (!second) {
+        return cloneValue(first);
+      }
+
+      const firstCounters =
+        migrateLegacyCounters(first);
+
+      const secondCounters =
+        migrateLegacyCounters(second);
+
+      const mergedCounters =
+        mergeSyncCounters(
+          firstCounters,
+          secondCounters
+        );
+
+      const mergedKanaStats = {};
+
+      kanaData.forEach(item => {
+        const firstState =
+          normalizedKanaState(
+            first,
+            item
+          );
+
+        const secondState =
+          normalizedKanaState(
+            second,
+            item
+          );
+
+        const firstTime =
+          parseTimestamp(
+            firstState.lastReviewedAt ||
+            first.updatedAt
+          );
+
+        const secondTime =
+          parseTimestamp(
+            secondState.lastReviewedAt ||
+            second.updatedAt
+          );
+
+        const latestState =
+          secondTime > firstTime
+            ? secondState
+            : firstState;
+
+        const totals =
+          sumDeviceCounters(
+            mergedCounters[
+              item.kana
+            ]
+          );
+
+        mergedKanaStats[
+          item.kana
+        ] = {
+          ...latestState,
+          correct:
+            totals.correct,
+          wrong:
+            totals.wrong
+        };
+      });
+
+      const totalCorrect =
+        Object.values(
+          mergedKanaStats
+        ).reduce(
+          (sum, item) =>
+            sum + item.correct,
+          0
+        );
+
+      const totalWrong =
+        Object.values(
+          mergedKanaStats
+        ).reduce(
+          (sum, item) =>
+            sum + item.wrong,
+          0
+        );
+
+      const firstSettingsTime =
+        parseTimestamp(
+          first.settingsUpdatedAt ||
+          first.updatedAt
+        );
+
+      const secondSettingsTime =
+        parseTimestamp(
+          second.settingsUpdatedAt ||
+          second.updatedAt
+        );
+
+      const settingsSource =
+        secondSettingsTime >
+        firstSettingsTime
+          ? second
+          : first;
+
+      const latestUpdatedAt =
+        Math.max(
+          parseTimestamp(first.updatedAt),
+          parseTimestamp(second.updatedAt),
+          Date.now()
+        );
+
+      return {
+        version:
+          STORAGE_VERSION,
+        selectedGroups:
+          Array.isArray(
+            settingsSource.selectedGroups
+          )
+            ? [...settingsSource.selectedGroups]
+            : ["a", "ka", "sa"],
+        stats: {
+          total:
+            totalCorrect + totalWrong,
+          correct:
+            totalCorrect,
+          wrong:
+            totalWrong
+        },
+        kanaStats:
+          mergedKanaStats,
+        syncCounters:
+          mergedCounters,
+        dailyCounters:
+          mergeDailyCounters(
+            first.dailyCounters,
+            second.dailyCounters
+          ),
+        mode:
+          settingsSource.mode ||
+          "kanaToRoman",
+        weightMode:
+          settingsSource.weightMode ||
+          "weighted",
+        answerMode:
+          settingsSource.answerMode ||
+          "self",
+        settingsUpdatedAt:
+          settingsSource.settingsUpdatedAt ||
+          settingsSource.updatedAt ||
+          new Date().toISOString(),
+        updatedAt:
+          new Date(
+            latestUpdatedAt
+          ).toISOString()
+      };
+    }
+
+
     function createStateSnapshot(
       updatedAt =
         new Date().toISOString()
     ) {
+      recalculateCountsFromCounters();
+
       return {
         version:
           STORAGE_VERSION,
-
         selectedGroups:
           [...selectedGroups],
-
         stats:
-          typeof structuredClone === "function"
-            ? structuredClone(stats)
-            : JSON.parse(
-                JSON.stringify(stats)
-              ),
-
+          cloneValue(stats),
         kanaStats:
-          typeof structuredClone === "function"
-            ? structuredClone(kanaStats)
-            : JSON.parse(
-                JSON.stringify(kanaStats)
-              ),
-
+          cloneValue(kanaStats),
+        syncCounters:
+          cloneValue(syncCounters),
+        dailyCounters:
+          cloneValue(dailyCounters),
         mode:
           modeEl.value,
-
         weightMode:
           weightModeEl.value,
-
+        answerMode:
+          answerModeEl.value,
+        settingsUpdatedAt,
         updatedAt
       };
     }
@@ -3542,16 +4269,27 @@ window.addEventListener(
       kanaStats =
         createDefaultKanaStats();
 
+      syncCounters = {};
+
+      dailyCounters = {};
+
       modeEl.value =
         "kanaToRoman";
 
       weightModeEl.value =
         "weighted";
+
+      answerModeEl.value =
+        "self";
+
+      settingsUpdatedAt =
+        new Date().toISOString();
     }
 
 
     function applyStateSnapshot(
-      saved
+      saved,
+      refresh = true
     ) {
       resetLearningState();
 
@@ -3559,13 +4297,12 @@ window.addEventListener(
         !saved ||
         typeof saved !== "object"
       ) {
-        refreshLearningUI();
+        if (refresh) {
+          refreshLearningUI();
+        }
         return false;
       }
 
-      /*
-       * 恢复选择范围
-       */
       if (
         Array.isArray(
           saved.selectedGroups
@@ -3577,115 +4314,32 @@ window.addEventListener(
           );
       }
 
-
-      /*
-       * 恢复总体统计
-       */
-      if (saved.stats) {
-        stats = {
-          total:
-            Number(
-              saved.stats.total
-            ) || 0,
-
-          correct:
-            Number(
-              saved.stats.correct
-            ) || 0,
-
-          wrong:
-            Number(
-              saved.stats.wrong
-            ) || 0
-        };
-      }
-
-
-      /*
-       * 恢复每个假名记录
-       */
-      if (saved.kanaStats) {
-        kanaData.forEach(
-          item => {
-            const old =
-              saved.kanaStats[
-                item.kana
-              ];
-
-            if (!old) {
-              return;
-            }
-
-            const correct =
-              Number(
-                old.correct
-              ) || 0;
-
-            const wrong =
-              Number(
-                old.wrong
-              ) || 0;
-
-            let mastery;
-
-            if (
-              old.mastery !==
-                undefined &&
-              Number.isFinite(
-                Number(
-                  old.mastery
-                )
-              )
-            ) {
-              mastery =
-                Math.max(
-                  0,
-                  Math.min(
-                    MAX_MASTERY,
-                    Number(
-                      old.mastery
-                    )
-                  )
-                );
-            } else {
-              mastery =
-                inferMastery(
-                  correct,
-                  wrong
-                );
-            }
-
-            kanaStats[
-              item.kana
-            ] = {
-              correct,
-              wrong,
-
-              streak:
-                Number(
-                  old.streak
-                ) || 0,
-
-              mastery,
-
-              lastResult:
-                [
-                  "correct",
-                  "wrong"
-                ].includes(
-                  old.lastResult
-                )
-                  ? old.lastResult
-                  : null
-            };
-          }
+      syncCounters =
+        migrateLegacyCounters(
+          saved
         );
+
+      dailyCounters =
+        cloneValue(
+          saved.dailyCounters || {}
+        );
+
+      if (saved.kanaStats) {
+        kanaData.forEach(item => {
+          const normalized =
+            normalizedKanaState(
+              saved,
+              item
+            );
+
+          kanaStats[
+            item.kana
+          ] = normalized;
+        });
       }
 
+      recalculateCountsFromCounters();
 
-      /*
-       * 恢复测试模式
-       */
       if (
         [
           "kanaToRoman",
@@ -3699,10 +4353,6 @@ window.addEventListener(
           saved.mode;
       }
 
-
-      /*
-       * 恢复抽取模式
-       */
       if (
         [
           "weighted",
@@ -3715,7 +4365,32 @@ window.addEventListener(
           saved.weightMode;
       }
 
-      refreshLearningUI();
+      if (
+        [
+          "self",
+          "input"
+        ].includes(
+          saved.answerMode
+        )
+      ) {
+        answerModeEl.value =
+          saved.answerMode;
+      }
+
+      settingsUpdatedAt =
+        saved.settingsUpdatedAt ||
+        saved.updatedAt ||
+        new Date().toISOString();
+
+      if (refresh) {
+        refreshLearningUI();
+      } else {
+        syncGroupButtons();
+        updateStats();
+        updateSelectedInfo();
+        renderAnswerModeUI();
+      }
+
       return true;
     }
 
@@ -3741,9 +4416,26 @@ window.addEventListener(
         return false;
       }
 
-      return applyStateSnapshot(
-        saved
-      );
+      const applied =
+        applyStateSnapshot(
+          saved
+        );
+
+      if (
+        applied &&
+        Number(saved.version) <
+          STORAGE_VERSION
+      ) {
+        writeLocalSnapshot(
+          storageKey,
+          createStateSnapshot(
+            saved.updatedAt ||
+            new Date().toISOString()
+          )
+        );
+      }
+
+      return applied;
     }
 
 
@@ -3821,46 +4513,44 @@ window.addEventListener(
     function getItemWeight(
       item
     ) {
-
       const stat =
         kanaStats[
           item.kana
         ];
 
-
-      /*
-       * mastery = 0 → 6
-       * mastery = 1 → 5
-       * mastery = 2 → 4
-       * mastery = 3 → 3
-       * mastery = 4 → 2
-       * mastery = 5 → 1
-       */
       let weight =
         MAX_MASTERY -
         stat.mastery +
         1;
 
-
-      /*
-       * 最近一次答错：
-       * 增加近期复习概率。
-       */
       if (
         stat.lastResult ===
         "wrong"
       ) {
-
         weight += 3;
-
       }
 
+      const nextReviewTime =
+        parseTimestamp(
+          stat.nextReviewAt
+        );
+
+      if (
+        nextReviewTime > 0 &&
+        nextReviewTime <= Date.now()
+      ) {
+        weight += 4;
+      } else if (
+        nextReviewTime > Date.now() &&
+        stat.mastery >= 3
+      ) {
+        weight *= 0.55;
+      }
 
       return Math.max(
-        1,
+        0.5,
         weight
       );
-
     }
 
 
@@ -4002,130 +4692,268 @@ window.addEventListener(
        下一题
        ======================================== */
 
-    function nextCard() {
+    function renderAnswerModeUI() {
+      const isInputMode =
+        answerModeEl.value ===
+        "input";
 
+      answerFormEl.hidden =
+        !isInputMode;
+
+      selfButtonsEl.hidden =
+        isInputMode;
+
+      answerFeedbackEl.hidden =
+        !isInputMode;
+
+      if (isInputMode) {
+        cardEl.setAttribute(
+          "aria-label",
+          "题目卡片"
+        );
+        cardEl.tabIndex = -1;
+      } else {
+        cardEl.setAttribute(
+          "aria-label",
+          "点击显示答案"
+        );
+        cardEl.tabIndex = 0;
+      }
+    }
+
+
+    function resetAnswerInputUI() {
+      inputAnswerRecorded = false;
+      answerInputEl.value = "";
+      answerInputEl.disabled = false;
+      submitAnswerEl.textContent =
+        "提交";
+      dontKnowInputEl.hidden = false;
+      answerFeedbackEl.textContent = "";
+      answerFeedbackEl.className =
+        "answer-feedback";
+    }
+
+
+    function nextCard() {
       currentItem =
         getRandomItem();
 
+      answerVisible = false;
+      answerEl.textContent = "";
+      questionEl.classList.remove(
+        "roman"
+      );
 
-      answerVisible =
-        false;
+      resetAnswerInputUI();
+      renderAnswerModeUI();
 
-
-      answerEl.textContent =
-        "";
-
-
-      hintEl.textContent =
-        "点击卡片或按空格查看答案";
-
-
-      questionEl
-        .classList
-        .remove(
-          "roman"
-        );
-
-
-      /*
-       * 没选择任何范围
-       */
-      if (
-        !currentItem
-      ) {
-
+      if (!currentItem) {
         questionEl.textContent =
           "—";
-
-
         hintEl.textContent =
           "请至少选择一个背诵范围";
-
-
+        answerInputEl.disabled = true;
         return;
-
       }
-
 
       currentDirection =
         getDirection();
 
-
-      /*
-       * 假名 → 罗马音
-       */
       if (
         currentDirection ===
         "kanaToRoman"
       ) {
-
         questionEl.textContent =
           currentItem.kana;
-
-      }
-
-      /*
-       * 罗马音 → 假名
-       */
-      else {
-
+      } else {
         questionEl.textContent =
           currentItem.roman;
-
-
-        questionEl
-          .classList
-          .add(
-            "roman"
-          );
-
+        questionEl.classList.add(
+          "roman"
+        );
       }
 
+      if (
+        answerModeEl.value ===
+        "input"
+      ) {
+        hintEl.textContent =
+          currentDirection ===
+          "kanaToRoman"
+            ? "输入罗马音后按 Enter"
+            : "输入对应平假名后按 Enter";
+
+        answerInputEl.placeholder =
+          currentDirection ===
+          "kanaToRoman"
+            ? "例如：shi"
+            : "例如：し";
+
+        if (
+          window.matchMedia?.(
+            "(pointer: fine)"
+          ).matches
+        ) {
+          requestAnimationFrame(
+            () =>
+              answerInputEl.focus()
+          );
+        }
+      } else {
+        hintEl.textContent =
+          "点击卡片或按空格查看答案";
+      }
     }
 
 
-    /* ========================================
-       显示答案
-       ======================================== */
-
-    function showAnswer() {
-
-      if (
-        !currentItem
-      ) {
+    function showAnswer(
+      force = false
+    ) {
+      if (!currentItem) {
         return;
       }
 
-
-      answerVisible =
-        true;
-
-
       if (
-        currentDirection ===
-        "kanaToRoman"
+        answerModeEl.value ===
+          "input" &&
+        !force
       ) {
-
-        answerEl.textContent =
-          currentItem.roman;
-
-      } else {
-
-        answerEl.textContent =
-          currentItem.kana;
-
+        answerInputEl.focus();
+        return;
       }
 
+      answerVisible = true;
+
+      answerEl.textContent =
+        currentDirection ===
+        "kanaToRoman"
+          ? currentItem.roman
+          : currentItem.kana;
 
       const stat =
         kanaStats[
           currentItem.kana
         ];
 
-
       hintEl.textContent =
         `${currentItem.memory} ｜ 掌握度 ${stat.mastery}/${MAX_MASTERY}`;
+    }
 
+
+    function getAcceptedTypedAnswers() {
+      if (!currentItem) {
+        return [];
+      }
+
+      if (
+        currentDirection ===
+        "romanToKana"
+      ) {
+        return [
+          currentItem.kana
+        ];
+      }
+
+      const alternatives = {
+        "し": ["shi", "si"],
+        "ち": ["chi", "ti"],
+        "つ": ["tsu", "tu"],
+        "ふ": ["fu", "hu"],
+        "を": ["o", "wo"]
+      };
+
+      return alternatives[
+        currentItem.kana
+      ] || [
+        currentItem.roman
+      ];
+    }
+
+
+    function normalizeTypedAnswer(
+      value
+    ) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "");
+    }
+
+
+    function submitTypedAnswer() {
+      if (!currentItem) {
+        return;
+      }
+
+      if (inputAnswerRecorded) {
+        nextCard();
+        return;
+      }
+
+      const value =
+        normalizeTypedAnswer(
+          answerInputEl.value
+        );
+
+      if (!value) {
+        answerFeedbackEl.textContent =
+          "先输入答案；如果不会，可以点“不会”。";
+        answerFeedbackEl.className =
+          "answer-feedback wrong-feedback";
+        answerInputEl.focus();
+        return;
+      }
+
+      const accepted =
+        getAcceptedTypedAnswers()
+          .map(
+            normalizeTypedAnswer
+          );
+
+      const isCorrect =
+        accepted.includes(value);
+
+      recordAnswerResult(
+        isCorrect
+      );
+
+      showAnswer(true);
+      inputAnswerRecorded = true;
+      answerInputEl.disabled = true;
+      dontKnowInputEl.hidden = true;
+      submitAnswerEl.textContent =
+        "下一题";
+
+      answerFeedbackEl.textContent =
+        isCorrect
+          ? "✓ 正确"
+          : `✕ 错误，正确答案：${currentDirection === "kanaToRoman" ? currentItem.roman : currentItem.kana}`;
+
+      answerFeedbackEl.className =
+        `answer-feedback ${isCorrect ? "correct-feedback" : "wrong-feedback"}`;
+    }
+
+
+    function markTypedDontKnow() {
+      if (
+        !currentItem ||
+        inputAnswerRecorded
+      ) {
+        return;
+      }
+
+      recordAnswerResult(false);
+      showAnswer(true);
+      inputAnswerRecorded = true;
+      answerInputEl.disabled = true;
+      dontKnowInputEl.hidden = true;
+      submitAnswerEl.textContent =
+        "下一题";
+      answerFeedbackEl.textContent =
+        "已记为不认识，先看一遍联想再继续。";
+      answerFeedbackEl.className =
+        "answer-feedback wrong-feedback";
     }
 
 
@@ -4137,137 +4965,150 @@ window.addEventListener(
       item,
       isCorrect
     ) {
-
       const stat =
         kanaStats[
           item.kana
         ];
 
-
-      /*
-       * 答对
-       */
-      if (
-        isCorrect
-      ) {
-
-        stat.correct++;
-
+      if (isCorrect) {
         stat.streak++;
-
         stat.lastResult =
           "correct";
 
-
-        /*
-         * 连续答对两次：
-         * 掌握度 +1
-         */
         if (
           stat.streak >= 2
         ) {
-
           stat.mastery =
             Math.min(
               MAX_MASTERY,
               stat.mastery + 1
             );
-
-
-          stat.streak =
-            0;
-
+          stat.streak = 0;
         }
-
-      }
-
-
-      /*
-       * 答错
-       */
-      else {
-
-        stat.wrong++;
-
-        stat.streak =
-          0;
-
+      } else {
+        stat.streak = 0;
         stat.lastResult =
           "wrong";
-
-
-        /*
-         * 答错降低 2 级。
-         */
         stat.mastery =
           Math.max(
             0,
             stat.mastery - 2
           );
-
       }
 
+      const now = new Date();
+      stat.lastReviewedAt =
+        now.toISOString();
+
+      const delay =
+        isCorrect
+          ? REVIEW_INTERVAL_MS[
+              stat.mastery
+            ]
+          : 5 * 60 * 1000;
+
+      stat.nextReviewAt =
+        new Date(
+          now.getTime() + delay
+        ).toISOString();
     }
 
 
-    /* ========================================
-       标记结果
-       ======================================== */
-
-    function markAnswer(
+    function incrementReviewCounters(
+      item,
       isCorrect
     ) {
+      const currentDeviceId =
+        getOrCreateDeviceId();
 
-      if (
-        !currentItem
-      ) {
-        return;
-      }
+      syncCounters[
+        item.kana
+      ] ||= {};
 
+      syncCounters[
+        item.kana
+      ][currentDeviceId] ||= {
+        correct: 0,
+        wrong: 0
+      };
 
-      /*
-       * 尚未显示答案时，
-       * 第一次操作只负责显示答案。
-       */
-      if (
-        !answerVisible
-      ) {
-
-        showAnswer();
-
-        return;
-
-      }
-
-
-      stats.total++;
-
-
-      if (
+      syncCounters[
+        item.kana
+      ][currentDeviceId][
         isCorrect
-      ) {
+          ? "correct"
+          : "wrong"
+      ]++;
 
-        stats.correct++;
+      const dateKey =
+        getLocalDateKey();
 
-      } else {
+      dailyCounters[dateKey] ||= {};
+      dailyCounters[dateKey][
+        currentDeviceId
+      ] ||= {
+        correct: 0,
+        wrong: 0
+      };
 
-        stats.wrong++;
+      dailyCounters[dateKey][
+        currentDeviceId
+      ][
+        isCorrect
+          ? "correct"
+          : "wrong"
+      ]++;
+    }
 
+
+    function recordAnswerResult(
+      isCorrect
+    ) {
+      if (!currentItem) {
+        return;
       }
 
+      incrementReviewCounters(
+        currentItem,
+        isCorrect
+      );
 
       updateKanaMastery(
         currentItem,
         isCorrect
       );
 
-
+      recalculateCountsFromCounters();
       saveState();
-
       updateStats();
+      updateSelectedInfo();
+    }
+
+
+    function markAnswer(
+      isCorrect
+    ) {
+      if (!currentItem) {
+        return;
+      }
+
+      if (
+        answerModeEl.value ===
+        "input"
+      ) {
+        return;
+      }
+
+      if (!answerVisible) {
+        showAnswer();
+        return;
+      }
+
+      recordAnswerResult(
+        isCorrect
+      );
 
       nextCard();
-
     }
 
 
@@ -4302,9 +5143,80 @@ window.addEventListener(
       accuracyEl.textContent =
         accuracy + "%";
 
+      updateDailySummary();
 
       updateWeakList();
 
+    }
+
+
+    function getDailyTotals(
+      dateKey
+    ) {
+      return sumDeviceCounters(
+        dailyCounters[
+          dateKey
+        ]
+      );
+    }
+
+
+    function getStudyStreak() {
+      let streak = 0;
+      const cursor =
+        new Date();
+
+      while (streak < 3660) {
+        const dateKey =
+          getLocalDateKey(
+            cursor
+          );
+
+        const totals =
+          getDailyTotals(
+            dateKey
+          );
+
+        if (
+          totals.correct +
+          totals.wrong === 0
+        ) {
+          break;
+        }
+
+        streak++;
+        cursor.setDate(
+          cursor.getDate() - 1
+        );
+      }
+
+      return streak;
+    }
+
+
+    function updateDailySummary() {
+      const today =
+        getDailyTotals(
+          getLocalDateKey()
+        );
+
+      const total =
+        today.correct +
+        today.wrong;
+
+      const accuracy =
+        total === 0
+          ? 0
+          : Math.round(
+              today.correct /
+              total * 100
+            );
+
+      todaySummaryEl.textContent =
+        `今日 ${total} 题 · 正确率 ${accuracy}%`;
+
+      studyStreakEl.textContent =
+        `连续 ${getStudyStreak()} 天`;
     }
 
 
@@ -4485,9 +5397,65 @@ window.addEventListener(
         ).length;
 
 
-      selectedInfoEl.textContent =
-        `当前抽取 ${items.length} 个平假名 · 已掌握 ${masteredCount} 个`;
+      const dueCount =
+        items.filter(
+          item => {
+            const nextReview =
+              parseTimestamp(
+                kanaStats[
+                  item.kana
+                ].nextReviewAt
+              );
 
+            return (
+              nextReview > 0 &&
+              nextReview <= Date.now()
+            );
+          }
+        ).length;
+
+      selectedInfoEl.textContent =
+        `当前抽取 ${items.length} 个平假名 · 已掌握 ${masteredCount} 个 · 到期复习 ${dueCount} 个`;
+
+      const selectedLabels =
+        [...selectedGroups]
+          .map(group => ({
+            a: "あ",
+            ka: "か",
+            sa: "さ",
+            ta: "た",
+            na: "な",
+            ha: "は",
+            ma: "ま",
+            ya: "や",
+            ra: "ら",
+            wa: "わ"
+          })[group])
+          .filter(Boolean);
+
+      const rangeLabel =
+        selectedLabels.length === 0
+          ? "未选择范围"
+          : selectedLabels.length <= 4
+            ? selectedLabels.join("・")
+            : `${selectedLabels.slice(0, 3).join("・")} 等 ${selectedLabels.length} 行`;
+
+      const directionLabel =
+        ({
+          kanaToRoman: "假→罗",
+          romanToKana: "罗→假",
+          random: "随机双向"
+        })[modeEl.value] || "假→罗";
+
+      settingsSummaryEl.textContent =
+        `${rangeLabel} · ${directionLabel} · ${answerModeEl.value === "input" ? "输入" : "自评"}`;
+
+    }
+
+
+    function markSettingsChanged() {
+      settingsUpdatedAt =
+        new Date().toISOString();
     }
 
 
@@ -4528,6 +5496,8 @@ window.addEventListener(
             syncGroupButtons();
 
             updateSelectedInfo();
+
+            markSettingsChanged();
 
             saveState();
 
@@ -4571,6 +5541,8 @@ window.addEventListener(
 
           updateSelectedInfo();
 
+          markSettingsChanged();
+
           saveState();
 
           nextCard();
@@ -4597,6 +5569,8 @@ window.addEventListener(
           syncGroupButtons();
 
           updateSelectedInfo();
+
+          markSettingsChanged();
 
           saveState();
 
@@ -4647,10 +5621,11 @@ window.addEventListener(
             wrong: 0
           };
 
-
           kanaStats =
             createDefaultKanaStats();
 
+          syncCounters = {};
+          dailyCounters = {};
 
           saveState();
 
@@ -4718,13 +5693,37 @@ window.addEventListener(
       );
 
 
+    answerFormEl.addEventListener(
+      "submit",
+      event => {
+        event.preventDefault();
+        submitTypedAnswer();
+      }
+    );
+
+    dontKnowInputEl.addEventListener(
+      "click",
+      markTypedDontKnow
+    );
+
+
     /* ========================================
        卡片点击
        ======================================== */
 
     cardEl.addEventListener(
       "click",
-      showAnswer
+      () => {
+        if (
+          answerModeEl.value ===
+          "input"
+        ) {
+          answerInputEl.focus();
+          return;
+        }
+
+        showAnswer();
+      }
     );
 
 
@@ -4739,13 +5738,12 @@ window.addEventListener(
 
         if (
           event.code ===
-          "Enter"
+          "Enter" &&
+          answerModeEl.value !==
+            "input"
         ) {
-
           event.preventDefault();
-
           showAnswer();
-
         }
 
       }
@@ -4845,23 +5843,29 @@ window.addEventListener(
     modeEl.addEventListener(
       "change",
       () => {
-
+        markSettingsChanged();
         saveState();
-
+        updateSelectedInfo();
         nextCard();
-
       }
     );
-
 
     weightModeEl.addEventListener(
       "change",
       () => {
-
+        markSettingsChanged();
         saveState();
-
         nextCard();
+      }
+    );
 
+    answerModeEl.addEventListener(
+      "change",
+      () => {
+        markSettingsChanged();
+        saveState();
+        updateSelectedInfo();
+        nextCard();
       }
     );
 
@@ -4894,6 +5898,13 @@ window.addEventListener(
             "button"
           ].includes(tagName) ||
           activeElement?.isContentEditable
+        ) {
+          return;
+        }
+
+        if (
+          answerModeEl.value ===
+          "input"
         ) {
           return;
         }
@@ -4957,6 +5968,16 @@ window.addEventListener(
     /* ========================================
        初始化 
        ======================================== */
+
+    getOrCreateDeviceId();
+
+    if (
+      window.matchMedia?.(
+        "(max-width: 600px)"
+      ).matches
+    ) {
+      studySettingsEl.open = false;
+    }
 
     const hasInitialLocalState =
       loadState(
