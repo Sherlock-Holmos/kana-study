@@ -2,36 +2,28 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f4f6">
+  <title>五十音学习</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  >
-
-  <meta
-    name="theme-color"
-    content="#f3f4f6"
-  >
-
-  <title>五十音抽认卡</title>
-
-  <link rel="stylesheet" href="./css/base.css">
-  <link rel="stylesheet" href="./css/auth.css">
-  <link rel="stylesheet" href="./css/study.css">
-  <link rel="stylesheet" href="./css/responsive.css">
+  <link rel="stylesheet" href="./css/base.css?v=5">
+  <link rel="stylesheet" href="./css/auth.css?v=5">
+  <link rel="stylesheet" href="./css/study.css?v=5">
+  <link rel="stylesheet" href="./css/progress.css?v=5">
+  <link rel="stylesheet" href="./css/responsive.css?v=5">
 </head>
-
 <body>
-
   <main class="app">
-
     <header class="app-header">
       <div class="app-heading">
-        <h1>五十音抽认卡</h1>
-        <div class="subtitle">
-          平假名 · 随机抽取 · 掌握度复习
-        </div>
+        <h1>五十音学习</h1>
+        <div class="subtitle">平假名 · 智能复习 · 云端同步</div>
       </div>
+
+      <nav class="top-nav" aria-label="主导航">
+        <button class="top-nav-button active" type="button" data-view-target="study">学习</button>
+        <button class="top-nav-button" type="button" data-view-target="progress">进度</button>
+      </nav>
 
       <button
         id="accountTrigger"
@@ -46,469 +38,313 @@
       </button>
     </header>
 
-    <div
-      id="authModal"
-      class="auth-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="authDialogTitle"
-      hidden
-    >
-      <div class="auth-modal-backdrop" data-auth-close></div>
-
-      <section class="auth-dialog">
-        <button
-          id="closeAuthModal"
-          class="auth-close"
-          type="button"
-          aria-label="关闭账号窗口"
-        >×</button>
-
-        <div id="loggedOutPanel" class="auth-logged-out">
-          <div>
-            <h2 id="authDialogTitle" class="auth-dialog-title">登录账号</h2>
-            <div class="auth-dialog-subtitle">
-              登录后可在不同设备之间同步五十音学习进度。
-            </div>
+    <!-- 学习页 -->
+    <section id="studyView" class="app-view" data-view="study">
+      <section class="panel study-panel">
+        <div class="study-toolbar">
+          <div class="study-toolbar-copy">
+            <span class="eyebrow">当前练习</span>
+            <strong id="settingsSummary">あ・か・さ · 假→罗 · 自评</strong>
+            <span id="selectedInfo" class="selected-info"></span>
           </div>
-
-          <div>
-            <label class="auth-field-label" for="authEmail">邮箱</label>
-            <input
-              id="authEmail"
-              class="auth-input"
-              type="email"
-              autocomplete="email"
-              placeholder="name@example.com"
-            >
-          </div>
-
-          <div>
-            <label class="auth-field-label" for="authPassword">密码</label>
-            <input
-              id="authPassword"
-              class="auth-input"
-              type="password"
-              autocomplete="current-password"
-              placeholder="至少 8 位"
-            >
-          </div>
-
-          <div class="auth-buttons">
-            <button id="loginButton" class="auth-button primary" type="button">登录</button>
-            <button id="registerButton" class="auth-button" type="button">注册新账号</button>
-          </div>
-
-          <div id="authMessage" class="auth-message"></div>
-        </div>
-
-        <div id="loggedInPanel" class="auth-logged-in" hidden>
-          <div>
-            <h2 class="auth-dialog-title">账号</h2>
-            <div class="auth-dialog-subtitle">
-              当前学习记录会保存在本机，并在联网时同步到云端。
-            </div>
-          </div>
-
-          <div class="account-card">
-            <div id="accountCardAvatar" class="account-card-avatar">人</div>
-            <div class="user-info">
-              <span>当前账号</span>
-              <strong id="userEmail"></strong>
-            </div>
-          </div>
-
-          <div class="sync-row">
-            <span class="sync-row-label">学习进度</span>
-            <span id="syncStatus" class="sync-status">仅本地保存</span>
-          </div>
-
-          <button id="logoutButton" class="auth-button logout-button" type="button">
-            退出登录
+          <button id="openSettings" class="settings-trigger" type="button" aria-haspopup="dialog" aria-controls="settingsModal">
+            <span aria-hidden="true">⚙</span>
+            设置
           </button>
         </div>
-      </section>
-    </div>
-
-    <section class="panel">
-
-      <!-- ==============================
-           设置
-           ============================== -->
-
-      <details id="studySettings" class="study-settings" open>
-        <summary class="study-settings-summary">
-          <span class="study-settings-title">学习设置</span>
-          <span id="settingsSummary" class="study-settings-current">あ・か・さ · 自评</span>
-        </summary>
-
-        <div class="study-settings-body">
-
-      <div class="settings">
-
-        <div class="setting-item">
-
-          <label for="mode">
-            测试模式
-          </label>
-
-          <select id="mode">
-
-            <option value="kanaToRoman">
-              假名 → 罗马音
-            </option>
-
-            <option value="romanToKana">
-              罗马音 → 假名
-            </option>
-
-            <option value="random">
-              随机双向
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="setting-item">
-
-          <label for="weightMode">
-            抽取方式
-          </label>
-
-          <select id="weightMode">
-
-            <option value="weighted">
-              智能复习
-            </option>
-
-            <option value="pure">
-              完全随机
-            </option>
-
-          </select>
-
-        </div>
-
-        <div class="setting-item">
-
-          <label for="answerMode">
-            作答方式
-          </label>
-
-          <select id="answerMode">
-            <option value="self">自评认识 / 不认识</option>
-            <option value="input">输入答案（推荐）</option>
-          </select>
-
-        </div>
-
-      </div>
-
-
-      <!-- ==============================
-           范围
-           ============================== -->
-
-      <div class="range-toolbar">
-
-        <span class="section-title">
-          选择背诵范围
-        </span>
-
-
-        <div class="small-actions">
-
-          <button
-            class="mini-button"
-            id="selectAll"
-            type="button"
-          >
-            全选
-          </button>
-
-
-          <button
-            class="mini-button"
-            id="clearAll"
-            type="button"
-          >
-            清空
-          </button>
-
-
-          <button
-            class="mini-button danger"
-            id="resetProgress"
-            type="button"
-          >
-            重置记录
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <div class="groups">
-
-        <button
-          class="group-button active"
-          data-group="a"
-          type="button"
-        >
-          あ行
-        </button>
-
-        <button
-          class="group-button active"
-          data-group="ka"
-          type="button"
-        >
-          か行
-        </button>
-
-        <button
-          class="group-button active"
-          data-group="sa"
-          type="button"
-        >
-          さ行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="ta"
-          type="button"
-        >
-          た行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="na"
-          type="button"
-        >
-          な行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="ha"
-          type="button"
-        >
-          は行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="ma"
-          type="button"
-        >
-          ま行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="ya"
-          type="button"
-        >
-          や行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="ra"
-          type="button"
-        >
-          ら行
-        </button>
-
-        <button
-          class="group-button"
-          data-group="wa"
-          type="button"
-        >
-          わ行
-        </button>
-
-      </div>
-
-
-      <div
-        class="selected-info"
-        id="selectedInfo"
-      ></div>
-
-        </div>
-      </details>
-
-
-      <!-- ==============================
-           卡片
-           ============================== -->
-
-      <div
-        class="card"
-        id="card"
-        role="button"
-        tabindex="0"
-        aria-label="点击显示答案"
-      >
 
         <div
-          class="question"
-          id="question"
-        ></div>
-
-
-        <div
-          class="answer"
-          id="answer"
-        ></div>
-
-
-        <div
-          class="hint"
-          id="hint"
+          class="card"
+          id="card"
+          role="button"
+          tabindex="0"
+          aria-label="点击显示答案"
         >
-          点击卡片或按空格查看答案
+          <div class="question" id="question"></div>
+          <div class="answer" id="answer"></div>
+          <div class="hint" id="hint">点击卡片或按空格查看答案</div>
         </div>
 
-      </div>
+        <form id="answerForm" class="answer-form" hidden>
+          <input
+            id="answerInput"
+            class="answer-input"
+            type="text"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="输入答案后按 Enter"
+            aria-label="输入答案"
+          >
+          <button id="submitAnswer" class="answer-submit" type="submit">提交</button>
+          <button id="dontKnowInput" class="answer-skip" type="button">不会</button>
+        </form>
 
+        <div id="answerFeedback" class="answer-feedback" aria-live="polite" hidden></div>
 
-      <!-- ==============================
-           输入作答
-           ============================== -->
-
-      <form id="answerForm" class="answer-form" hidden>
-        <input
-          id="answerInput"
-          class="answer-input"
-          type="text"
-          autocomplete="off"
-          autocapitalize="none"
-          spellcheck="false"
-          placeholder="输入答案后按 Enter"
-          aria-label="输入答案"
-        >
-        <button id="submitAnswer" class="answer-submit" type="submit">提交</button>
-        <button id="dontKnowInput" class="answer-skip" type="button">不会</button>
-      </form>
-
-      <div id="answerFeedback" class="answer-feedback" aria-live="polite" hidden></div>
-
-      <!-- ==============================
-           自评操作按钮
-           ============================== -->
-
-      <div class="buttons" id="selfButtons">
-
-        <button
-          class="show-answer"
-          id="showAnswer"
-          type="button"
-        >
-          显示答案
-        </button>
-
-
-        <button
-          class="wrong"
-          id="wrong"
-          type="button"
-        >
-          ✕ 不认识
-        </button>
-
-
-        <button
-          class="correct"
-          id="correct"
-          type="button"
-        >
-          ✓ 认识
-        </button>
-
-      </div>
-
-
-      <!-- ==============================
-           统计
-           ============================== -->
-
-      <div class="stats">
-
-        <div class="stats-grid">
-
-          <div class="stats-row">
-            <span>已练习</span>
-            <strong id="total">0</strong>
-          </div>
-
-
-          <div class="stats-row">
-            <span>正确率</span>
-            <strong id="accuracy">0%</strong>
-          </div>
-
-
-          <div class="stats-row">
-            <span>认识</span>
-            <strong id="correctCount">0</strong>
-          </div>
-
-
-          <div class="stats-row">
-            <span>错误</span>
-            <strong id="wrongCount">0</strong>
-          </div>
-
+        <div class="buttons" id="selfButtons">
+          <button class="show-answer" id="showAnswer" type="button">显示答案</button>
+          <button class="wrong" id="wrong" type="button">✕ 不认识</button>
+          <button class="correct" id="correct" type="button">✓ 认识</button>
         </div>
 
-        <div class="today-summary">
+        <div class="study-quick-summary" aria-label="今日学习概览">
           <span id="todaySummary">今日 0 题 · 正确率 0%</span>
           <strong id="studyStreak">连续 0 天</strong>
         </div>
 
-        <div class="weak-title">
-          当前薄弱假名
+        <div class="footer-tip">
+          自评：空格显示答案，← 不认识，→ 认识。输入模式直接键入答案并按 Enter。
         </div>
-
-
-        <div
-          class="weak-list"
-          id="weakList"
-        >
-          暂无
-        </div>
-
-      </div>
-
-
-      <div class="footer-tip">
-        自评模式：空格显示答案，← 不认识，→ 认识。
-        输入模式：输入答案后按 Enter，答错会显示正确答案。
-        <br>
-        智能复习会优先安排薄弱和到期假名。
-      </div>
-
+      </section>
     </section>
 
+    <!-- 进度页 -->
+    <section id="progressView" class="app-view" data-view="progress" hidden>
+      <div class="progress-heading">
+        <div>
+          <span class="eyebrow">学习进度</span>
+          <h2>你的五十音掌握情况</h2>
+        </div>
+        <div id="progressUpdated" class="progress-updated">根据当前记录计算</div>
+      </div>
+
+      <section class="progress-overview panel">
+        <div class="progress-score-row">
+          <div>
+            <span class="progress-label">总体掌握度</span>
+            <strong id="progressPercent" class="progress-percent">0%</strong>
+          </div>
+          <div class="progress-mastered-copy">
+            <strong id="progressMastered">0 / 46</strong>
+            <span>完全掌握</span>
+          </div>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progressBar" class="progress-bar" style="width:0%"></div>
+        </div>
+
+        <div class="level-grid">
+          <div class="level-card">
+            <span>已掌握</span>
+            <strong id="levelMastered">0</strong>
+          </div>
+          <div class="level-card">
+            <span>学习中</span>
+            <strong id="levelLearning">0</strong>
+          </div>
+          <div class="level-card">
+            <span>未学习</span>
+            <strong id="levelUnseen">46</strong>
+          </div>
+          <div class="level-card">
+            <span>到期复习</span>
+            <strong id="levelDue">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="progress-section panel">
+        <div class="section-heading-row">
+          <div>
+            <span class="eyebrow">累计结果</span>
+            <h3>练习表现</h3>
+          </div>
+        </div>
+        <div class="result-grid">
+          <div class="result-card"><span>已练习</span><strong id="total">0</strong></div>
+          <div class="result-card"><span>正确率</span><strong id="accuracy">0%</strong></div>
+          <div class="result-card"><span>正确</span><strong id="correctCount">0</strong></div>
+          <div class="result-card"><span>错误</span><strong id="wrongCount">0</strong></div>
+        </div>
+        <div class="today-detail">
+          <div><span>今日练习</span><strong id="progressTodayTotal">0 题</strong></div>
+          <div><span>今日正确率</span><strong id="progressTodayAccuracy">0%</strong></div>
+          <div><span>连续学习</span><strong id="progressStreak">0 天</strong></div>
+        </div>
+      </section>
+
+      <section class="progress-section panel">
+        <div class="section-heading-row">
+          <div>
+            <span class="eyebrow">掌握矩阵</span>
+            <h3>46 个基础平假名</h3>
+          </div>
+          <div class="mastery-legend" aria-label="掌握度图例">
+            <span><i class="legend-dot unseen"></i>未学</span>
+            <span><i class="legend-dot learning"></i>学习中</span>
+            <span><i class="legend-dot mastered"></i>掌握</span>
+          </div>
+        </div>
+        <div id="masteryGrid" class="mastery-grid"></div>
+      </section>
+
+      <section class="progress-section panel">
+        <div class="section-heading-row">
+          <div>
+            <span class="eyebrow">重点复习</span>
+            <h3>当前薄弱假名</h3>
+          </div>
+        </div>
+        <div id="weakList" class="weak-list progress-weak-list">暂无</div>
+      </section>
+
+      <section class="progress-section panel">
+        <div class="section-heading-row">
+          <div>
+            <span class="eyebrow">最近 7 天</span>
+            <h3>学习历史</h3>
+          </div>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </section>
   </main>
 
-  <!-- Supabase SDK 必须先加载 -->
+  <!-- 手机底部导航 -->
+  <nav class="bottom-nav" aria-label="主导航">
+    <button class="bottom-nav-button active" type="button" data-view-target="study">
+      <span class="bottom-nav-icon" aria-hidden="true">学</span>
+      <span>学习</span>
+    </button>
+    <button class="bottom-nav-button" type="button" data-view-target="progress">
+      <span class="bottom-nav-icon" aria-hidden="true">数</span>
+      <span>进度</span>
+    </button>
+  </nav>
+
+  <!-- 学习设置 -->
+  <div id="settingsModal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsDialogTitle" hidden>
+    <div class="settings-modal-backdrop" data-settings-close></div>
+    <section class="settings-dialog">
+      <div class="settings-dialog-header">
+        <div>
+          <span class="eyebrow">学习偏好</span>
+          <h2 id="settingsDialogTitle">学习设置</h2>
+        </div>
+        <button id="closeSettings" class="dialog-close" type="button" aria-label="关闭学习设置">×</button>
+      </div>
+
+      <div class="settings-dialog-body">
+        <div class="settings">
+          <div class="setting-item">
+            <label for="mode">测试方向</label>
+            <select id="mode">
+              <option value="kanaToRoman">假名 → 罗马音</option>
+              <option value="romanToKana">罗马音 → 假名</option>
+              <option value="random">随机双向</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="weightMode">抽取方式</label>
+            <select id="weightMode">
+              <option value="weighted">智能复习</option>
+              <option value="pure">完全随机</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="answerMode">作答方式</label>
+            <select id="answerMode">
+              <option value="self">自评认识 / 不认识</option>
+              <option value="input">输入答案（推荐）</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <div class="range-toolbar">
+            <span class="section-title">学习范围</span>
+            <div class="small-actions">
+              <button class="mini-button" id="selectAll" type="button">全选</button>
+              <button class="mini-button" id="clearAll" type="button">清空</button>
+            </div>
+          </div>
+
+          <div class="groups">
+            <button class="group-button active" data-group="a" type="button">あ行</button>
+            <button class="group-button active" data-group="ka" type="button">か行</button>
+            <button class="group-button active" data-group="sa" type="button">さ行</button>
+            <button class="group-button" data-group="ta" type="button">た行</button>
+            <button class="group-button" data-group="na" type="button">な行</button>
+            <button class="group-button" data-group="ha" type="button">は行</button>
+            <button class="group-button" data-group="ma" type="button">ま行</button>
+            <button class="group-button" data-group="ya" type="button">や行</button>
+            <button class="group-button" data-group="ra" type="button">ら行</button>
+            <button class="group-button" data-group="wa" type="button">わ行</button>
+          </div>
+        </div>
+
+        <div class="settings-block data-management">
+          <div>
+            <span class="section-title">数据管理</span>
+            <p>重置只影响当前游客或当前账号的学习记录，不会删除账号。</p>
+          </div>
+          <button class="danger-action" id="resetProgress" type="button">重置当前学习记录</button>
+        </div>
+      </div>
+
+      <div class="settings-dialog-footer">
+        <button id="doneSettings" class="settings-done" type="button">完成</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 账号弹窗 -->
+  <div id="authModal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authDialogTitle" hidden>
+    <div class="auth-modal-backdrop" data-auth-close></div>
+    <section class="auth-dialog">
+      <button id="closeAuthModal" class="auth-close" type="button" aria-label="关闭账号窗口">×</button>
+
+      <div id="loggedOutPanel" class="auth-logged-out">
+        <div>
+          <h2 id="authDialogTitle" class="auth-dialog-title">登录账号</h2>
+          <div class="auth-dialog-subtitle">登录后可在不同设备之间同步五十音学习进度。</div>
+        </div>
+        <div>
+          <label class="auth-field-label" for="authEmail">邮箱</label>
+          <input id="authEmail" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com">
+        </div>
+        <div>
+          <label class="auth-field-label" for="authPassword">密码</label>
+          <input id="authPassword" class="auth-input" type="password" autocomplete="current-password" placeholder="至少 8 位">
+        </div>
+        <div class="auth-buttons">
+          <button id="loginButton" class="auth-button primary" type="button">登录</button>
+          <button id="registerButton" class="auth-button" type="button">注册新账号</button>
+        </div>
+        <div id="authMessage" class="auth-message"></div>
+      </div>
+
+      <div id="loggedInPanel" class="auth-logged-in" hidden>
+        <div>
+          <h2 class="auth-dialog-title">账号</h2>
+          <div class="auth-dialog-subtitle">当前学习记录会保存在本机，并在联网时同步到云端。</div>
+        </div>
+        <div class="account-card">
+          <div id="accountCardAvatar" class="account-card-avatar">人</div>
+          <div class="user-info">
+            <span>当前账号</span>
+            <strong id="userEmail"></strong>
+          </div>
+        </div>
+        <div class="sync-row">
+          <span class="sync-row-label">学习进度</span>
+          <span id="syncStatus" class="sync-status">仅本地保存</span>
+        </div>
+        <button id="logoutButton" class="auth-button logout-button" type="button">退出登录</button>
+      </div>
+    </section>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- 按依赖顺序加载项目脚本。请不要随意调整顺序。 -->
-  <script src="./js/config.js"></script>
-  <script src="./js/auth-sync.js"></script>
-  <script src="./js/kana-data.js"></script>
-  <script src="./js/progress.js"></script>
-  <script src="./js/study.js"></script>
-  <script src="./js/app.js"></script>
-
+  <script src="./js/config.js?v=5"></script>
+  <script src="./js/auth-sync.js?v=5"></script>
+  <script src="./js/kana-data.js?v=5"></script>
+  <script src="./js/progress.js?v=5"></script>
+  <script src="./js/study.js?v=5"></script>
+  <script src="./js/ui.js?v=5"></script>
+  <script src="./js/app.js?v=5"></script>
 </body>
 </html>

@@ -252,11 +252,6 @@
         "studyStreak"
       );
 
-    const studySettingsEl =
-      document.getElementById(
-        "studySettings"
-      );
-
     const settingsSummaryEl =
       document.getElementById(
         "settingsSummary"

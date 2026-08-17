@@ -319,12 +319,23 @@
     document.addEventListener(
       "keydown",
       event => {
-        if (
-          event.key === "Escape" &&
-          !authModal.hidden
-        ) {
+        if (event.key !== "Escape") {
+          return;
+        }
+
+        if (!authModal.hidden) {
           event.preventDefault();
           closeAuthModal();
+          return;
+        }
+
+        if (
+          typeof settingsModalEl !==
+            "undefined" &&
+          !settingsModalEl.hidden
+        ) {
+          event.preventDefault();
+          closeSettingsModal();
         }
       }
     );
@@ -416,6 +427,14 @@
     document.addEventListener(
       "keydown",
       event => {
+
+        if (
+          typeof isStudyViewActive ===
+            "function" &&
+          !isStudyViewActive()
+        ) {
+          return;
+        }
 
         /*
          * 输入账号、密码或操作表单时，
@@ -510,13 +529,7 @@
 
     getOrCreateDeviceId();
 
-    if (
-      window.matchMedia?.(
-        "(max-width: 600px)"
-      ).matches
-    ) {
-      studySettingsEl.open = false;
-    }
+    initializeUi();
 
     const hasInitialLocalState =
       loadState(

@@ -706,6 +706,13 @@
 
       updateWeakList();
 
+      if (
+        typeof updateProgressDashboard ===
+        "function"
+      ) {
+        updateProgressDashboard();
+      }
+
     }
 
 
