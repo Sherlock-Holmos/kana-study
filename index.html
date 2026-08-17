@@ -1,1283 +1,514 @@
-    const loggedOutPanel =
-  document.getElementById(
-    "loggedOutPanel"
-  );
-
-const loggedInPanel =
-  document.getElementById(
-    "loggedInPanel"
-  );
-
-const authEmailEl =
-  document.getElementById(
-    "authEmail"
-  );
-
-const authPasswordEl =
-  document.getElementById(
-    "authPassword"
-  );
-
-const authMessageEl =
-  document.getElementById(
-    "authMessage"
-  );
-
-const userEmailEl =
-  document.getElementById(
-    "userEmail"
-  );
-
-const loginButton =
-  document.getElementById(
-    "loginButton"
-  );
-
-const registerButton =
-  document.getElementById(
-    "registerButton"
-  );
-
-const logoutButton =
-  document.getElementById(
-    "logoutButton"
-  );
-
-const syncStatusEl =
-  document.getElementById(
-    "syncStatus"
-  );
-
-const accountTrigger =
-  document.getElementById(
-    "accountTrigger"
-  );
-
-const accountTriggerText =
-  document.getElementById(
-    "accountTriggerText"
-  );
-
-const accountAvatar =
-  document.getElementById(
-    "accountAvatar"
-  );
-
-const accountCardAvatar =
-  document.getElementById(
-    "accountCardAvatar"
-  );
-
-const accountSyncDot =
-  document.getElementById(
-    "accountSyncDot"
-  );
-
-const authModal =
-  document.getElementById(
-    "authModal"
-  );
-
-const closeAuthModalButton =
-  document.getElementById(
-    "closeAuthModal"
-  );
-
-let currentUser = null;
-let activeUserContextId = null;
-let cloudSaveTimer = null;
-let pendingCloudSnapshot = null;
-let isApplyingExternalState = false;
-
-
-/* ========================================
-   账号 / 云同步辅助
-   ======================================== */
-
-function setAuthMessage(
-  message,
-  isError = false
-) {
-  authMessageEl.textContent =
-    message;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#f3f4f6"
+  >
+
+  <title>五十音抽认卡</title>
+
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/auth.css">
+  <link rel="stylesheet" href="./css/study.css">
+  <link rel="stylesheet" href="./css/responsive.css">
+</head>
+
+<body>
+
+  <main class="app">
+
+    <header class="app-header">
+      <div class="app-heading">
+        <h1>五十音抽认卡</h1>
+        <div class="subtitle">
+          平假名 · 随机抽取 · 掌握度复习
+        </div>
+      </div>
+
+      <button
+        id="accountTrigger"
+        class="account-trigger"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="authModal"
+      >
+        <span id="accountAvatar" class="account-avatar">人</span>
+        <span id="accountTriggerText" class="account-trigger-text">登录</span>
+        <span id="accountSyncDot" class="account-sync-dot" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <div
+      id="authModal"
+      class="auth-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="authDialogTitle"
+      hidden
+    >
+      <div class="auth-modal-backdrop" data-auth-close></div>
+
+      <section class="auth-dialog">
+        <button
+          id="closeAuthModal"
+          class="auth-close"
+          type="button"
+          aria-label="关闭账号窗口"
+        >×</button>
+
+        <div id="loggedOutPanel" class="auth-logged-out">
+          <div>
+            <h2 id="authDialogTitle" class="auth-dialog-title">登录账号</h2>
+            <div class="auth-dialog-subtitle">
+              登录后可在不同设备之间同步五十音学习进度。
+            </div>
+          </div>
+
+          <div>
+            <label class="auth-field-label" for="authEmail">邮箱</label>
+            <input
+              id="authEmail"
+              class="auth-input"
+              type="email"
+              autocomplete="email"
+              placeholder="name@example.com"
+            >
+          </div>
+
+          <div>
+            <label class="auth-field-label" for="authPassword">密码</label>
+            <input
+              id="authPassword"
+              class="auth-input"
+              type="password"
+              autocomplete="current-password"
+              placeholder="至少 8 位"
+            >
+          </div>
+
+          <div class="auth-buttons">
+            <button id="loginButton" class="auth-button primary" type="button">登录</button>
+            <button id="registerButton" class="auth-button" type="button">注册新账号</button>
+          </div>
+
+          <div id="authMessage" class="auth-message"></div>
+        </div>
 
-  authMessageEl.classList.toggle(
-    "error",
-    isError
-  );
-}
+        <div id="loggedInPanel" class="auth-logged-in" hidden>
+          <div>
+            <h2 class="auth-dialog-title">账号</h2>
+            <div class="auth-dialog-subtitle">
+              当前学习记录会保存在本机，并在联网时同步到云端。
+            </div>
+          </div>
 
-
-function setAuthBusy(
-  isBusy
-) {
-  loginButton.disabled =
-    isBusy;
+          <div class="account-card">
+            <div id="accountCardAvatar" class="account-card-avatar">人</div>
+            <div class="user-info">
+              <span>当前账号</span>
+              <strong id="userEmail"></strong>
+            </div>
+          </div>
 
-  registerButton.disabled =
-    isBusy;
-
-  logoutButton.disabled =
-    isBusy;
-}
+          <div class="sync-row">
+            <span class="sync-row-label">学习进度</span>
+            <span id="syncStatus" class="sync-status">仅本地保存</span>
+          </div>
 
+          <button id="logoutButton" class="auth-button logout-button" type="button">
+            退出登录
+          </button>
+        </div>
+      </section>
+    </div>
 
-function setSyncStatus(
-  message
-) {
-  if (!syncStatusEl) {
-    return;
-  }
+    <section class="panel">
 
-  syncStatusEl.textContent =
-    message;
-}
-
+      <!-- ==============================
+           设置
+           ============================== -->
 
-function getAccountInitial() {
-  const source =
-    currentUser?.email || "人";
+      <details id="studySettings" class="study-settings" open>
+        <summary class="study-settings-summary">
+          <span class="study-settings-title">学习设置</span>
+          <span id="settingsSummary" class="study-settings-current">あ・か・さ · 自评</span>
+        </summary>
 
-  return source
-    .trim()
-    .charAt(0)
-    .toUpperCase() || "人";
-}
-
-
-function renderAuthState() {
-  const isLoggedIn =
-    Boolean(currentUser);
-
-  loggedOutPanel.hidden =
-    isLoggedIn;
-
-  loggedInPanel.hidden =
-    !isLoggedIn;
-
-  userEmailEl.textContent =
-    currentUser?.email || "";
-
-  const initial =
-    getAccountInitial();
-
-  accountAvatar.textContent =
-    initial;
-
-  accountCardAvatar.textContent =
-    initial;
-
-  accountTriggerText.textContent =
-    isLoggedIn
-      ? (currentUser?.email || "账号")
-      : "登录";
-
-  accountSyncDot.classList.toggle(
-    "online",
-    isLoggedIn && navigator.onLine
-  );
-
-  if (!isLoggedIn) {
-    setSyncStatus(
-      "仅本地保存"
-    );
-  }
-}
-
-
-function openAuthModal() {
-  authModal.hidden = false;
-  document.body.classList.add(
-    "auth-modal-open"
-  );
-
-  requestAnimationFrame(() => {
-    if (currentUser) {
-      closeAuthModalButton.focus();
-    } else {
-      authEmailEl.focus();
-    }
-  });
-}
-
-
-function closeAuthModal() {
-  authModal.hidden = true;
-  document.body.classList.remove(
-    "auth-modal-open"
-  );
-  setAuthMessage("");
-  accountTrigger.focus();
-}
-
-
-function getUserStorageKey(
-  userId
-) {
-  return `${USER_STORAGE_PREFIX}${userId}`;
-}
-
-
-function getActiveStorageKey() {
-  return currentUser
-    ? getUserStorageKey(
-        currentUser.id
-      )
-    : STORAGE_KEY;
-}
-
-
-function getGuestMigrationKey(
-  userId
-) {
-  return `${GUEST_MIGRATION_PREFIX}${userId}`;
-}
-
-
-function markGuestMigrationPending(
-  userId,
-  guestSnapshot
-) {
-  if (!guestSnapshot) {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      getGuestMigrationKey(userId),
-      JSON.stringify({
-        guestUpdatedAt:
-          guestSnapshot.updatedAt || null
-      })
-    );
-  } catch (error) {
-    console.error(
-      "记录游客迁移状态失败：",
-      error
-    );
-  }
-}
-
-
-function completeGuestMigrationIfPending(
-  userId
-) {
-  const migrationKey =
-    getGuestMigrationKey(userId);
-
-  let marker = null;
-
-  try {
-    const raw =
-      localStorage.getItem(
-        migrationKey
-      );
-
-    if (!raw) {
-      return;
-    }
-
-    marker =
-      JSON.parse(raw);
-  } catch (error) {
-    console.error(
-      "读取游客迁移状态失败：",
-      error
-    );
-
-    return;
-  }
-
-  const currentGuestSnapshot =
-    readLocalSnapshot(
-      STORAGE_KEY
-    );
-
-  /*
-   * 如果游客记录在迁移过程中又被其他标签页更新，
-   * 不删除新的游客记录，避免误伤。
-   */
-  const expectedUpdatedAt =
-    marker?.guestUpdatedAt || null;
-
-  const currentUpdatedAt =
-    currentGuestSnapshot?.updatedAt || null;
-
-  try {
-    if (
-      !currentGuestSnapshot ||
-      currentUpdatedAt ===
-        expectedUpdatedAt
-    ) {
-      localStorage.removeItem(
-        STORAGE_KEY
-      );
-    }
-
-    localStorage.removeItem(
-      migrationKey
-    );
-  } catch (error) {
-    console.error(
-      "完成游客记录迁移失败：",
-      error
-    );
-  }
-}
-
-
-function parseTimestamp(
-  value
-) {
-  if (!value) {
-    return 0;
-  }
-
-  const timestamp =
-    Date.parse(value);
-
-  return Number.isFinite(timestamp)
-    ? timestamp
-    : 0;
-}
-
-
-function readLocalSnapshot(
-  storageKey
-) {
-  try {
-    const raw =
-      localStorage.getItem(
-        storageKey
-      );
-
-    if (!raw) {
-      return null;
-    }
-
-    return JSON.parse(raw);
-  } catch (error) {
-    console.error(
-      "读取本地学习记录失败：",
-      error
-    );
-
-    return null;
-  }
-}
-
-
-function writeLocalSnapshot(
-  storageKey,
-  snapshot
-) {
-  try {
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify(snapshot)
-    );
-
-    return true;
-  } catch (error) {
-    console.error(
-      "保存本地学习记录失败：",
-      error
-    );
-
-    return false;
-  }
-}
-
-
-function hasLearningData(
-  snapshot
-) {
-  if (!snapshot) {
-    return false;
-  }
-
-  if (
-    Number(
-      snapshot.stats?.total
-    ) > 0
-  ) {
-    return true;
-  }
-
-  const perKana =
-    snapshot.kanaStats;
-
-  if (
-    perKana &&
-    typeof perKana === "object"
-  ) {
-    return Object.values(
-      perKana
-    ).some(stat =>
-      Number(stat?.correct) > 0 ||
-      Number(stat?.wrong) > 0 ||
-      Number(stat?.mastery) > 0
-    );
-  }
-
-  return false;
-}
-
-
-/* ========================================
-   云端读取 / 保存
-   ======================================== */
-
-async function fetchCloudProgress(
-  userId
-) {
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .from(
-        "user_progress"
-      )
-      .select(
-        "progress, updated_at"
-      )
-      .eq(
-        "user_id",
-        userId
-      )
-      .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
-}
-
-
-async function saveCloudProgress(
-  snapshot = pendingCloudSnapshot
-) {
-  if (
-    !currentUser ||
-    !snapshot
-  ) {
-    return false;
-  }
-
-  const userId =
-    currentUser.id;
-
-  /*
-   * 防止 await 期间切换了账号。
-   */
-  let snapshotToSave =
-    typeof structuredClone === "function"
-      ? structuredClone(snapshot)
-      : JSON.parse(
-          JSON.stringify(snapshot)
-        );
-
-  setSyncStatus(
-    navigator.onLine
-      ? "云端同步中…"
-      : "离线 · 已保存本机"
-  );
-
-  if (!navigator.onLine) {
-    pendingCloudSnapshot =
-      snapshotToSave;
-
-    return false;
-  }
-
-  try {
-    const latestCloud =
-      await fetchCloudProgress(
-        userId
-      );
-
-    if (latestCloud?.progress) {
-      snapshotToSave =
-        mergeSnapshots(
-          snapshotToSave,
-          latestCloud.progress
-        );
-    }
-
-    const updatedAt =
-      new Date().toISOString();
-
-    snapshotToSave.updatedAt =
-      updatedAt;
-
-    const {
-      error
-    } =
-      await supabaseClient
-        .from(
-          "user_progress"
-        )
-        .upsert(
-          {
-            user_id:
-              userId,
-
-            progress:
-              snapshotToSave,
-
-            updated_at:
-              updatedAt
-          },
-          {
-            onConflict:
-              "user_id"
-          }
-        );
-
-    if (error) {
-      throw error;
-    }
-
-    if (
-      currentUser?.id ===
-      userId
-    ) {
-      isApplyingExternalState = true;
-      applyStateSnapshot(
-        snapshotToSave,
-        false
-      );
-      isApplyingExternalState = false;
-
-      writeLocalSnapshot(
-        getUserStorageKey(userId),
-        snapshotToSave
-      );
-    }
-
-    /*
-     * 如果这是游客记录首次迁移到账号，
-     * 只有云端确认写入成功后才清除原游客记录。
-     */
-    completeGuestMigrationIfPending(
-      userId
-    );
-
-    /*
-     * 如果同步期间已经切换账号，
-     * 不改当前页面状态。
-     */
-    if (
-      currentUser?.id ===
-      userId
-    ) {
-      pendingCloudSnapshot =
-        null;
-
-      setSyncStatus(
-        "云端已同步"
-      );
-    }
-
-    return true;
-  } catch (error) {
-    console.error(
-      "云端同步失败：",
-      error
-    );
-
-    pendingCloudSnapshot =
-      snapshotToSave;
-
-    if (
-      currentUser?.id ===
-      userId
-    ) {
-      setSyncStatus(
-        "同步失败 · 已保存本机"
-      );
-    }
-
-    return false;
-  }
-}
-
-
-function scheduleCloudSave(
-  snapshot
-) {
-  if (!currentUser) {
-    return;
-  }
-
-  pendingCloudSnapshot =
-    snapshot;
-
-  clearTimeout(
-    cloudSaveTimer
-  );
-
-  cloudSaveTimer =
-    setTimeout(
-      () => {
-        cloudSaveTimer = null;
-        void saveCloudProgress();
-      },
-      CLOUD_SYNC_DELAY_MS
-    );
-
-  setSyncStatus(
-    navigator.onLine
-      ? "待同步…"
-      : "离线 · 已保存本机"
-  );
-}
-
-
-async function flushCloudSave() {
-  if (!currentUser) {
-    return;
-  }
-
-  if (cloudSaveTimer) {
-    clearTimeout(
-      cloudSaveTimer
-    );
-
-    cloudSaveTimer = null;
-  }
-
-  if (pendingCloudSnapshot) {
-    await saveCloudProgress(
-      pendingCloudSnapshot
-    );
-  }
-}
-
-
-/* ========================================
-   登录后的进度选择
-   ======================================== */
-
-async function activateUserContext(
-  user
-) {
-  if (!user) {
-    return;
-  }
-
-  if (
-    activeUserContextId ===
-    user.id
-  ) {
-    return;
-  }
-
-  activeUserContextId =
-    user.id;
-
-  currentUser =
-    user;
-
-  renderAuthState();
-  setSyncStatus(
-    "正在读取云端…"
-  );
-
-  const userStorageKey =
-    getUserStorageKey(
-      user.id
-    );
-
-  const userLocalSnapshot =
-    readLocalSnapshot(
-      userStorageKey
-    );
-
-  const guestSnapshot =
-    readLocalSnapshot(
-      STORAGE_KEY
-    );
-
-  let cloudRow = null;
-
-  try {
-    cloudRow =
-      await fetchCloudProgress(
-        user.id
-      );
-  } catch (error) {
-    console.error(
-      "读取云端学习记录失败：",
-      error
-    );
-
-    /*
-     * 云端暂时不可用：
-     * 优先继续使用该账号在本机的记录。
-     */
-    if (userLocalSnapshot) {
-      isApplyingExternalState =
-        true;
-
-      applyStateSnapshot(
-        userLocalSnapshot
-      );
-
-      isApplyingExternalState =
-        false;
-
-      setSyncStatus(
-        "云端不可用 · 使用本机记录"
-      );
-
-      return;
-    }
-
-    /*
-     * 首次登录且没有账号本地记录，
-     * 暂时沿用游客记录。
-     */
-    if (guestSnapshot) {
-      /*
-       * 先保留游客原记录。
-       * 等之后真正同步到云端成功，再清理游客副本。
-       */
-      markGuestMigrationPending(
-        user.id,
-        guestSnapshot
-      );
-
-      isApplyingExternalState =
-        true;
-
-      applyStateSnapshot(
-        guestSnapshot
-      );
-
-      isApplyingExternalState =
-        false;
-
-      writeLocalSnapshot(
-        userStorageKey,
-        createStateSnapshot(
-          guestSnapshot.updatedAt ||
-          new Date().toISOString()
-        )
-      );
-    }
-
-    setSyncStatus(
-      "云端不可用 · 已保存本机"
-    );
-
-    return;
-  }
-
-  const cloudSnapshot =
-    cloudRow?.progress ?? null;
-
-  /*
-   * 云端 + 本机都有记录：
-   * 不再整份覆盖，而是合并每台设备的答题计数，
-   * 每个假名的掌握状态采用最近复习的一份。
-   */
-  if (
-    cloudSnapshot &&
-    userLocalSnapshot
-  ) {
-    const mergedSnapshot =
-      mergeSnapshots(
-        userLocalSnapshot,
-        cloudSnapshot
-      );
-
-    isApplyingExternalState =
-      true;
-    applyStateSnapshot(
-      mergedSnapshot
-    );
-    isApplyingExternalState =
-      false;
-
-    writeLocalSnapshot(
-      userStorageKey,
-      mergedSnapshot
-    );
-
-    await saveCloudProgress(
-      mergedSnapshot
-    );
-
-    return;
-  }
-
-  /*
-   * 只有云端记录：下载到本机。
-   */
-  if (cloudSnapshot) {
-    isApplyingExternalState =
-      true;
-
-    applyStateSnapshot(
-      cloudSnapshot
-    );
-
-    isApplyingExternalState =
-      false;
-
-    const normalizedCloud =
-      createStateSnapshot(
-        cloudRow.updated_at ||
-        cloudSnapshot.updatedAt ||
-        new Date().toISOString()
-      );
-
-    writeLocalSnapshot(
-      userStorageKey,
-      normalizedCloud
-    );
-
-    completeGuestMigrationIfPending(
-      user.id
-    );
-
-    setSyncStatus(
-      "云端已同步"
-    );
-
-    return;
-  }
-
-  /*
-   * 只有账号本地记录：上传云端。
-   */
-  if (userLocalSnapshot) {
-    isApplyingExternalState =
-      true;
-
-    applyStateSnapshot(
-      userLocalSnapshot
-    );
-
-    isApplyingExternalState =
-      false;
-
-    await saveCloudProgress(
-      createStateSnapshot(
-        userLocalSnapshot.updatedAt ||
-        new Date().toISOString()
-      )
-    );
-
-    return;
-  }
-
-  /*
-   * 账号本地和云端都没有：
-   * 第一次登录时把游客进度迁移到账号。
-   *
-   * 注意：这里只“标记待迁移”，不会马上删除游客数据。
-   * 必须等 Supabase 写入成功后才清除游客副本。
-   */
-  if (guestSnapshot) {
-    markGuestMigrationPending(
-      user.id,
-      guestSnapshot
-    );
-
-    isApplyingExternalState =
-      true;
-
-    applyStateSnapshot(
-      guestSnapshot
-    );
-
-    isApplyingExternalState =
-      false;
-  }
-
-  const initialSnapshot =
-    createStateSnapshot(
-      guestSnapshot?.updatedAt ||
-      new Date().toISOString()
-    );
-
-  writeLocalSnapshot(
-    userStorageKey,
-    initialSnapshot
-  );
-
-  await saveCloudProgress(
-    initialSnapshot
-  );
-}
-
-
-function switchToGuestContext() {
-  activeUserContextId =
-    null;
-
-  currentUser =
-    null;
-
-  pendingCloudSnapshot =
-    null;
-
-  clearTimeout(
-    cloudSaveTimer
-  );
-
-  cloudSaveTimer =
-    null;
-
-  renderAuthState();
-
-  const loaded =
-    loadState(
-      STORAGE_KEY
-    );
-
-  /*
-   * 游客有自己的历史记录就恢复游客记录；
-   * 如果游客记录已经成功迁移到账号并被清除，
-   * 退出后显示全新的游客状态。
-   *
-   * 账号的本地缓存和 Supabase 云端数据都不会删除。
-   */
-  if (!loaded) {
-    resetLearningState();
-    refreshLearningUI();
-  }
-}
-
-
-/* ========================================
-   注册
-   ======================================== */
-
-async function registerAccount() {
-  const email =
-    authEmailEl.value
-      .trim();
-
-  const password =
-    authPasswordEl.value;
-
-  if (!email) {
-    setAuthMessage(
-      "请输入邮箱。",
-      true
-    );
-
-    authEmailEl.focus();
-    return;
-  }
-
-  if (password.length < 8) {
-    setAuthMessage(
-      "密码至少需要 8 位。",
-      true
-    );
-
-    authPasswordEl.focus();
-    return;
-  }
-
-  setAuthBusy(true);
-  setAuthMessage(
-    "正在注册……"
-  );
-
-  try {
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .auth
-        .signUp({
-          email,
-          password
-        });
-
-    if (error) {
-      setAuthMessage(
-        `注册失败：${error.message}`,
-        true
-      );
-      return;
-    }
-
-    currentUser =
-      data.session?.user ?? null;
-
-    authPasswordEl.value =
-      "";
-
-    if (currentUser) {
-      setAuthMessage("");
-      renderAuthState();
-
-      await activateUserContext(
-        currentUser
-      );
-
-      closeAuthModal();
-    } else {
-      setAuthMessage(
-        "注册成功，但当前未自动登录。请确认 Supabase 的 Confirm email 已关闭，或完成邮箱验证后再登录。"
-      );
-    }
-  } catch (error) {
-    console.error(
-      "注册异常：",
-      error
-    );
-
-    setAuthMessage(
-      "注册失败，请检查网络后重试。",
-      true
-    );
-  } finally {
-    setAuthBusy(false);
-  }
-}
-
-
-/* ========================================
-   登录
-   ======================================== */
-
-async function loginAccount() {
-  const email =
-    authEmailEl.value
-      .trim();
-
-  const password =
-    authPasswordEl.value;
-
-  if (!email || !password) {
-    setAuthMessage(
-      "请输入邮箱和密码。",
-      true
-    );
-    return;
-  }
-
-  setAuthBusy(true);
-  setAuthMessage(
-    "正在登录……"
-  );
-
-  try {
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .auth
-        .signInWithPassword({
-          email,
-          password
-        });
-
-    if (error) {
-      setAuthMessage(
-        `登录失败：${error.message}`,
-        true
-      );
-      return;
-    }
-
-    currentUser =
-      data.user ?? null;
-
-    authPasswordEl.value =
-      "";
-
-    setAuthMessage("");
-    renderAuthState();
-
-    if (currentUser) {
-      await activateUserContext(
-        currentUser
-      );
-
-      closeAuthModal();
-    }
-  } catch (error) {
-    console.error(
-      "登录异常：",
-      error
-    );
-
-    setAuthMessage(
-      "登录失败，请检查网络后重试。",
-      true
-    );
-  } finally {
-    setAuthBusy(false);
-  }
-}
-
-
-/* ========================================
-   退出
-   ======================================== */
-
-async function logoutAccount() {
-  setAuthBusy(true);
-
-  try {
-    await flushCloudSave();
-
-    const {
-      error
-    } =
-      await supabaseClient
-        .auth
-        .signOut();
-
-    if (error) {
-      window.alert(
-        `退出失败：${error.message}`
-      );
-      return;
-    }
-
-    switchToGuestContext();
-  } catch (error) {
-    console.error(
-      "退出异常：",
-      error
-    );
-
-    window.alert(
-      "退出失败，请检查网络后重试。"
-    );
-  } finally {
-    setAuthBusy(false);
-  }
-}
-
-
-/* ========================================
-   初始化 Supabase 登录状态
-   ======================================== */
-
-async function initializeAuth() {
-  try {
-    const {
-      data,
-      error
-    } =
-      await supabaseClient
-        .auth
-        .getSession();
-
-    if (error) {
-      console.error(
-        "读取登录状态失败：",
-        error
-      );
-    }
-
-    const sessionUser =
-      data?.session?.user ?? null;
-
-    if (sessionUser) {
-      currentUser =
-        sessionUser;
-
-      renderAuthState();
-
-      await activateUserContext(
-        sessionUser
-      );
-    } else {
-      renderAuthState();
-    }
-
-    supabaseClient
-      .auth
-      .onAuthStateChange(
-        (
-          event,
-          session
-        ) => {
-          const nextUser =
-            session?.user ?? null;
-
-          if (
-            event === "SIGNED_OUT"
-          ) {
-            switchToGuestContext();
-            setAuthMessage("");
-            return;
-          }
-
-          if (nextUser) {
-            currentUser =
-              nextUser;
-
-            renderAuthState();
-
-            void activateUserContext(
-              nextUser
-            );
-          }
-        }
-      );
-  } catch (error) {
-    console.error(
-      "初始化认证失败：",
-      error
-    );
-
-    switchToGuestContext();
-  }
-}
-
-
-/* ========================================
-   网络恢复后补同步
-   ======================================== */
-
-window.addEventListener(
-  "online",
-  () => {
-    if (!currentUser) {
-      return;
-    }
-
-    setSyncStatus(
-      "网络已恢复 · 准备同步"
-    );
-
-    if (pendingCloudSnapshot) {
-      void saveCloudProgress(
-        pendingCloudSnapshot
-      );
-    } else {
-      scheduleCloudSave(
-        createStateSnapshot()
-      );
-    }
-  }
-);
-
-
-window.addEventListener(
-  "offline",
-  () => {
-    if (currentUser) {
-      setSyncStatus(
-        "离线 · 已保存本机"
-      );
-    }
-  }
-);
+        <div class="study-settings-body">
 
+      <div class="settings">
+
+        <div class="setting-item">
+
+          <label for="mode">
+            测试模式
+          </label>
+
+          <select id="mode">
+
+            <option value="kanaToRoman">
+              假名 → 罗马音
+            </option>
+
+            <option value="romanToKana">
+              罗马音 → 假名
+            </option>
+
+            <option value="random">
+              随机双向
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="setting-item">
+
+          <label for="weightMode">
+            抽取方式
+          </label>
+
+          <select id="weightMode">
+
+            <option value="weighted">
+              智能复习
+            </option>
+
+            <option value="pure">
+              完全随机
+            </option>
+
+          </select>
+
+        </div>
+
+        <div class="setting-item">
+
+          <label for="answerMode">
+            作答方式
+          </label>
+
+          <select id="answerMode">
+            <option value="self">自评认识 / 不认识</option>
+            <option value="input">输入答案（推荐）</option>
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==============================
+           范围
+           ============================== -->
+
+      <div class="range-toolbar">
+
+        <span class="section-title">
+          选择背诵范围
+        </span>
+
+
+        <div class="small-actions">
+
+          <button
+            class="mini-button"
+            id="selectAll"
+            type="button"
+          >
+            全选
+          </button>
+
+
+          <button
+            class="mini-button"
+            id="clearAll"
+            type="button"
+          >
+            清空
+          </button>
+
+
+          <button
+            class="mini-button danger"
+            id="resetProgress"
+            type="button"
+          >
+            重置记录
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="groups">
+
+        <button
+          class="group-button active"
+          data-group="a"
+          type="button"
+        >
+          あ行
+        </button>
+
+        <button
+          class="group-button active"
+          data-group="ka"
+          type="button"
+        >
+          か行
+        </button>
+
+        <button
+          class="group-button active"
+          data-group="sa"
+          type="button"
+        >
+          さ行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ta"
+          type="button"
+        >
+          た行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="na"
+          type="button"
+        >
+          な行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ha"
+          type="button"
+        >
+          は行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ma"
+          type="button"
+        >
+          ま行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ya"
+          type="button"
+        >
+          や行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ra"
+          type="button"
+        >
+          ら行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="wa"
+          type="button"
+        >
+          わ行
+        </button>
+
+      </div>
+
+
+      <div
+        class="selected-info"
+        id="selectedInfo"
+      ></div>
+
+        </div>
+      </details>
+
+
+      <!-- ==============================
+           卡片
+           ============================== -->
+
+      <div
+        class="card"
+        id="card"
+        role="button"
+        tabindex="0"
+        aria-label="点击显示答案"
+      >
+
+        <div
+          class="question"
+          id="question"
+        ></div>
+
+
+        <div
+          class="answer"
+          id="answer"
+        ></div>
+
+
+        <div
+          class="hint"
+          id="hint"
+        >
+          点击卡片或按空格查看答案
+        </div>
+
+      </div>
+
+
+      <!-- ==============================
+           输入作答
+           ============================== -->
+
+      <form id="answerForm" class="answer-form" hidden>
+        <input
+          id="answerInput"
+          class="answer-input"
+          type="text"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          placeholder="输入答案后按 Enter"
+          aria-label="输入答案"
+        >
+        <button id="submitAnswer" class="answer-submit" type="submit">提交</button>
+        <button id="dontKnowInput" class="answer-skip" type="button">不会</button>
+      </form>
+
+      <div id="answerFeedback" class="answer-feedback" aria-live="polite" hidden></div>
+
+      <!-- ==============================
+           自评操作按钮
+           ============================== -->
+
+      <div class="buttons" id="selfButtons">
+
+        <button
+          class="show-answer"
+          id="showAnswer"
+          type="button"
+        >
+          显示答案
+        </button>
+
+
+        <button
+          class="wrong"
+          id="wrong"
+          type="button"
+        >
+          ✕ 不认识
+        </button>
+
+
+        <button
+          class="correct"
+          id="correct"
+          type="button"
+        >
+          ✓ 认识
+        </button>
+
+      </div>
+
+
+      <!-- ==============================
+           统计
+           ============================== -->
+
+      <div class="stats">
+
+        <div class="stats-grid">
+
+          <div class="stats-row">
+            <span>已练习</span>
+            <strong id="total">0</strong>
+          </div>
+
+
+          <div class="stats-row">
+            <span>正确率</span>
+            <strong id="accuracy">0%</strong>
+          </div>
+
+
+          <div class="stats-row">
+            <span>认识</span>
+            <strong id="correctCount">0</strong>
+          </div>
+
+
+          <div class="stats-row">
+            <span>错误</span>
+            <strong id="wrongCount">0</strong>
+          </div>
+
+        </div>
+
+        <div class="today-summary">
+          <span id="todaySummary">今日 0 题 · 正确率 0%</span>
+          <strong id="studyStreak">连续 0 天</strong>
+        </div>
+
+        <div class="weak-title">
+          当前薄弱假名
+        </div>
+
+
+        <div
+          class="weak-list"
+          id="weakList"
+        >
+          暂无
+        </div>
+
+      </div>
+
+
+      <div class="footer-tip">
+        自评模式：空格显示答案，← 不认识，→ 认识。
+        输入模式：输入答案后按 Enter，答错会显示正确答案。
+        <br>
+        智能复习会优先安排薄弱和到期假名。
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Supabase SDK 必须先加载 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 按依赖顺序加载项目脚本。请不要随意调整顺序。 -->
+  <script src="./js/config.js"></script>
+  <script src="./js/auth-sync.js"></script>
+  <script src="./js/kana-data.js"></script>
+  <script src="./js/progress.js"></script>
+  <script src="./js/study.js"></script>
+  <script src="./js/app.js"></script>
+
+</body>
+</html>
