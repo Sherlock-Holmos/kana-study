@@ -114,6 +114,207 @@
         0 8px 30px rgba(0, 0, 0, 0.06);
     }
 
+/* ==============================
+   账号区域
+   ============================== */
+
+.auth-panel {
+  width: min(100%, 720px);
+
+  margin:
+    0 auto
+    clamp(12px, 3vw, 18px);
+
+  padding: 14px;
+
+  background: #ffffff;
+
+  border:
+    1px solid
+    rgba(0, 0, 0, 0.05);
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 5px 20px
+    rgba(0, 0, 0, 0.04);
+}
+
+
+.auth-title {
+  margin-bottom: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #555;
+}
+
+
+.auth-logged-out {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr auto;
+
+  gap: 8px;
+
+  align-items: center;
+}
+
+
+.auth-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+
+  padding: 8px 11px;
+
+  border: 1px solid #d9dce1;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+
+.auth-input:focus {
+  border-color: #777;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(0, 0, 0, 0.05);
+}
+
+
+.auth-buttons {
+  display: flex;
+
+  gap: 6px;
+}
+
+
+.auth-button {
+  min-height: 42px;
+
+  padding: 8px 14px;
+
+  background: #f4f4f4;
+  color: #444;
+
+  border: 1px solid #ddd;
+  border-radius: 9px;
+
+  white-space: nowrap;
+}
+
+
+.auth-button.primary {
+  background: #222;
+  color: white;
+
+  border-color: #222;
+}
+
+
+.auth-message {
+  grid-column: 1 / -1;
+
+  min-height: 18px;
+
+  color: #888;
+
+  font-size: 12px;
+}
+
+
+.auth-message.error {
+  color: #a43c3c;
+}
+
+
+.auth-logged-in {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+
+.user-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+
+  color: #888;
+
+  font-size: 12px;
+}
+
+
+.user-info strong {
+  color: #222;
+
+  font-size: 14px;
+
+  word-break: break-all;
+}
+
+
+.user-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.sync-status {
+  color: #888;
+
+  font-size: 12px;
+}
+
+
+@media (max-width: 600px) {
+
+  .auth-logged-out {
+    grid-template-columns:
+      1fr;
+  }
+
+  .auth-buttons {
+    display: grid;
+
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .auth-message {
+    grid-column: auto;
+  }
+
+
+  .auth-logged-in {
+    align-items: flex-start;
+  }
+
+
+  .user-actions {
+    flex-direction: column;
+
+    align-items: flex-end;
+  }
+
+}
+
 
     /* ==============================
        设置区
@@ -761,6 +962,87 @@
       平假名 · 随机抽取 · 掌握度复习
     </div>
 
+    <section class="auth-panel">
+
+    <div
+      id="loggedOutPanel"
+      class="auth-logged-out"
+    >
+      <div class="auth-title">
+        账号
+      </div>
+
+      <input
+        id="authEmail"
+        class="auth-input"
+        type="email"
+        autocomplete="email"
+        placeholder="邮箱"
+      >
+
+      <input
+        id="authPassword"
+        class="auth-input"
+        type="password"
+        autocomplete="current-password"
+        placeholder="密码"
+      >
+
+      <div class="auth-buttons">
+        <button
+          id="loginButton"
+          class="auth-button primary"
+          type="button"
+        >
+          登录
+        </button>
+
+        <button
+          id="registerButton"
+          class="auth-button"
+          type="button"
+        >
+          注册
+        </button>
+      </div>
+
+      <div
+        id="authMessage"
+        class="auth-message"
+      ></div>
+    </div>
+
+
+    <div
+      id="loggedInPanel"
+      class="auth-logged-in"
+      hidden
+    >
+      <div class="user-info">
+        <span>已登录</span>
+
+        <strong id="userEmail"></strong>
+      </div>
+
+      <div class="user-actions">
+        <span
+          id="syncStatus"
+          class="sync-status"
+        >
+          仅本地保存
+        </span>
+
+        <button
+          id="logoutButton"
+          class="auth-button"
+          type="button"
+        >
+          退出
+        </button>
+      </div>
+    </div>
+
+  </section>
 
     <section class="panel">
 
@@ -1083,8 +1365,373 @@
 
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
+    const SUPABASE_URL =
+      "https://actgbctprjohjqhxwvlz.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_g2TZB_-n02_IDT3tVpHhNA_-8yAUxEy";
+
+    const supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
+  </script>
+
+  <script>
+    const loggedOutPanel =
+  document.getElementById(
+    "loggedOutPanel"
+  );
+
+const loggedInPanel =
+  document.getElementById(
+    "loggedInPanel"
+  );
+
+const authEmailEl =
+  document.getElementById(
+    "authEmail"
+  );
+
+const authPasswordEl =
+  document.getElementById(
+    "authPassword"
+  );
+
+const authMessageEl =
+  document.getElementById(
+    "authMessage"
+  );
+
+const userEmailEl =
+  document.getElementById(
+    "userEmail"
+  );
+
+const loginButton =
+  document.getElementById(
+    "loginButton"
+  );
+
+const registerButton =
+  document.getElementById(
+    "registerButton"
+  );
+
+const logoutButton =
+  document.getElementById(
+    "logoutButton"
+  );
+
+const syncStatusEl =
+  document.getElementById(
+    "syncStatus"
+  );
+
+let currentUser = null;
+
+
+/* ========================================
+   账号状态 UI
+   ======================================== */
+
+function setAuthMessage(
+  message,
+  isError = false
+) {
+  authMessageEl.textContent =
+    message;
+
+  authMessageEl.classList.toggle(
+    "error",
+    isError
+  );
+}
+
+
+function setAuthBusy(
+  isBusy
+) {
+  loginButton.disabled =
+    isBusy;
+
+  registerButton.disabled =
+    isBusy;
+
+  logoutButton.disabled =
+    isBusy;
+}
+
+
+function renderAuthState() {
+  const isLoggedIn =
+    Boolean(currentUser);
+
+  loggedOutPanel.hidden =
+    isLoggedIn;
+
+  loggedInPanel.hidden =
+    !isLoggedIn;
+
+  userEmailEl.textContent =
+    currentUser?.email || "";
+
+  if (syncStatusEl) {
+    syncStatusEl.textContent =
+      isLoggedIn
+        ? "已登录 · 暂仅本地保存"
+        : "仅本地保存";
+  }
+}
+
+
+/* ========================================
+   注册
+   ======================================== */
+
+async function registerAccount() {
+  const email =
+    authEmailEl.value
+      .trim();
+
+  const password =
+    authPasswordEl.value;
+
+  if (!email) {
+    setAuthMessage(
+      "请输入邮箱。",
+      true
+    );
+
+    authEmailEl.focus();
+    return;
+  }
+
+  if (password.length < 8) {
+    setAuthMessage(
+      "密码至少需要 8 位。",
+      true
+    );
+
+    authPasswordEl.focus();
+    return;
+  }
+
+  setAuthBusy(true);
+  setAuthMessage("正在注册……");
+
+  try {
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .auth
+        .signUp({
+          email,
+          password
+        });
+
+    if (error) {
+      setAuthMessage(
+        `注册失败：${error.message}`,
+        true
+      );
+      return;
+    }
+
+    currentUser =
+      data.session?.user ?? null;
+
+    authPasswordEl.value = "";
+
+    if (currentUser) {
+      setAuthMessage("");
+      renderAuthState();
+    } else {
+      setAuthMessage(
+        "注册成功，但当前未自动登录。请确认 Supabase 的 Confirm email 已关闭，或完成邮箱验证后再登录。"
+      );
+    }
+  } catch (error) {
+    console.error(
+      "注册异常：",
+      error
+    );
+
+    setAuthMessage(
+      "注册失败，请检查网络后重试。",
+      true
+    );
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+
+/* ========================================
+   登录
+   ======================================== */
+
+async function loginAccount() {
+  const email =
+    authEmailEl.value
+      .trim();
+
+  const password =
+    authPasswordEl.value;
+
+  if (!email || !password) {
+    setAuthMessage(
+      "请输入邮箱和密码。",
+      true
+    );
+    return;
+  }
+
+  setAuthBusy(true);
+  setAuthMessage("正在登录……");
+
+  try {
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .auth
+        .signInWithPassword({
+          email,
+          password
+        });
+
+    if (error) {
+      setAuthMessage(
+        `登录失败：${error.message}`,
+        true
+      );
+      return;
+    }
+
+    currentUser =
+      data.user ?? null;
+
+    authPasswordEl.value = "";
+    setAuthMessage("");
+    renderAuthState();
+  } catch (error) {
+    console.error(
+      "登录异常：",
+      error
+    );
+
+    setAuthMessage(
+      "登录失败，请检查网络后重试。",
+      true
+    );
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+
+/* ========================================
+   退出
+   ======================================== */
+
+async function logoutAccount() {
+  setAuthBusy(true);
+
+  try {
+    const {
+      error
+    } =
+      await supabaseClient
+        .auth
+        .signOut();
+
+    if (error) {
+      window.alert(
+        `退出失败：${error.message}`
+      );
+      return;
+    }
+
+    currentUser = null;
+    renderAuthState();
+  } catch (error) {
+    console.error(
+      "退出异常：",
+      error
+    );
+
+    window.alert(
+      "退出失败，请检查网络后重试。"
+    );
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+
+/* ========================================
+   初始化 Supabase 登录状态
+   ======================================== */
+
+async function initializeAuth() {
+  try {
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .auth
+        .getSession();
+
+    if (error) {
+      console.error(
+        "读取登录状态失败：",
+        error
+      );
+    }
+
+    currentUser =
+      data?.session?.user ?? null;
+
+    renderAuthState();
+
+    supabaseClient
+      .auth
+      .onAuthStateChange(
+        (
+          event,
+          session
+        ) => {
+          currentUser =
+            session?.user ?? null;
+
+          renderAuthState();
+
+          if (
+            event === "SIGNED_OUT"
+          ) {
+            setAuthMessage("");
+          }
+        }
+      );
+  } catch (error) {
+    console.error(
+      "初始化认证失败：",
+      error
+    );
+
+    currentUser = null;
+    renderAuthState();
+  }
+}
 
     /* ========================================
        五十音数据
@@ -2943,6 +3590,46 @@
 
 
     /* ========================================
+       账号事件
+       ======================================== */
+
+    registerButton.addEventListener(
+      "click",
+      registerAccount
+    );
+
+    loginButton.addEventListener(
+      "click",
+      loginAccount
+    );
+
+    logoutButton.addEventListener(
+      "click",
+      logoutAccount
+    );
+
+    authEmailEl.addEventListener(
+      "keydown",
+      event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          loginAccount();
+        }
+      }
+    );
+
+    authPasswordEl.addEventListener(
+      "keydown",
+      event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          loginAccount();
+        }
+      }
+    );
+
+
+    /* ========================================
        设置变化
        ======================================== */
 
@@ -2979,18 +3666,25 @@
       event => {
 
         /*
-         * 防止 select 正在操作时
-         * 快捷键产生干扰。
+         * 输入账号、密码或操作表单时，
+         * 不触发抽认卡快捷键。
          */
+        const activeElement =
+          document.activeElement;
+
         const tagName =
-          document.activeElement
+          activeElement
             ?.tagName
             ?.toLowerCase();
 
-
         if (
-          tagName ===
-          "select"
+          [
+            "input",
+            "textarea",
+            "select",
+            "button"
+          ].includes(tagName) ||
+          activeElement?.isContentEditable
         ) {
           return;
         }
@@ -3064,6 +3758,8 @@
     updateSelectedInfo();
 
     nextCard();
+
+    initializeAuth();
 
   </script>
 
