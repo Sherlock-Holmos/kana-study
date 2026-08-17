@@ -9,15 +9,14 @@
   <meta name="apple-mobile-web-app-title" content="五十音学习">
   <title>五十音学习</title>
 
-  <link rel="manifest" href="./manifest.webmanifest?v=6">
-  <link rel="icon" href="./icons/icon.svg?v=6" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png?v=6">
+  <link rel="manifest" href="./manifest.webmanifest?v=7">
+  <link rel="icon" href="./icons/icon.svg?v=7" type="image/svg+xml">
 
-  <link rel="stylesheet" href="./css/base.css?v=6">
-  <link rel="stylesheet" href="./css/auth.css?v=6">
-  <link rel="stylesheet" href="./css/study.css?v=6">
-  <link rel="stylesheet" href="./css/progress.css?v=6">
-  <link rel="stylesheet" href="./css/responsive.css?v=6">
+  <link rel="stylesheet" href="./css/base.css?v=7">
+  <link rel="stylesheet" href="./css/auth.css?v=7">
+  <link rel="stylesheet" href="./css/study.css?v=7">
+  <link rel="stylesheet" href="./css/progress.css?v=7">
+  <link rel="stylesheet" href="./css/responsive.css?v=7">
 </head>
 <body>
   <main class="app">
@@ -228,14 +227,50 @@
         <div id="recentWrongList" class="recent-wrong-list">暂无</div>
       </section>
 
-      <section class="progress-section panel">
-        <div class="section-heading-row">
+      <section class="progress-section panel activity-section">
+        <div class="section-heading-row activity-heading-row">
           <div>
-            <span class="eyebrow">最近 7 天</span>
-            <h3>学习历史</h3>
+            <span class="eyebrow">过去 365 天</span>
+            <h3>学习活跃度</h3>
+          </div>
+          <div class="activity-summary" aria-label="学习活跃度摘要">
+            <span>今年学习 <strong id="activityYearDays">0</strong> 天</span>
+            <span>最长连续 <strong id="activityLongestStreak">0</strong> 天</span>
           </div>
         </div>
-        <div id="historyList" class="history-list"></div>
+
+        <div class="activity-layout">
+          <div class="activity-weekday-labels" aria-hidden="true">
+            <span></span>
+            <span>一</span>
+            <span></span>
+            <span>三</span>
+            <span></span>
+            <span>五</span>
+            <span></span>
+          </div>
+
+          <div id="activityViewport" class="activity-viewport">
+            <div id="activityHeatmap" class="activity-heatmap" role="grid" aria-label="过去 365 天学习活跃度"></div>
+          </div>
+        </div>
+
+        <div class="activity-footer">
+          <div class="activity-legend" aria-label="学习量图例">
+            <span>少</span>
+            <i class="activity-cell level-0" aria-hidden="true"></i>
+            <i class="activity-cell level-1" aria-hidden="true"></i>
+            <i class="activity-cell level-2" aria-hidden="true"></i>
+            <i class="activity-cell level-3" aria-hidden="true"></i>
+            <i class="activity-cell level-4" aria-hidden="true"></i>
+            <span>多</span>
+          </div>
+          <span class="activity-mobile-tip">左右滑动可查看更早记录</span>
+        </div>
+
+        <div id="activityDetail" class="activity-detail" aria-live="polite">
+          选择任意日期查看当天练习详情
+        </div>
       </section>
     </section>
   </main>
@@ -336,7 +371,7 @@
         <div class="settings-block data-management">
           <div>
             <span class="section-title">数据管理</span>
-            <p>可导出当前身份的完整学习进度。导入会与当前身份的学习记录安全合并，并在登录时同步到云端。</p>
+            <p>可导出当前身份的完整学习进度。导入会替换当前身份的学习记录，并在登录时同步到云端。</p>
           </div>
           <div class="data-actions">
             <button class="secondary-action" id="exportData" type="button">导出学习数据</button>
@@ -404,13 +439,13 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/config.js?v=6"></script>
-  <script src="./js/auth-sync.js?v=6"></script>
-  <script src="./js/kana-data.js?v=6"></script>
-  <script src="./js/progress.js?v=6"></script>
-  <script src="./js/study.js?v=6"></script>
-  <script src="./js/ui.js?v=6"></script>
-  <script src="./js/data-tools.js?v=6"></script>
-  <script src="./js/app.js?v=6"></script>
+  <script src="./js/config.js?v=7"></script>
+  <script src="./js/auth-sync.js?v=7"></script>
+  <script src="./js/kana-data.js?v=7"></script>
+  <script src="./js/progress.js?v=7"></script>
+  <script src="./js/study.js?v=7"></script>
+  <script src="./js/ui.js?v=7"></script>
+  <script src="./js/data-tools.js?v=7"></script>
+  <script src="./js/app.js?v=7"></script>
 </body>
 </html>

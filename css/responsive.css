@@ -84,8 +84,6 @@
   .mastery-item { min-height: 58px; border-radius: 9px; }
   .mastery-item .kana { font-size: 21px; }
   .section-heading-row { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .history-item { grid-template-columns: 54px minmax(0, 1fr) 48px; gap: 8px; }
-  .history-accuracy { display: none; }
 }
 
 @media (max-width: 380px) {
@@ -160,6 +158,26 @@
   }
   .progress-action {
     flex: 1 1 160px;
+  }
+  .activity-summary {
+    justify-content: flex-start;
+  }
+  .activity-layout {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 5px;
+  }
+  .activity-viewport {
+    margin-right: -4px;
+    padding-right: 4px;
+  }
+  .activity-heatmap {
+    min-width: max-content;
+  }
+  .activity-mobile-tip {
+    display: inline;
+  }
+  .activity-detail {
+    align-items: flex-start;
   }
 }
 

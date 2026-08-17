@@ -39,9 +39,29 @@ const masteryGridEl =
     "masteryGrid"
   );
 
-const historyListEl =
+const activityHeatmapEl =
   document.getElementById(
-    "historyList"
+    "activityHeatmap"
+  );
+
+const activityViewportEl =
+  document.getElementById(
+    "activityViewport"
+  );
+
+const activityDetailEl =
+  document.getElementById(
+    "activityDetail"
+  );
+
+const activityYearDaysEl =
+  document.getElementById(
+    "activityYearDays"
+  );
+
+const activityLongestStreakEl =
+  document.getElementById(
+    "activityLongestStreak"
   );
 
 const progressPercentEl =
@@ -378,108 +398,447 @@ function renderMasteryGrid() {
 }
 
 
-function renderHistory() {
-  if (!historyListEl) {
+function getActivityLevel(
+  total
+) {
+  if (total <= 0) {
+    return 0;
+  }
+
+  if (total < 10) {
+    return 1;
+  }
+
+  if (total < 20) {
+    return 2;
+  }
+
+  if (total < 40) {
+    return 3;
+  }
+
+  return 4;
+}
+
+
+function formatActivityDate(
+  date
+) {
+  return (
+    `${date.getFullYear()}年` +
+    `${date.getMonth() + 1}月` +
+    `${date.getDate()}日`
+  );
+}
+
+
+function getActivityDayData(
+  date
+) {
+  const dateKey =
+    getLocalDateKey(
+      date
+    );
+
+  const totals =
+    getDailyTotals(
+      dateKey
+    );
+
+  const total =
+    totals.correct +
+    totals.wrong;
+
+  const accuracy =
+    total === 0
+      ? 0
+      : Math.round(
+          totals.correct /
+          total * 100
+        );
+
+  return {
+    date,
+    dateKey,
+    total,
+    correct: totals.correct,
+    wrong: totals.wrong,
+    accuracy
+  };
+}
+
+
+function getLongestStudyStreak() {
+  const activeDateKeys =
+    Object.keys(
+      dailyCounters || {}
+    )
+      .filter(
+        dateKey => {
+          const totals =
+            getDailyTotals(
+              dateKey
+            );
+
+          return (
+            totals.correct +
+            totals.wrong
+          ) > 0;
+        }
+      )
+      .sort();
+
+  if (
+    activeDateKeys.length === 0
+  ) {
+    return 0;
+  }
+
+  let longest = 1;
+  let current = 1;
+
+  for (
+    let index = 1;
+    index < activeDateKeys.length;
+    index++
+  ) {
+    const previous =
+      new Date(
+        `${activeDateKeys[index - 1]}T12:00:00`
+      );
+
+    const currentDate =
+      new Date(
+        `${activeDateKeys[index]}T12:00:00`
+      );
+
+    const difference =
+      Math.round(
+        (
+          currentDate -
+          previous
+        ) /
+        86400000
+      );
+
+    if (difference === 1) {
+      current++;
+      longest =
+        Math.max(
+          longest,
+          current
+        );
+    } else if (difference > 1) {
+      current = 1;
+    }
+  }
+
+  return longest;
+}
+
+
+function updateActivityDetail(
+  day
+) {
+  if (!activityDetailEl) {
     return;
   }
+
+  if (!day) {
+    activityDetailEl.textContent =
+      "选择任意日期查看当天练习详情";
+    return;
+  }
+
+  if (day.total === 0) {
+    activityDetailEl.innerHTML =
+      `<strong>${formatActivityDate(day.date)}</strong>` +
+      `<span>当天没有学习记录</span>`;
+    return;
+  }
+
+  activityDetailEl.innerHTML =
+    `<strong>${formatActivityDate(day.date)}</strong>` +
+    `<span>练习 ${day.total} 题</span>` +
+    `<span>正确 ${day.correct}</span>` +
+    `<span>错误 ${day.wrong}</span>` +
+    `<span>正确率 ${day.accuracy}%</span>`;
+}
+
+
+function renderActivityHeatmap() {
+  if (
+    !activityHeatmapEl ||
+    !activityViewportEl
+  ) {
+    return;
+  }
+
+  const today =
+    new Date();
+
+  today.setHours(
+    12,
+    0,
+    0,
+    0
+  );
+
+  const firstDay =
+    new Date(
+      today
+    );
+
+  firstDay.setDate(
+    firstDay.getDate() -
+    364
+  );
+
+  const leadingBlankCount =
+    (firstDay.getDay() + 6) % 7;
 
   const days = [];
 
   for (
-    let offset = 6;
-    offset >= 0;
-    offset--
+    let offset = 0;
+    offset < 365;
+    offset++
   ) {
     const date =
-      new Date();
-
-    date.setHours(
-      12,
-      0,
-      0,
-      0
-    );
+      new Date(
+        firstDay
+      );
 
     date.setDate(
-      date.getDate() - offset
+      firstDay.getDate() +
+      offset
     );
 
-    const dateKey =
-      getLocalDateKey(
+    days.push(
+      getActivityDayData(
         date
-      );
-
-    const totals =
-      getDailyTotals(
-        dateKey
-      );
-
-    const total =
-      totals.correct +
-      totals.wrong;
-
-    const accuracy =
-      total === 0
-        ? 0
-        : Math.round(
-            totals.correct /
-            total * 100
-          );
-
-    days.push({
-      date,
-      total,
-      accuracy
-    });
-  }
-
-  const maxTotal =
-    Math.max(
-      1,
-      ...days.map(
-        day => day.total
       )
     );
+  }
 
-  historyListEl.innerHTML = "";
+  const cells = [
+    ...Array(
+      leadingBlankCount
+    ).fill(null),
+    ...days
+  ];
 
-  days.forEach(
-    day => {
-      const item =
+  while (
+    cells.length % 7 !== 0
+  ) {
+    cells.push(
+      null
+    );
+  }
+
+  const weeks = [];
+
+  for (
+    let index = 0;
+    index < cells.length;
+    index += 7
+  ) {
+    weeks.push(
+      cells.slice(
+        index,
+        index + 7
+      )
+    );
+  }
+
+  activityHeatmapEl.innerHTML = "";
+
+  let previousMonth = -1;
+
+  weeks.forEach(
+    week => {
+      const weekEl =
         document.createElement(
           "div"
         );
 
-      item.className =
-        "history-item";
+      weekEl.className =
+        "activity-week";
 
-      const dateLabel =
-        `${day.date.getMonth() + 1}/${day.date.getDate()}`;
+      const monthLabel =
+        document.createElement(
+          "span"
+        );
 
-      const width =
-        day.total === 0
-          ? 0
-          : Math.max(
-              6,
-              Math.round(
-                day.total /
-                maxTotal * 100
-              )
+      monthLabel.className =
+        "activity-month-label";
+
+      const firstRealDay =
+        week.find(
+          Boolean
+        );
+
+      if (
+        firstRealDay &&
+        firstRealDay.date.getMonth() !==
+          previousMonth
+      ) {
+        monthLabel.textContent =
+          `${firstRealDay.date.getMonth() + 1}月`;
+
+        previousMonth =
+          firstRealDay.date.getMonth();
+      }
+
+      weekEl.appendChild(
+        monthLabel
+      );
+
+      week.forEach(
+        day => {
+          if (!day) {
+            const blank =
+              document.createElement(
+                "span"
+              );
+
+            blank.className =
+              "activity-cell activity-cell-blank";
+
+            weekEl.appendChild(
+              blank
             );
 
-      item.innerHTML =
-        `<span class="history-date">${dateLabel}</span>` +
-        `<div class="history-track"><div class="history-bar" style="width:${width}%"></div></div>` +
-        `<span class="history-count">${day.total} 题</span>` +
-        `<span class="history-accuracy">${day.accuracy}%</span>`;
+            return;
+          }
 
-      historyListEl.appendChild(
-        item
+          const cell =
+            document.createElement(
+              "button"
+            );
+
+          const level =
+            getActivityLevel(
+              day.total
+            );
+
+          cell.type =
+            "button";
+
+          cell.className =
+            `activity-cell level-${level}`;
+
+          cell.dataset.date =
+            day.dateKey;
+
+          cell.setAttribute(
+            "role",
+            "gridcell"
+          );
+
+          cell.setAttribute(
+            "aria-label",
+            `${formatActivityDate(day.date)}，练习 ${day.total} 题，正确率 ${day.accuracy}%`
+          );
+
+          cell.title =
+            day.total === 0
+              ? `${formatActivityDate(day.date)}｜0 题`
+              : `${formatActivityDate(day.date)}｜${day.total} 题｜正确率 ${day.accuracy}%`;
+
+          cell.addEventListener(
+            "click",
+            () => {
+              activityHeatmapEl
+                .querySelectorAll(
+                  ".activity-cell.selected"
+                )
+                .forEach(
+                  element =>
+                    element.classList.remove(
+                      "selected"
+                    )
+                );
+
+              cell.classList.add(
+                "selected"
+              );
+
+              updateActivityDetail(
+                day
+              );
+            }
+          );
+
+          weekEl.appendChild(
+            cell
+          );
+        }
+      );
+
+      activityHeatmapEl.appendChild(
+        weekEl
       );
     }
   );
-}
 
+  const currentYear =
+    today.getFullYear();
+
+  const yearStudyDays =
+    Object.keys(
+      dailyCounters || {}
+    )
+      .filter(
+        dateKey =>
+          dateKey.startsWith(
+            `${currentYear}-`
+          )
+      )
+      .filter(
+        dateKey => {
+          const totals =
+            getDailyTotals(
+              dateKey
+            );
+
+          return (
+            totals.correct +
+            totals.wrong
+          ) > 0;
+        }
+      ).length;
+
+  if (activityYearDaysEl) {
+    activityYearDaysEl.textContent =
+      yearStudyDays;
+  }
+
+  if (activityLongestStreakEl) {
+    activityLongestStreakEl.textContent =
+      getLongestStudyStreak();
+  }
+
+  updateActivityDetail(
+    days[
+      days.length - 1
+    ]
+  );
+
+  requestAnimationFrame(
+    () => {
+      const shouldScrollToLatest =
+        window.matchMedia?.(
+          "(max-width: 700px)"
+        ).matches;
+
+      if (shouldScrollToLatest) {
+        activityViewportEl.scrollLeft =
+          activityViewportEl.scrollWidth;
+      }
+    }
+  );
+}
 
 function updateProgressDashboard() {
   if (!progressPercentEl) {
@@ -630,7 +989,7 @@ function updateProgressDashboard() {
     `已练习 ${practiced}/${kanaData.length} 个假名`;
 
   renderMasteryGrid();
-  renderHistory();
+  renderActivityHeatmap();
 
   if (typeof updateRecentWrongList === "function") {
     updateRecentWrongList();

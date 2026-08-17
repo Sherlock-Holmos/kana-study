@@ -1,22 +1,22 @@
-const CACHE_NAME = "kana-study-v6";
+const CACHE_NAME = "kana-study-v7";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./css/base.css?v=6",
-  "./css/auth.css?v=6",
-  "./css/study.css?v=6",
-  "./css/progress.css?v=6",
-  "./css/responsive.css?v=6",
-  "./js/config.js?v=6",
-  "./js/auth-sync.js?v=6",
-  "./js/kana-data.js?v=6",
-  "./js/progress.js?v=6",
-  "./js/study.js?v=6",
-  "./js/ui.js?v=6",
-  "./js/data-tools.js?v=6",
-  "./js/app.js?v=6",
+  "./css/base.css?v=7",
+  "./css/auth.css?v=7",
+  "./css/study.css?v=7",
+  "./css/progress.css?v=7",
+  "./css/responsive.css?v=7",
+  "./js/config.js?v=7",
+  "./js/auth-sync.js?v=7",
+  "./js/kana-data.js?v=7",
+  "./js/progress.js?v=7",
+  "./js/study.js?v=7",
+  "./js/ui.js?v=7",
+  "./js/data-tools.js?v=7",
+  "./js/app.js?v=7",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

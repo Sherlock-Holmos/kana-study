@@ -577,7 +577,7 @@
         "load",
         () => {
           navigator.serviceWorker
-            .register("./sw.js?v=6")
+            .register("./sw.js?v=7")
             .catch(error =>
               console.warn("Service Worker 注册失败：", error)
             );
