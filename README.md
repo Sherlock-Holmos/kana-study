@@ -1,18 +1,41 @@
 # Kana Study
 
-一个纯静态的五十音学习工具，使用 GitHub Pages 部署、Supabase Auth / Postgres 保存账号学习进度。
+一个纯静态的五十音学习工具，使用 GitHub Pages 部署，Supabase Auth / Postgres 同步账号学习进度。
 
-## 当前信息架构
+## v6 重点优化
 
-应用保留单页加载，但拆成两个一级页面视图：
+- 学习页与进度页分离，低频设置继续使用弹窗。
+- 每日学习目标：20 / 30 / 50 / 100 题，并在学习页显示进度条。
+- 到期复习：进度页可直接进入已经到复习时间的假名。
+- 薄弱专项：自动选取掌握度较低、近期答错较多的假名集中训练。
+- 错题重现：答错的假名会在约 3–5 题后再次出现，不只依赖随机权重。
+- 输入模式支持答对后自动进入下一题，可在设置中关闭。
+- 最近易错：进度页单独展示近期答错的假名。
+- 学习数据导出 / 导入：JSON 备份，导入时与当前身份数据安全合并。
+- 云同步状态增加细节和最后同步时间。
+- PWA：支持添加到主屏幕；首次在线加载后，静态学习界面可离线打开。
+- 数据版本升级到 `STORAGE_VERSION = 5`，旧记录自动兼容。
 
-- **学习**：只保留抽认卡、答题、即时反馈、今日简要状态。
-- **进度**：总体掌握度、累计结果、46 个假名掌握矩阵、薄弱假名、最近 7 天历史。
+## 信息架构
 
-低频功能不再占用学习页面：
-
-- **学习设置**：测试方向、抽取方式、作答方式、学习范围、重置记录。
-- **账号弹窗**：登录、注册、同步状态、退出。
+```text
+五十音学习
+├── 学习
+│   ├── 抽认卡
+│   ├── 即时答题反馈
+│   ├── 今日目标
+│   └── 专项复习会话
+├── 进度
+│   ├── 总体掌握度
+│   ├── 累计 / 今日结果
+│   ├── 46 假名掌握矩阵
+│   ├── 到期复习
+│   ├── 薄弱假名
+│   ├── 最近易错
+│   └── 7 天历史
+├── 学习设置弹窗
+└── 账号弹窗
+```
 
 ## 项目结构
 
@@ -20,6 +43,12 @@
 kana-study/
 ├── index.html
 ├── README.md
+├── manifest.webmanifest
+├── sw.js
+├── icons/
+│   ├── icon.svg
+│   ├── icon-192.png
+│   └── icon-512.png
 ├── css/
 │   ├── base.css
 │   ├── auth.css
@@ -33,40 +62,37 @@ kana-study/
     ├── progress.js
     ├── study.js
     ├── ui.js
+    ├── data-tools.js
     └── app.js
-```
-
-## 文件职责
-
-- `index.html`：页面骨架、学习视图、进度视图、设置/账号弹窗。
-- `css/base.css`：全局布局、主导航、基础样式。
-- `css/auth.css`：账号入口和认证弹窗。
-- `css/study.css`：学习页、答题、学习设置弹窗。
-- `css/progress.css`：学习进度页、掌握矩阵、历史记录。
-- `css/responsive.css`：移动端底部导航、底部设置抽屉、横屏和桌面适配。
-- `js/progress.js`：状态结构、本地存储、迁移与合并。
-- `js/study.js`：抽题、答题、掌握度、统计计算。
-- `js/ui.js`：学习/进度页面切换、设置弹窗、进度页渲染。
-- `js/auth-sync.js`：Supabase 登录、游客迁移和云同步。
-- `js/app.js`：事件绑定和应用初始化。
-
-## URL
-
-- `#study`：学习页
-- `#progress`：进度页
-
-使用 hash 切换，因此 GitHub Pages 不需要额外路由配置。
-
-## 部署
-
-仍然是纯 HTML/CSS/JavaScript 项目，直接推送到 GitHub Pages 的发布分支即可。
-
-```bash
-git add .
-git commit -m "refactor: separate study and progress views"
-git push
 ```
 
 ## 数据兼容
 
-这次只调整 UI / 信息架构，没有修改 `STORAGE_VERSION = 4`、Supabase `user_progress` 表结构或账号/游客存储键。已有学习记录可以继续使用。
+Supabase 表结构不需要修改。新增的每日目标和自动跳题偏好继续保存在 `user_progress.progress` JSON 中。
+
+旧版 v4 数据读取后会按照 v5 结构重新保存，不需要清空 localStorage，也不需要重建 Supabase 表。
+
+导入数据采用合并策略，避免因为导入较旧备份而覆盖另一台设备上更多的学习次数。
+
+## PWA / 离线
+
+应用通过 `sw.js` 缓存本地静态资源。第一次仍需联网打开，使浏览器安装 Service Worker 并缓存资源。
+
+离线时：
+
+- 可以继续学习；
+- 学习记录继续保存在 localStorage；
+- 登录 / 注册不可用；
+- 恢复网络后会继续云同步。
+
+## 部署
+
+仍然是纯 HTML / CSS / JavaScript，无构建步骤。
+
+```bash
+git add .
+git commit -m "feat: improve review workflow and offline experience"
+git push
+```
+
+GitHub Pages 继续从 `main` 根目录部署即可。

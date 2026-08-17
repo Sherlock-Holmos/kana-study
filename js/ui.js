@@ -99,6 +99,21 @@ const progressUpdatedEl =
     "progressUpdated"
   );
 
+const startDueReviewButton =
+  document.getElementById(
+    "startDueReview"
+  );
+
+const startWeakReviewButton =
+  document.getElementById(
+    "startWeakReview"
+  );
+
+const startSmartReviewButton =
+  document.getElementById(
+    "startSmartReview"
+  );
+
 
 function isStudyViewActive() {
   return activeView === "study";
@@ -562,6 +577,29 @@ function updateProgressDashboard() {
   levelDueEl.textContent =
     due;
 
+  if (startDueReviewButton) {
+    startDueReviewButton.disabled =
+      due === 0;
+    startDueReviewButton.textContent =
+      due > 0
+        ? `开始到期复习（${due}）`
+        : "暂无到期复习";
+  }
+
+  if (startWeakReviewButton) {
+    const weakCount =
+      typeof getWeakReviewItems === "function"
+        ? getWeakReviewItems(12).length
+        : 0;
+
+    startWeakReviewButton.disabled =
+      weakCount === 0;
+    startWeakReviewButton.textContent =
+      weakCount > 0
+        ? `专项复习薄弱假名（${weakCount}）`
+        : "暂无薄弱假名";
+  }
+
   const today =
     getDailyTotals(
       getLocalDateKey()
@@ -593,6 +631,10 @@ function updateProgressDashboard() {
 
   renderMasteryGrid();
   renderHistory();
+
+  if (typeof updateRecentWrongList === "function") {
+    updateRecentWrongList();
+  }
 }
 
 
@@ -623,6 +665,37 @@ function initializeUi() {
   doneSettingsButton.addEventListener(
     "click",
     closeSettingsModal
+  );
+
+  startDueReviewButton?.addEventListener(
+    "click",
+    () => startFocusedReview("due")
+  );
+
+  startWeakReviewButton?.addEventListener(
+    "click",
+    () => startFocusedReview("weak")
+  );
+
+  startSmartReviewButton?.addEventListener(
+    "click",
+    () => {
+      focusedReviewMode = null;
+      focusedKanaSet = null;
+      wrongReplayQueue = [];
+      updateFocusedReviewUi();
+      weightModeEl.value = "weighted";
+      markSettingsChanged();
+      saveState();
+      updateSelectedInfo();
+      nextCard();
+      switchView("study");
+    }
+  );
+
+  exitFocusedReviewEl?.addEventListener(
+    "click",
+    stopFocusedReview
   );
 
   settingsModalEl.addEventListener(

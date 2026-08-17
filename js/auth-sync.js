@@ -48,6 +48,11 @@ const syncStatusEl =
     "syncStatus"
   );
 
+const syncStatusDetailEl =
+  document.getElementById(
+    "syncStatusDetail"
+  );
+
 const accountTrigger =
   document.getElementById(
     "accountTrigger"
@@ -123,7 +128,8 @@ function setAuthBusy(
 
 
 function setSyncStatus(
-  message
+  message,
+  detail = ""
 ) {
   if (!syncStatusEl) {
     return;
@@ -131,6 +137,21 @@ function setSyncStatus(
 
   syncStatusEl.textContent =
     message;
+
+  if (syncStatusDetailEl) {
+    syncStatusDetailEl.textContent = detail;
+  }
+}
+
+
+function getSyncTimeLabel() {
+  return new Intl.DateTimeFormat(
+    "zh-CN",
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  ).format(new Date());
 }
 
 
@@ -179,7 +200,13 @@ function renderAuthState() {
 
   if (!isLoggedIn) {
     setSyncStatus(
-      "仅本地保存"
+      "仅本地保存",
+      "游客数据仅保存在当前浏览器"
+    );
+  } else if (!navigator.onLine) {
+    setSyncStatus(
+      "离线 · 已保存本机",
+      "恢复网络后会自动继续同步"
     );
   }
 }
@@ -482,7 +509,10 @@ async function saveCloudProgress(
   setSyncStatus(
     navigator.onLine
       ? "云端同步中…"
-      : "离线 · 已保存本机"
+      : "离线 · 已保存本机",
+    navigator.onLine
+      ? "正在合并本机与云端记录"
+      : "恢复网络后会自动继续同步"
   );
 
   if (!navigator.onLine) {
@@ -577,7 +607,8 @@ async function saveCloudProgress(
         null;
 
       setSyncStatus(
-        "云端已同步"
+        "云端已同步",
+        `最后同步 ${getSyncTimeLabel()}`
       );
     }
 
@@ -596,7 +627,8 @@ async function saveCloudProgress(
       userId
     ) {
       setSyncStatus(
-        "同步失败 · 已保存本机"
+        "同步失败 · 已保存本机",
+        "本地记录安全；稍后会再次尝试"
       );
     }
 
@@ -631,7 +663,10 @@ function scheduleCloudSave(
   setSyncStatus(
     navigator.onLine
       ? "待同步…"
-      : "离线 · 已保存本机"
+      : "离线 · 已保存本机",
+    navigator.onLine
+      ? "本次学习记录已保存本机"
+      : "恢复网络后会自动继续同步"
   );
 }
 
@@ -683,7 +718,8 @@ async function activateUserContext(
 
   renderAuthState();
   setSyncStatus(
-    "正在读取云端…"
+    "正在读取云端…",
+    "正在检查此账号的最新学习进度"
   );
 
   const userStorageKey =
@@ -845,7 +881,8 @@ async function activateUserContext(
     );
 
     setSyncStatus(
-      "云端已同步"
+      "云端已同步",
+      `最后同步 ${getSyncTimeLabel()}`
     );
 
     return;
@@ -959,6 +996,14 @@ function switchToGuestContext() {
    ======================================== */
 
 async function registerAccount() {
+  if (!supabaseClient) {
+    setAuthMessage(
+      "当前离线或认证服务未加载，暂时不能注册账号。",
+      true
+    );
+    return;
+  }
+
   const email =
     authEmailEl.value
       .trim();
@@ -1052,6 +1097,14 @@ async function registerAccount() {
    ======================================== */
 
 async function loginAccount() {
+  if (!supabaseClient) {
+    setAuthMessage(
+      "当前离线或认证服务未加载，暂时不能登录账号。",
+      true
+    );
+    return;
+  }
+
   const email =
     authEmailEl.value
       .trim();
@@ -1129,6 +1182,13 @@ async function loginAccount() {
    ======================================== */
 
 async function logoutAccount() {
+  if (!supabaseClient) {
+    window.alert(
+      "当前认证服务不可用，无法安全退出云端会话。"
+    );
+    return;
+  }
+
   setAuthBusy(true);
 
   try {
@@ -1169,6 +1229,15 @@ async function logoutAccount() {
    ======================================== */
 
 async function initializeAuth() {
+  if (!supabaseClient) {
+    renderAuthState();
+    setSyncStatus(
+      "离线模式",
+      "仍可继续学习；联网后刷新页面即可恢复账号功能"
+    );
+    return;
+  }
+
   try {
     const {
       data,

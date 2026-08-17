@@ -1,4 +1,145 @@
     /* ========================================
+       学习会话状态
+       ======================================== */
+
+    let focusedReviewMode = null;
+    let focusedKanaSet = null;
+    let reviewQuestionSerial = 0;
+    let wrongReplayQueue = [];
+    let autoAdvanceTimer = null;
+
+    const sessionModeLabelEl =
+      document.getElementById("sessionModeLabel");
+
+    const exitFocusedReviewEl =
+      document.getElementById("exitFocusedReview");
+
+    const recentWrongListEl =
+      document.getElementById("recentWrongList");
+
+
+    function getWeakReviewItems(limit = 8) {
+      return kanaData
+        .filter(item => {
+          const stat = kanaStats[item.kana];
+          return (
+            stat.correct + stat.wrong > 0 &&
+            stat.mastery < MAX_MASTERY
+          );
+        })
+        .sort((a, b) => {
+          const statA = kanaStats[a.kana];
+          const statB = kanaStats[b.kana];
+
+          if (statA.mastery !== statB.mastery) {
+            return statA.mastery - statB.mastery;
+          }
+
+          if (statA.lastResult !== statB.lastResult) {
+            if (statA.lastResult === "wrong") return -1;
+            if (statB.lastResult === "wrong") return 1;
+          }
+
+          if (statA.wrong !== statB.wrong) {
+            return statB.wrong - statA.wrong;
+          }
+
+          return (
+            parseTimestamp(statB.lastReviewedAt) -
+            parseTimestamp(statA.lastReviewedAt)
+          );
+        })
+        .slice(0, limit);
+    }
+
+
+    function getDueReviewItems() {
+      const now = Date.now();
+
+      return kanaData.filter(item => {
+        const stat = kanaStats[item.kana];
+        const nextReview = parseTimestamp(stat.nextReviewAt);
+
+        return (
+          stat.correct + stat.wrong > 0 &&
+          nextReview > 0 &&
+          nextReview <= now
+        );
+      });
+    }
+
+
+    function getRecentWrongItems(limit = 8) {
+      return kanaData
+        .filter(item => kanaStats[item.kana].lastResult === "wrong")
+        .sort(
+          (a, b) =>
+            parseTimestamp(kanaStats[b.kana].lastReviewedAt) -
+            parseTimestamp(kanaStats[a.kana].lastReviewedAt)
+        )
+        .slice(0, limit);
+    }
+
+
+    function updateFocusedReviewUi() {
+      if (!sessionModeLabelEl || !exitFocusedReviewEl) {
+        return;
+      }
+
+      const labels = {
+        due: "到期复习",
+        weak: "薄弱专项"
+      };
+
+      const label = labels[focusedReviewMode];
+      sessionModeLabelEl.hidden = !label;
+      exitFocusedReviewEl.hidden = !label;
+      sessionModeLabelEl.textContent = label || "";
+    }
+
+
+    function startFocusedReview(mode) {
+      const items =
+        mode === "due"
+          ? getDueReviewItems()
+          : getWeakReviewItems(12);
+
+      if (items.length === 0) {
+        window.alert(
+          mode === "due"
+            ? "目前没有到期需要复习的假名。"
+            : "目前还没有可识别的薄弱假名。"
+        );
+        return false;
+      }
+
+      focusedReviewMode = mode;
+      focusedKanaSet = new Set(items.map(item => item.kana));
+      wrongReplayQueue = [];
+      reviewQuestionSerial = 0;
+      updateFocusedReviewUi();
+      updateSelectedInfo();
+      nextCard();
+
+      if (typeof switchView === "function") {
+        switchView("study");
+      }
+
+      return true;
+    }
+
+
+    function stopFocusedReview() {
+      focusedReviewMode = null;
+      focusedKanaSet = null;
+      wrongReplayQueue = [];
+      updateFocusedReviewUi();
+      updateSelectedInfo();
+      nextCard();
+    }
+
+
+    /* ========================================
        同步范围按钮
        ======================================== */
 
@@ -29,6 +170,11 @@
        ======================================== */
 
     function getAvailableItems() {
+      if (focusedKanaSet) {
+        return kanaData.filter(
+          item => focusedKanaSet.has(item.kana)
+        );
+      }
 
       return kanaData.filter(
         item =>
@@ -201,6 +347,28 @@
 
       }
 
+      const allowedKana =
+        new Set(items.map(item => item.kana));
+
+      const replayIndex =
+        wrongReplayQueue.findIndex(
+          entry =>
+            entry.dueAt <= reviewQuestionSerial &&
+            allowedKana.has(entry.kana)
+        );
+
+      if (replayIndex >= 0) {
+        const [entry] =
+          wrongReplayQueue.splice(replayIndex, 1);
+
+        const replayItem =
+          kanaData.find(item => item.kana === entry.kana);
+
+        if (replayItem) {
+          return replayItem;
+        }
+      }
+
 
       if (
         weightModeEl.value ===
@@ -295,6 +463,10 @@
 
 
     function nextCard() {
+      clearTimeout(autoAdvanceTimer);
+      autoAdvanceTimer = null;
+      reviewQuestionSerial++;
+
       currentItem =
         getRandomItem();
 
@@ -491,6 +663,16 @@
 
       answerFeedbackEl.className =
         `answer-feedback ${isCorrect ? "correct-feedback" : "wrong-feedback"}`;
+
+      if (
+        isCorrect &&
+        autoAdvanceEl?.value !== "off"
+      ) {
+        autoAdvanceTimer = setTimeout(
+          nextCard,
+          800
+        );
+      }
     }
 
 
@@ -620,6 +802,34 @@
     }
 
 
+    function scheduleWrongReplay(item) {
+      if (!item) {
+        return;
+      }
+
+      const existing =
+        wrongReplayQueue.find(
+          entry => entry.kana === item.kana
+        );
+
+      const dueAt =
+        reviewQuestionSerial +
+        3 +
+        Math.floor(Math.random() * 3);
+
+      if (existing) {
+        existing.dueAt =
+          Math.min(existing.dueAt, dueAt);
+        return;
+      }
+
+      wrongReplayQueue.push({
+        kana: item.kana,
+        dueAt
+      });
+    }
+
+
     function recordAnswerResult(
       isCorrect
     ) {
@@ -636,6 +846,10 @@
         currentItem,
         isCorrect
       );
+
+      if (!isCorrect) {
+        scheduleWrongReplay(currentItem);
+      }
 
       recalculateCountsFromCounters();
       saveState();
@@ -705,6 +919,7 @@
       updateDailySummary();
 
       updateWeakList();
+      updateRecentWrongList();
 
       if (
         typeof updateProgressDashboard ===
@@ -781,6 +996,19 @@
       todaySummaryEl.textContent =
         `今日 ${total} 题 · 正确率 ${accuracy}%`;
 
+      const goal =
+        Number(dailyGoalEl?.value) || 30;
+
+      if (goalSummaryEl) {
+        goalSummaryEl.textContent =
+          `${Math.min(total, goal)} / ${goal}${total >= goal ? " · 已完成" : ""}`;
+      }
+
+      if (goalBarEl) {
+        goalBarEl.style.width =
+          `${Math.min(100, Math.round(total / goal * 100))}%`;
+      }
+
       studyStreakEl.textContent =
         `连续 ${getStudyStreak()} 天`;
     }
@@ -791,155 +1019,50 @@
        ======================================== */
 
     function updateWeakList() {
+      const weakItems = getWeakReviewItems(8);
 
-      const weakItems =
-        kanaData
-
-          /*
-           * 必须练过
-           */
-          .filter(
-            item => {
-
-              const stat =
-                kanaStats[
-                  item.kana
-                ];
-
-
-              return (
-                stat.correct +
-                stat.wrong >
-                0
-              ) &&
-              stat.mastery <
-                MAX_MASTERY;
-
-            }
-          )
-
-          /*
-           * 排序优先级：
-           *
-           * 1. 掌握度低
-           * 2. 最近答错
-           * 3. 历史错误多
-           */
-          .sort(
-            (
-              a,
-              b
-            ) => {
-
-              const statA =
-                kanaStats[
-                  a.kana
-                ];
-
-
-              const statB =
-                kanaStats[
-                  b.kana
-                ];
-
-
-              if (
-                statA.mastery !==
-                statB.mastery
-              ) {
-
-                return (
-                  statA.mastery -
-                  statB.mastery
-                );
-
-              }
-
-
-              if (
-                statA.lastResult !==
-                statB.lastResult
-              ) {
-
-                if (
-                  statA.lastResult ===
-                  "wrong"
-                ) {
-                  return -1;
-                }
-
-
-                if (
-                  statB.lastResult ===
-                  "wrong"
-                ) {
-                  return 1;
-                }
-
-              }
-
-
-              return (
-                statB.wrong -
-                statA.wrong
-              );
-
-            }
-          )
-
-          .slice(
-            0,
-            8
-          );
-
-
-      if (
-        weakItems.length ===
-        0
-      ) {
-
-        weakListEl.textContent =
-          "暂无";
-
+      if (weakItems.length === 0) {
+        weakListEl.textContent = "暂无";
         return;
-
       }
 
+      weakListEl.innerHTML = "";
 
-      weakListEl.innerHTML =
-        "";
-
-
-      weakItems.forEach(
-        item => {
-
-          const stat =
-            kanaStats[
-              item.kana
-            ];
-
-
-          const element =
-            document.createElement(
-              "div"
-            );
+      weakItems.forEach(item => {
+        const stat = kanaStats[item.kana];
+        const element = document.createElement("div");
+        element.className = "weak-item";
+        element.textContent =
+          `${item.kana} ${item.roman} · 掌握 ${stat.mastery}/${MAX_MASTERY} · 错 ${stat.wrong}`;
+        weakListEl.appendChild(element);
+      });
+    }
 
 
-          element.className =
-            "weak-item";
+    function updateRecentWrongList() {
+      if (!recentWrongListEl) {
+        return;
+      }
 
+      const items = getRecentWrongItems(8);
 
-          element.textContent =
-            `${item.kana} ${item.roman} · 掌握 ${stat.mastery}/${MAX_MASTERY} · 错 ${stat.wrong}`;
+      if (items.length === 0) {
+        recentWrongListEl.textContent = "暂无";
+        return;
+      }
 
+      recentWrongListEl.innerHTML = "";
 
-          weakListEl.appendChild(
-            element
-          );
-
-        }
-      );
-
+      items.forEach(item => {
+        const stat = kanaStats[item.kana];
+        const element = document.createElement("div");
+        element.className = "recent-wrong-item";
+        element.innerHTML =
+          `<strong>${item.kana}</strong>` +
+          `<span>${item.roman}</span>` +
+          `<small>最近答错 · 累计错 ${stat.wrong}</small>`;
+        recentWrongListEl.appendChild(element);
+      });
     }
 
 
@@ -981,7 +1104,9 @@
         ).length;
 
       selectedInfoEl.textContent =
-        `当前抽取 ${items.length} 个平假名 · 已掌握 ${masteredCount} 个 · 到期复习 ${dueCount} 个`;
+        focusedReviewMode
+          ? `${focusedReviewMode === "due" ? "到期复习" : "薄弱专项"} · 当前 ${items.length} 个假名 · 答错会在 3–5 题后再次出现`
+          : `当前抽取 ${items.length} 个平假名 · 已掌握 ${masteredCount} 个 · 到期复习 ${dueCount} 个`;
 
       const selectedLabels =
         [...selectedGroups]

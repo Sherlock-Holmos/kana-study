@@ -115,3 +115,20 @@ body.auth-modal-open { overflow: hidden; }
   .account-avatar { width: 26px; height: 26px; }
   .auth-buttons { grid-template-columns: 1fr; }
 }
+
+/* ==============================
+   v6 同步状态细节
+   ============================== */
+.sync-status-stack {
+  min-width: 0;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+.sync-status-detail {
+  max-width: 240px;
+  color: #a0a4aa;
+  font-size: 10px;
+  line-height: 1.35;
+}

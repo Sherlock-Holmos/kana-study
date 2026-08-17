@@ -218,3 +218,87 @@ select:focus { border-color: #777; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
   flex: 0 0 auto; min-height: 40px; padding: 8px 12px; background: #fff6f6; color: #a33f3f;
   border: 1px solid #efd6d6; border-radius: 10px; font-size: 12px;
 }
+
+/* ==============================
+   v6 学习目标 / 专项复习
+   ============================== */
+.study-toolbar-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.study-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.session-mode-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  background: #202124;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.focus-exit {
+  min-height: 38px;
+  padding: 7px 10px;
+  background: #fff;
+  color: #6e737b;
+  border: 1px solid #dfe1e5;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.study-quick-summary {
+  display: block;
+}
+.goal-summary-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+.goal-summary-row > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.goal-label {
+  color: #8d9299;
+  font-size: 11px;
+}
+.goal-track {
+  height: 7px;
+  margin-top: 9px;
+  overflow: hidden;
+  background: #e9ebee;
+  border-radius: 999px;
+}
+.goal-bar {
+  height: 100%;
+  background: #292b2f;
+  border-radius: inherit;
+  transition: width .25s ease;
+}
+
+.data-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.secondary-action {
+  min-height: 40px;
+  padding: 8px 12px;
+  background: #f7f8f9;
+  color: #555a61;
+  border: 1px solid #e0e2e5;
+  border-radius: 10px;
+  font-size: 12px;
+}

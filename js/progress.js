@@ -5,7 +5,7 @@
     const STORAGE_KEY =
       "kanaFlashcardState";
 
-    const STORAGE_VERSION = 4;
+    const STORAGE_VERSION = 5;
 
     const MAX_MASTERY = 5;
 
@@ -212,6 +212,16 @@
         "answerMode"
       );
 
+    const dailyGoalEl =
+      document.getElementById(
+        "dailyGoal"
+      );
+
+    const autoAdvanceEl =
+      document.getElementById(
+        "autoAdvance"
+      );
+
     const answerFormEl =
       document.getElementById(
         "answerForm"
@@ -250,6 +260,16 @@
     const studyStreakEl =
       document.getElementById(
         "studyStreak"
+      );
+
+    const goalSummaryEl =
+      document.getElementById(
+        "goalSummary"
+      );
+
+    const goalBarEl =
+      document.getElementById(
+        "goalBar"
       );
 
     const settingsSummaryEl =
@@ -715,6 +735,16 @@
         answerMode:
           settingsSource.answerMode ||
           "self",
+        dailyGoal:
+          [20, 30, 50, 100].includes(
+            Number(settingsSource.dailyGoal)
+          )
+            ? Number(settingsSource.dailyGoal)
+            : 30,
+        autoAdvance:
+          settingsSource.autoAdvance === "off"
+            ? "off"
+            : "on",
         settingsUpdatedAt:
           settingsSource.settingsUpdatedAt ||
           settingsSource.updatedAt ||
@@ -752,6 +782,12 @@
           weightModeEl.value,
         answerMode:
           answerModeEl.value,
+        dailyGoal:
+          Number(dailyGoalEl?.value) || 30,
+        autoAdvance:
+          autoAdvanceEl?.value === "off"
+            ? "off"
+            : "on",
         settingsUpdatedAt,
         updatedAt
       };
@@ -887,6 +923,14 @@
       answerModeEl.value =
         "self";
 
+      if (dailyGoalEl) {
+        dailyGoalEl.value = "30";
+      }
+
+      if (autoAdvanceEl) {
+        autoAdvanceEl.value = "on";
+      }
+
       settingsUpdatedAt =
         new Date().toISOString();
     }
@@ -980,6 +1024,21 @@
       ) {
         answerModeEl.value =
           saved.answerMode;
+      }
+
+      if (dailyGoalEl) {
+        const savedGoal = Number(saved.dailyGoal);
+        dailyGoalEl.value =
+          [20, 30, 50, 100].includes(savedGoal)
+            ? String(savedGoal)
+            : "30";
+      }
+
+      if (autoAdvanceEl) {
+        autoAdvanceEl.value =
+          saved.autoAdvance === "off"
+            ? "off"
+            : "on";
       }
 
       settingsUpdatedAt =

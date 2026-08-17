@@ -4,13 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#f3f4f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="五十音学习">
   <title>五十音学习</title>
 
-  <link rel="stylesheet" href="./css/base.css?v=5">
-  <link rel="stylesheet" href="./css/auth.css?v=5">
-  <link rel="stylesheet" href="./css/study.css?v=5">
-  <link rel="stylesheet" href="./css/progress.css?v=5">
-  <link rel="stylesheet" href="./css/responsive.css?v=5">
+  <link rel="manifest" href="./manifest.webmanifest?v=6">
+  <link rel="icon" href="./icons/icon.svg?v=6" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png?v=6">
+
+  <link rel="stylesheet" href="./css/base.css?v=6">
+  <link rel="stylesheet" href="./css/auth.css?v=6">
+  <link rel="stylesheet" href="./css/study.css?v=6">
+  <link rel="stylesheet" href="./css/progress.css?v=6">
+  <link rel="stylesheet" href="./css/responsive.css?v=6">
 </head>
 <body>
   <main class="app">
@@ -43,14 +50,20 @@
       <section class="panel study-panel">
         <div class="study-toolbar">
           <div class="study-toolbar-copy">
-            <span class="eyebrow">当前练习</span>
+            <div class="study-toolbar-kicker">
+              <span class="eyebrow">当前练习</span>
+              <span id="sessionModeLabel" class="session-mode-label" hidden></span>
+            </div>
             <strong id="settingsSummary">あ・か・さ · 假→罗 · 自评</strong>
             <span id="selectedInfo" class="selected-info"></span>
           </div>
-          <button id="openSettings" class="settings-trigger" type="button" aria-haspopup="dialog" aria-controls="settingsModal">
-            <span aria-hidden="true">⚙</span>
-            设置
-          </button>
+          <div class="study-toolbar-actions">
+            <button id="exitFocusedReview" class="focus-exit" type="button" hidden>退出专项</button>
+            <button id="openSettings" class="settings-trigger" type="button" aria-haspopup="dialog" aria-controls="settingsModal">
+              <span aria-hidden="true">⚙</span>
+              设置
+            </button>
+          </div>
         </div>
 
         <div
@@ -89,8 +102,17 @@
         </div>
 
         <div class="study-quick-summary" aria-label="今日学习概览">
-          <span id="todaySummary">今日 0 题 · 正确率 0%</span>
-          <strong id="studyStreak">连续 0 天</strong>
+          <div class="goal-summary-row">
+            <div>
+              <span class="goal-label">今日目标</span>
+              <strong id="goalSummary">0 / 30</strong>
+            </div>
+            <span id="todaySummary">今日 0 题 · 正确率 0%</span>
+            <strong id="studyStreak">连续 0 天</strong>
+          </div>
+          <div class="goal-track" aria-hidden="true">
+            <div id="goalBar" class="goal-bar" style="width:0%"></div>
+          </div>
         </div>
 
         <div class="footer-tip">
@@ -142,6 +164,10 @@
             <strong id="levelDue">0</strong>
           </div>
         </div>
+        <div class="progress-actions">
+          <button id="startDueReview" class="progress-action primary" type="button">开始到期复习</button>
+          <button id="startSmartReview" class="progress-action" type="button">智能学习</button>
+        </div>
       </section>
 
       <section class="progress-section panel">
@@ -187,6 +213,19 @@
           </div>
         </div>
         <div id="weakList" class="weak-list progress-weak-list">暂无</div>
+        <div class="progress-actions compact">
+          <button id="startWeakReview" class="progress-action primary" type="button">专项复习薄弱假名</button>
+        </div>
+      </section>
+
+      <section class="progress-section panel">
+        <div class="section-heading-row">
+          <div>
+            <span class="eyebrow">近期表现</span>
+            <h3>最近易错假名</h3>
+          </div>
+        </div>
+        <div id="recentWrongList" class="recent-wrong-list">暂无</div>
       </section>
 
       <section class="progress-section panel">
@@ -251,6 +290,24 @@
               <option value="input">输入答案（推荐）</option>
             </select>
           </div>
+
+          <div class="setting-item">
+            <label for="dailyGoal">每日目标</label>
+            <select id="dailyGoal">
+              <option value="20">20 题</option>
+              <option value="30">30 题</option>
+              <option value="50">50 题</option>
+              <option value="100">100 题</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="autoAdvance">输入正确后</label>
+            <select id="autoAdvance">
+              <option value="on">自动进入下一题</option>
+              <option value="off">手动进入下一题</option>
+            </select>
+          </div>
         </div>
 
         <div class="settings-block">
@@ -279,9 +336,14 @@
         <div class="settings-block data-management">
           <div>
             <span class="section-title">数据管理</span>
-            <p>重置只影响当前游客或当前账号的学习记录，不会删除账号。</p>
+            <p>可导出当前身份的完整学习进度。导入会与当前身份的学习记录安全合并，并在登录时同步到云端。</p>
           </div>
-          <button class="danger-action" id="resetProgress" type="button">重置当前学习记录</button>
+          <div class="data-actions">
+            <button class="secondary-action" id="exportData" type="button">导出学习数据</button>
+            <button class="secondary-action" id="importData" type="button">导入学习数据</button>
+            <input id="importDataFile" type="file" accept="application/json,.json" hidden>
+            <button class="danger-action" id="resetProgress" type="button">重置当前学习记录</button>
+          </div>
         </div>
       </div>
 
@@ -331,7 +393,10 @@
         </div>
         <div class="sync-row">
           <span class="sync-row-label">学习进度</span>
-          <span id="syncStatus" class="sync-status">仅本地保存</span>
+          <span class="sync-status-stack">
+            <span id="syncStatus" class="sync-status">仅本地保存</span>
+            <small id="syncStatusDetail" class="sync-status-detail">游客数据仅保存在当前浏览器</small>
+          </span>
         </div>
         <button id="logoutButton" class="auth-button logout-button" type="button">退出登录</button>
       </div>
@@ -339,12 +404,13 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/config.js?v=5"></script>
-  <script src="./js/auth-sync.js?v=5"></script>
-  <script src="./js/kana-data.js?v=5"></script>
-  <script src="./js/progress.js?v=5"></script>
-  <script src="./js/study.js?v=5"></script>
-  <script src="./js/ui.js?v=5"></script>
-  <script src="./js/app.js?v=5"></script>
+  <script src="./js/config.js?v=6"></script>
+  <script src="./js/auth-sync.js?v=6"></script>
+  <script src="./js/kana-data.js?v=6"></script>
+  <script src="./js/progress.js?v=6"></script>
+  <script src="./js/study.js?v=6"></script>
+  <script src="./js/ui.js?v=6"></script>
+  <script src="./js/data-tools.js?v=6"></script>
+  <script src="./js/app.js?v=6"></script>
 </body>
 </html>

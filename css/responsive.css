@@ -126,3 +126,59 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+/* ==============================
+   v6 响应式补充
+   ============================== */
+@media (max-width: 700px) {
+  .study-toolbar-actions { gap: 5px; }
+  .focus-exit { padding-left: 8px; padding-right: 8px; }
+  .goal-summary-row {
+    grid-template-columns: 1fr auto;
+    gap: 6px 10px;
+  }
+  .goal-summary-row #todaySummary {
+    text-align: right;
+  }
+  .goal-summary-row #studyStreak {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+  .data-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .data-actions .danger-action {
+    grid-column: 1 / -1;
+  }
+  .recent-wrong-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .progress-actions {
+    justify-content: stretch;
+  }
+  .progress-action {
+    flex: 1 1 160px;
+  }
+}
+
+@media (max-width: 420px) {
+  .study-toolbar-actions {
+    align-self: flex-start;
+  }
+  .settings-trigger span[aria-hidden="true"] {
+    display: none;
+  }
+  .recent-wrong-list {
+    grid-template-columns: 1fr;
+  }
+  .goal-summary-row {
+    grid-template-columns: 1fr;
+  }
+  .goal-summary-row #todaySummary,
+  .goal-summary-row #studyStreak {
+    justify-self: start;
+    text-align: left;
+  }
+}

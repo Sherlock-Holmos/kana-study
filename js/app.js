@@ -165,6 +165,10 @@
 
           syncCounters = {};
           dailyCounters = {};
+          focusedReviewMode = null;
+          focusedKanaSet = null;
+          wrongReplayQueue = [];
+          updateFocusedReviewUi();
 
           saveState();
 
@@ -419,6 +423,24 @@
       }
     );
 
+    dailyGoalEl?.addEventListener(
+      "change",
+      () => {
+        markSettingsChanged();
+        saveState();
+        updateDailySummary();
+        updateProgressDashboard();
+      }
+    );
+
+    autoAdvanceEl?.addEventListener(
+      "change",
+      () => {
+        markSettingsChanged();
+        saveState();
+      }
+    );
+
 
     /* ========================================
        全局键盘快捷键
@@ -531,6 +553,10 @@
 
     initializeUi();
 
+    if (typeof initializeDataTools === "function") {
+      initializeDataTools();
+    }
+
     const hasInitialLocalState =
       loadState(
         STORAGE_KEY
@@ -542,4 +568,21 @@
     }
 
     initializeAuth();
+
+    if (
+      "serviceWorker" in navigator &&
+      location.protocol === "https:"
+    ) {
+      window.addEventListener(
+        "load",
+        () => {
+          navigator.serviceWorker
+            .register("./sw.js?v=6")
+            .catch(error =>
+              console.warn("Service Worker 注册失败：", error)
+            );
+        },
+        { once: true }
+      );
+    }
 
