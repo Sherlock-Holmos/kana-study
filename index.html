@@ -1792,6 +1792,105 @@ function getActiveStorageKey() {
 }
 
 
+function getGuestMigrationKey(
+  userId
+) {
+  return `${GUEST_MIGRATION_PREFIX}${userId}`;
+}
+
+
+function markGuestMigrationPending(
+  userId,
+  guestSnapshot
+) {
+  if (!guestSnapshot) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      getGuestMigrationKey(userId),
+      JSON.stringify({
+        guestUpdatedAt:
+          guestSnapshot.updatedAt || null
+      })
+    );
+  } catch (error) {
+    console.error(
+      "记录游客迁移状态失败：",
+      error
+    );
+  }
+}
+
+
+function completeGuestMigrationIfPending(
+  userId
+) {
+  const migrationKey =
+    getGuestMigrationKey(userId);
+
+  let marker = null;
+
+  try {
+    const raw =
+      localStorage.getItem(
+        migrationKey
+      );
+
+    if (!raw) {
+      return;
+    }
+
+    marker =
+      JSON.parse(raw);
+  } catch (error) {
+    console.error(
+      "读取游客迁移状态失败：",
+      error
+    );
+
+    return;
+  }
+
+  const currentGuestSnapshot =
+    readLocalSnapshot(
+      STORAGE_KEY
+    );
+
+  /*
+   * 如果游客记录在迁移过程中又被其他标签页更新，
+   * 不删除新的游客记录，避免误伤。
+   */
+  const expectedUpdatedAt =
+    marker?.guestUpdatedAt || null;
+
+  const currentUpdatedAt =
+    currentGuestSnapshot?.updatedAt || null;
+
+  try {
+    if (
+      !currentGuestSnapshot ||
+      currentUpdatedAt ===
+        expectedUpdatedAt
+    ) {
+      localStorage.removeItem(
+        STORAGE_KEY
+      );
+    }
+
+    localStorage.removeItem(
+      migrationKey
+    );
+  } catch (error) {
+    console.error(
+      "完成游客记录迁移失败：",
+      error
+    );
+  }
+}
+
+
 function parseTimestamp(
   value
 ) {
@@ -1995,6 +2094,14 @@ async function saveCloudProgress(
     }
 
     /*
+     * 如果这是游客记录首次迁移到账号，
+     * 只有云端确认写入成功后才清除原游客记录。
+     */
+    completeGuestMigrationIfPending(
+      userId
+    );
+
+    /*
      * 如果同步期间已经切换账号，
      * 不改当前页面状态。
      */
@@ -2170,6 +2277,15 @@ async function activateUserContext(
      * 暂时沿用游客记录。
      */
     if (guestSnapshot) {
+      /*
+       * 先保留游客原记录。
+       * 等之后真正同步到云端成功，再清理游客副本。
+       */
+      markGuestMigrationPending(
+        user.id,
+        guestSnapshot
+      );
+
       isApplyingExternalState =
         true;
 
@@ -2260,6 +2376,10 @@ async function activateUserContext(
         normalizedCloud
       );
 
+      completeGuestMigrationIfPending(
+        user.id
+      );
+
       setSyncStatus(
         "云端已同步"
       );
@@ -2292,6 +2412,10 @@ async function activateUserContext(
     writeLocalSnapshot(
       userStorageKey,
       normalizedCloud
+    );
+
+    completeGuestMigrationIfPending(
+      user.id
     );
 
     setSyncStatus(
@@ -2328,8 +2452,16 @@ async function activateUserContext(
   /*
    * 账号本地和云端都没有：
    * 第一次登录时把游客进度迁移到账号。
+   *
+   * 注意：这里只“标记待迁移”，不会马上删除游客数据。
+   * 必须等 Supabase 写入成功后才清除游客副本。
    */
   if (guestSnapshot) {
+    markGuestMigrationPending(
+      user.id,
+      guestSnapshot
+    );
+
     isApplyingExternalState =
       true;
 
@@ -2382,6 +2514,13 @@ function switchToGuestContext() {
       STORAGE_KEY
     );
 
+  /*
+   * 游客有自己的历史记录就恢复游客记录；
+   * 如果游客记录已经成功迁移到账号并被清除，
+   * 退出后显示全新的游客状态。
+   *
+   * 账号的本地缓存和 Supabase 云端数据都不会删除。
+   */
   if (!loaded) {
     resetLearningState();
     refreshLearningUI();
@@ -3079,6 +3218,13 @@ window.addEventListener(
 
     const USER_STORAGE_PREFIX =
       `${STORAGE_KEY}:user:`;
+
+    /*
+     * 游客进度迁移到账号时使用的临时标记。
+     * 只有确认云端保存成功后，才会清除原游客记录。
+     */
+    const GUEST_MIGRATION_PREFIX =
+      `${STORAGE_KEY}:guest-migration:`;
 
     const CLOUD_SYNC_DELAY_MS =
       1000;
@@ -4472,9 +4618,19 @@ window.addEventListener(
         "click",
         () => {
 
+          const resetTarget =
+            currentUser
+              ? "当前账号"
+              : "游客";
+
+          const isolationTip =
+            currentUser
+              ? "不会删除账号，也不会影响游客或其他账号的数据。"
+              : "不会影响任何账号的本地缓存或云端记录。";
+
           const confirmed =
             window.confirm(
-              "确定要重置全部学习记录吗？\n\n当前选择的学习范围和设置会保留。"
+              `确定要重置${resetTarget}的学习记录吗？\n\n${isolationTip}\n当前选择的学习范围和设置会保留。`
             );
 
 
