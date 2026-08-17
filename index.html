@@ -1433,10 +1433,14 @@ const syncStatusEl =
   );
 
 let currentUser = null;
+let activeUserContextId = null;
+let cloudSaveTimer = null;
+let pendingCloudSnapshot = null;
+let isApplyingExternalState = false;
 
 
 /* ========================================
-   账号状态 UI
+   账号 / 云同步辅助
    ======================================== */
 
 function setAuthMessage(
@@ -1467,6 +1471,18 @@ function setAuthBusy(
 }
 
 
+function setSyncStatus(
+  message
+) {
+  if (!syncStatusEl) {
+    return;
+  }
+
+  syncStatusEl.textContent =
+    message;
+}
+
+
 function renderAuthState() {
   const isLoggedIn =
     Boolean(currentUser);
@@ -1480,11 +1496,623 @@ function renderAuthState() {
   userEmailEl.textContent =
     currentUser?.email || "";
 
-  if (syncStatusEl) {
-    syncStatusEl.textContent =
-      isLoggedIn
-        ? "已登录 · 暂仅本地保存"
-        : "仅本地保存";
+  if (!isLoggedIn) {
+    setSyncStatus(
+      "仅本地保存"
+    );
+  }
+}
+
+
+function getUserStorageKey(
+  userId
+) {
+  return `${USER_STORAGE_PREFIX}${userId}`;
+}
+
+
+function getActiveStorageKey() {
+  return currentUser
+    ? getUserStorageKey(
+        currentUser.id
+      )
+    : STORAGE_KEY;
+}
+
+
+function parseTimestamp(
+  value
+) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp =
+    Date.parse(value);
+
+  return Number.isFinite(timestamp)
+    ? timestamp
+    : 0;
+}
+
+
+function readLocalSnapshot(
+  storageKey
+) {
+  try {
+    const raw =
+      localStorage.getItem(
+        storageKey
+      );
+
+    if (!raw) {
+      return null;
+    }
+
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error(
+      "读取本地学习记录失败：",
+      error
+    );
+
+    return null;
+  }
+}
+
+
+function writeLocalSnapshot(
+  storageKey,
+  snapshot
+) {
+  try {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(snapshot)
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "保存本地学习记录失败：",
+      error
+    );
+
+    return false;
+  }
+}
+
+
+function hasLearningData(
+  snapshot
+) {
+  if (!snapshot) {
+    return false;
+  }
+
+  if (
+    Number(
+      snapshot.stats?.total
+    ) > 0
+  ) {
+    return true;
+  }
+
+  const perKana =
+    snapshot.kanaStats;
+
+  if (
+    perKana &&
+    typeof perKana === "object"
+  ) {
+    return Object.values(
+      perKana
+    ).some(stat =>
+      Number(stat?.correct) > 0 ||
+      Number(stat?.wrong) > 0 ||
+      Number(stat?.mastery) > 0
+    );
+  }
+
+  return false;
+}
+
+
+/* ========================================
+   云端读取 / 保存
+   ======================================== */
+
+async function fetchCloudProgress(
+  userId
+) {
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from(
+        "user_progress"
+      )
+      .select(
+        "progress, updated_at"
+      )
+      .eq(
+        "user_id",
+        userId
+      )
+      .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+
+async function saveCloudProgress(
+  snapshot = pendingCloudSnapshot
+) {
+  if (
+    !currentUser ||
+    !snapshot
+  ) {
+    return false;
+  }
+
+  const userId =
+    currentUser.id;
+
+  /*
+   * 防止 await 期间切换了账号。
+   */
+  const snapshotToSave =
+    typeof structuredClone === "function"
+      ? structuredClone(snapshot)
+      : JSON.parse(
+          JSON.stringify(snapshot)
+        );
+
+  setSyncStatus(
+    navigator.onLine
+      ? "云端同步中…"
+      : "离线 · 已保存本机"
+  );
+
+  if (!navigator.onLine) {
+    pendingCloudSnapshot =
+      snapshotToSave;
+
+    return false;
+  }
+
+  try {
+    const updatedAt =
+      snapshotToSave.updatedAt ||
+      new Date().toISOString();
+
+    snapshotToSave.updatedAt =
+      updatedAt;
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from(
+          "user_progress"
+        )
+        .upsert(
+          {
+            user_id:
+              userId,
+
+            progress:
+              snapshotToSave,
+
+            updated_at:
+              updatedAt
+          },
+          {
+            onConflict:
+              "user_id"
+          }
+        );
+
+    if (error) {
+      throw error;
+    }
+
+    /*
+     * 如果同步期间已经切换账号，
+     * 不改当前页面状态。
+     */
+    if (
+      currentUser?.id ===
+      userId
+    ) {
+      pendingCloudSnapshot =
+        null;
+
+      setSyncStatus(
+        "云端已同步"
+      );
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "云端同步失败：",
+      error
+    );
+
+    pendingCloudSnapshot =
+      snapshotToSave;
+
+    if (
+      currentUser?.id ===
+      userId
+    ) {
+      setSyncStatus(
+        "同步失败 · 已保存本机"
+      );
+    }
+
+    return false;
+  }
+}
+
+
+function scheduleCloudSave(
+  snapshot
+) {
+  if (!currentUser) {
+    return;
+  }
+
+  pendingCloudSnapshot =
+    snapshot;
+
+  clearTimeout(
+    cloudSaveTimer
+  );
+
+  cloudSaveTimer =
+    setTimeout(
+      () => {
+        cloudSaveTimer = null;
+        void saveCloudProgress();
+      },
+      CLOUD_SYNC_DELAY_MS
+    );
+
+  setSyncStatus(
+    navigator.onLine
+      ? "待同步…"
+      : "离线 · 已保存本机"
+  );
+}
+
+
+async function flushCloudSave() {
+  if (!currentUser) {
+    return;
+  }
+
+  if (cloudSaveTimer) {
+    clearTimeout(
+      cloudSaveTimer
+    );
+
+    cloudSaveTimer = null;
+  }
+
+  if (pendingCloudSnapshot) {
+    await saveCloudProgress(
+      pendingCloudSnapshot
+    );
+  }
+}
+
+
+/* ========================================
+   登录后的进度选择
+   ======================================== */
+
+async function activateUserContext(
+  user
+) {
+  if (!user) {
+    return;
+  }
+
+  if (
+    activeUserContextId ===
+    user.id
+  ) {
+    return;
+  }
+
+  activeUserContextId =
+    user.id;
+
+  currentUser =
+    user;
+
+  renderAuthState();
+  setSyncStatus(
+    "正在读取云端…"
+  );
+
+  const userStorageKey =
+    getUserStorageKey(
+      user.id
+    );
+
+  const userLocalSnapshot =
+    readLocalSnapshot(
+      userStorageKey
+    );
+
+  const guestSnapshot =
+    readLocalSnapshot(
+      STORAGE_KEY
+    );
+
+  let cloudRow = null;
+
+  try {
+    cloudRow =
+      await fetchCloudProgress(
+        user.id
+      );
+  } catch (error) {
+    console.error(
+      "读取云端学习记录失败：",
+      error
+    );
+
+    /*
+     * 云端暂时不可用：
+     * 优先继续使用该账号在本机的记录。
+     */
+    if (userLocalSnapshot) {
+      isApplyingExternalState =
+        true;
+
+      applyStateSnapshot(
+        userLocalSnapshot
+      );
+
+      isApplyingExternalState =
+        false;
+
+      setSyncStatus(
+        "云端不可用 · 使用本机记录"
+      );
+
+      return;
+    }
+
+    /*
+     * 首次登录且没有账号本地记录，
+     * 暂时沿用游客记录。
+     */
+    if (guestSnapshot) {
+      isApplyingExternalState =
+        true;
+
+      applyStateSnapshot(
+        guestSnapshot
+      );
+
+      isApplyingExternalState =
+        false;
+
+      writeLocalSnapshot(
+        userStorageKey,
+        createStateSnapshot(
+          guestSnapshot.updatedAt ||
+          new Date().toISOString()
+        )
+      );
+    }
+
+    setSyncStatus(
+      "云端不可用 · 已保存本机"
+    );
+
+    return;
+  }
+
+  const cloudSnapshot =
+    cloudRow?.progress ?? null;
+
+  /*
+   * 云端有记录 + 本机有该账号记录：
+   * 使用更新时间更新的一份。
+   */
+  if (
+    cloudSnapshot &&
+    userLocalSnapshot
+  ) {
+    const cloudTime =
+      parseTimestamp(
+        cloudRow.updated_at ||
+        cloudSnapshot.updatedAt
+      );
+
+    const localTime =
+      parseTimestamp(
+        userLocalSnapshot.updatedAt
+      );
+
+    if (
+      localTime > cloudTime
+    ) {
+      isApplyingExternalState =
+        true;
+
+      applyStateSnapshot(
+        userLocalSnapshot
+      );
+
+      isApplyingExternalState =
+        false;
+
+      await saveCloudProgress(
+        createStateSnapshot(
+          userLocalSnapshot.updatedAt ||
+          new Date().toISOString()
+        )
+      );
+    } else {
+      isApplyingExternalState =
+        true;
+
+      applyStateSnapshot(
+        cloudSnapshot
+      );
+
+      isApplyingExternalState =
+        false;
+
+      const normalizedCloud =
+        createStateSnapshot(
+          cloudRow.updated_at ||
+          cloudSnapshot.updatedAt ||
+          new Date().toISOString()
+        );
+
+      writeLocalSnapshot(
+        userStorageKey,
+        normalizedCloud
+      );
+
+      setSyncStatus(
+        "云端已同步"
+      );
+    }
+
+    return;
+  }
+
+  /*
+   * 只有云端记录：下载到本机。
+   */
+  if (cloudSnapshot) {
+    isApplyingExternalState =
+      true;
+
+    applyStateSnapshot(
+      cloudSnapshot
+    );
+
+    isApplyingExternalState =
+      false;
+
+    const normalizedCloud =
+      createStateSnapshot(
+        cloudRow.updated_at ||
+        cloudSnapshot.updatedAt ||
+        new Date().toISOString()
+      );
+
+    writeLocalSnapshot(
+      userStorageKey,
+      normalizedCloud
+    );
+
+    setSyncStatus(
+      "云端已同步"
+    );
+
+    return;
+  }
+
+  /*
+   * 只有账号本地记录：上传云端。
+   */
+  if (userLocalSnapshot) {
+    isApplyingExternalState =
+      true;
+
+    applyStateSnapshot(
+      userLocalSnapshot
+    );
+
+    isApplyingExternalState =
+      false;
+
+    await saveCloudProgress(
+      createStateSnapshot(
+        userLocalSnapshot.updatedAt ||
+        new Date().toISOString()
+      )
+    );
+
+    return;
+  }
+
+  /*
+   * 账号本地和云端都没有：
+   * 第一次登录时把游客进度迁移到账号。
+   */
+  if (guestSnapshot) {
+    isApplyingExternalState =
+      true;
+
+    applyStateSnapshot(
+      guestSnapshot
+    );
+
+    isApplyingExternalState =
+      false;
+  }
+
+  const initialSnapshot =
+    createStateSnapshot(
+      guestSnapshot?.updatedAt ||
+      new Date().toISOString()
+    );
+
+  writeLocalSnapshot(
+    userStorageKey,
+    initialSnapshot
+  );
+
+  await saveCloudProgress(
+    initialSnapshot
+  );
+}
+
+
+function switchToGuestContext() {
+  activeUserContextId =
+    null;
+
+  currentUser =
+    null;
+
+  pendingCloudSnapshot =
+    null;
+
+  clearTimeout(
+    cloudSaveTimer
+  );
+
+  cloudSaveTimer =
+    null;
+
+  renderAuthState();
+
+  const loaded =
+    loadState(
+      STORAGE_KEY
+    );
+
+  if (!loaded) {
+    resetLearningState();
+    refreshLearningUI();
   }
 }
 
@@ -1522,7 +2150,9 @@ async function registerAccount() {
   }
 
   setAuthBusy(true);
-  setAuthMessage("正在注册……");
+  setAuthMessage(
+    "正在注册……"
+  );
 
   try {
     const {
@@ -1547,11 +2177,16 @@ async function registerAccount() {
     currentUser =
       data.session?.user ?? null;
 
-    authPasswordEl.value = "";
+    authPasswordEl.value =
+      "";
 
     if (currentUser) {
       setAuthMessage("");
       renderAuthState();
+
+      await activateUserContext(
+        currentUser
+      );
     } else {
       setAuthMessage(
         "注册成功，但当前未自动登录。请确认 Supabase 的 Confirm email 已关闭，或完成邮箱验证后再登录。"
@@ -1594,7 +2229,9 @@ async function loginAccount() {
   }
 
   setAuthBusy(true);
-  setAuthMessage("正在登录……");
+  setAuthMessage(
+    "正在登录……"
+  );
 
   try {
     const {
@@ -1619,9 +2256,17 @@ async function loginAccount() {
     currentUser =
       data.user ?? null;
 
-    authPasswordEl.value = "";
+    authPasswordEl.value =
+      "";
+
     setAuthMessage("");
     renderAuthState();
+
+    if (currentUser) {
+      await activateUserContext(
+        currentUser
+      );
+    }
   } catch (error) {
     console.error(
       "登录异常：",
@@ -1646,6 +2291,8 @@ async function logoutAccount() {
   setAuthBusy(true);
 
   try {
+    await flushCloudSave();
+
     const {
       error
     } =
@@ -1660,8 +2307,7 @@ async function logoutAccount() {
       return;
     }
 
-    currentUser = null;
-    renderAuthState();
+    switchToGuestContext();
   } catch (error) {
     console.error(
       "退出异常：",
@@ -1698,10 +2344,21 @@ async function initializeAuth() {
       );
     }
 
-    currentUser =
+    const sessionUser =
       data?.session?.user ?? null;
 
-    renderAuthState();
+    if (sessionUser) {
+      currentUser =
+        sessionUser;
+
+      renderAuthState();
+
+      await activateUserContext(
+        sessionUser
+      );
+    } else {
+      renderAuthState();
+    }
 
     supabaseClient
       .auth
@@ -1710,15 +2367,26 @@ async function initializeAuth() {
           event,
           session
         ) => {
-          currentUser =
+          const nextUser =
             session?.user ?? null;
-
-          renderAuthState();
 
           if (
             event === "SIGNED_OUT"
           ) {
+            switchToGuestContext();
             setAuthMessage("");
+            return;
+          }
+
+          if (nextUser) {
+            currentUser =
+              nextUser;
+
+            renderAuthState();
+
+            void activateUserContext(
+              nextUser
+            );
           }
         }
       );
@@ -1728,10 +2396,49 @@ async function initializeAuth() {
       error
     );
 
-    currentUser = null;
-    renderAuthState();
+    switchToGuestContext();
   }
 }
+
+
+/* ========================================
+   网络恢复后补同步
+   ======================================== */
+
+window.addEventListener(
+  "online",
+  () => {
+    if (!currentUser) {
+      return;
+    }
+
+    setSyncStatus(
+      "网络已恢复 · 准备同步"
+    );
+
+    if (pendingCloudSnapshot) {
+      void saveCloudProgress(
+        pendingCloudSnapshot
+      );
+    } else {
+      scheduleCloudSave(
+        createStateSnapshot()
+      );
+    }
+  }
+);
+
+
+window.addEventListener(
+  "offline",
+  () => {
+    if (currentUser) {
+      setSyncStatus(
+        "离线 · 已保存本机"
+      );
+    }
+  }
+);
 
     /* ========================================
        五十音数据
@@ -2090,9 +2797,15 @@ async function initializeAuth() {
     const STORAGE_KEY =
       "kanaFlashcardState";
 
-    const STORAGE_VERSION = 2;
+    const STORAGE_VERSION = 3;
 
     const MAX_MASTERY = 5;
+
+    const USER_STORAGE_PREFIX =
+      `${STORAGE_KEY}:user:`;
+
+    const CLOUD_SYNC_DELAY_MS =
+      1000;
 
 
     /* ========================================
@@ -2255,45 +2968,69 @@ async function initializeAuth() {
        保存状态
        ======================================== */
 
-    function saveState() {
-
-      const state = {
-
+    function createStateSnapshot(
+      updatedAt =
+        new Date().toISOString()
+    ) {
+      return {
         version:
           STORAGE_VERSION,
 
         selectedGroups:
           [...selectedGroups],
 
-        stats,
+        stats:
+          typeof structuredClone === "function"
+            ? structuredClone(stats)
+            : JSON.parse(
+                JSON.stringify(stats)
+              ),
 
-        kanaStats,
+        kanaStats:
+          typeof structuredClone === "function"
+            ? structuredClone(kanaStats)
+            : JSON.parse(
+                JSON.stringify(kanaStats)
+              ),
 
         mode:
           modeEl.value,
 
         weightMode:
-          weightModeEl.value
+          weightModeEl.value,
 
+        updatedAt
       };
+    }
 
 
-      try {
+    function saveState() {
+      const snapshot =
+        createStateSnapshot();
 
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(state)
+      const storageKey =
+        getActiveStorageKey();
+
+      writeLocalSnapshot(
+        storageKey,
+        snapshot
+      );
+
+      /*
+       * 游客只存 localStorage。
+       * 登录用户在本地保存后，
+       * 再进行 1 秒防抖云同步。
+       */
+      if (
+        currentUser &&
+        !isApplyingExternalState
+      ) {
+        scheduleCloudSave(
+          snapshot
         );
-
-      } catch (error) {
-
-        console.error(
-          "保存学习记录失败：",
-          error
-        );
-
       }
 
+      return snapshot;
     }
 
 
@@ -2366,231 +3103,225 @@ async function initializeAuth() {
        读取状态
        ======================================== */
 
-    function loadState() {
+    function resetLearningState() {
+      selectedGroups =
+        new Set([
+          "a",
+          "ka",
+          "sa"
+        ]);
 
-      try {
+      stats = {
+        total: 0,
+        correct: 0,
+        wrong: 0
+      };
 
-        const raw =
-          localStorage.getItem(
-            STORAGE_KEY
-          );
+      kanaStats =
+        createDefaultKanaStats();
 
+      modeEl.value =
+        "kanaToRoman";
 
-        if (!raw) {
-          return;
-        }
-
-
-        const saved =
-          JSON.parse(raw);
-
-
-        /*
-         * 恢复选择范围
-         */
-        if (
-          Array.isArray(
-            saved.selectedGroups
-          )
-        ) {
-
-          selectedGroups =
-            new Set(
-              saved.selectedGroups
-            );
-
-        }
+      weightModeEl.value =
+        "weighted";
+    }
 
 
-        /*
-         * 恢复总体统计
-         */
-        if (
-          saved.stats
-        ) {
+    function applyStateSnapshot(
+      saved
+    ) {
+      resetLearningState();
 
-          stats = {
-
-            total:
-              Number(
-                saved.stats.total
-              ) || 0,
-
-            correct:
-              Number(
-                saved.stats.correct
-              ) || 0,
-
-            wrong:
-              Number(
-                saved.stats.wrong
-              ) || 0
-
-          };
-
-        }
-
-
-        /*
-         * 恢复每个假名记录
-         */
-        if (
-          saved.kanaStats
-        ) {
-
-          kanaData.forEach(
-            item => {
-
-              const old =
-                saved.kanaStats[
-                  item.kana
-                ];
-
-
-              if (!old) {
-                return;
-              }
-
-
-              const correct =
-                Number(
-                  old.correct
-                ) || 0;
-
-
-              const wrong =
-                Number(
-                  old.wrong
-                ) || 0;
-
-
-              let mastery;
-
-
-              /*
-               * 新版数据
-               */
-              if (
-                old.mastery !==
-                  undefined &&
-                Number.isFinite(
-                  Number(
-                    old.mastery
-                  )
-                )
-              ) {
-
-                mastery =
-                  Math.max(
-                    0,
-                    Math.min(
-                      MAX_MASTERY,
-                      Number(
-                        old.mastery
-                      )
-                    )
-                  );
-
-              }
-
-              /*
-               * 旧版数据自动迁移
-               */
-              else {
-
-                mastery =
-                  inferMastery(
-                    correct,
-                    wrong
-                  );
-
-              }
-
-
-              kanaStats[
-                item.kana
-              ] = {
-
-                correct,
-
-                wrong,
-
-                streak:
-                  Number(
-                    old.streak
-                  ) || 0,
-
-                mastery,
-
-                lastResult:
-                  [
-                    "correct",
-                    "wrong"
-                  ].includes(
-                    old.lastResult
-                  )
-                    ? old.lastResult
-                    : null
-
-              };
-
-            }
-          );
-
-        }
-
-
-        /*
-         * 恢复测试模式
-         */
-        if (
-          [
-            "kanaToRoman",
-            "romanToKana",
-            "random"
-          ].includes(
-            saved.mode
-          )
-        ) {
-
-          modeEl.value =
-            saved.mode;
-
-        }
-
-
-        /*
-         * 恢复抽取模式
-         */
-        if (
-          [
-            "weighted",
-            "pure"
-          ].includes(
-            saved.weightMode
-          )
-        ) {
-
-          weightModeEl.value =
-            saved.weightMode;
-
-        }
-
-
-        /*
-         * 自动升级旧数据。
-         */
-        saveState();
-
-      } catch (error) {
-
-        console.error(
-          "读取学习记录失败：",
-          error
-        );
-
+      if (
+        !saved ||
+        typeof saved !== "object"
+      ) {
+        refreshLearningUI();
+        return false;
       }
 
+      /*
+       * 恢复选择范围
+       */
+      if (
+        Array.isArray(
+          saved.selectedGroups
+        )
+      ) {
+        selectedGroups =
+          new Set(
+            saved.selectedGroups
+          );
+      }
+
+
+      /*
+       * 恢复总体统计
+       */
+      if (saved.stats) {
+        stats = {
+          total:
+            Number(
+              saved.stats.total
+            ) || 0,
+
+          correct:
+            Number(
+              saved.stats.correct
+            ) || 0,
+
+          wrong:
+            Number(
+              saved.stats.wrong
+            ) || 0
+        };
+      }
+
+
+      /*
+       * 恢复每个假名记录
+       */
+      if (saved.kanaStats) {
+        kanaData.forEach(
+          item => {
+            const old =
+              saved.kanaStats[
+                item.kana
+              ];
+
+            if (!old) {
+              return;
+            }
+
+            const correct =
+              Number(
+                old.correct
+              ) || 0;
+
+            const wrong =
+              Number(
+                old.wrong
+              ) || 0;
+
+            let mastery;
+
+            if (
+              old.mastery !==
+                undefined &&
+              Number.isFinite(
+                Number(
+                  old.mastery
+                )
+              )
+            ) {
+              mastery =
+                Math.max(
+                  0,
+                  Math.min(
+                    MAX_MASTERY,
+                    Number(
+                      old.mastery
+                    )
+                  )
+                );
+            } else {
+              mastery =
+                inferMastery(
+                  correct,
+                  wrong
+                );
+            }
+
+            kanaStats[
+              item.kana
+            ] = {
+              correct,
+              wrong,
+
+              streak:
+                Number(
+                  old.streak
+                ) || 0,
+
+              mastery,
+
+              lastResult:
+                [
+                  "correct",
+                  "wrong"
+                ].includes(
+                  old.lastResult
+                )
+                  ? old.lastResult
+                  : null
+            };
+          }
+        );
+      }
+
+
+      /*
+       * 恢复测试模式
+       */
+      if (
+        [
+          "kanaToRoman",
+          "romanToKana",
+          "random"
+        ].includes(
+          saved.mode
+        )
+      ) {
+        modeEl.value =
+          saved.mode;
+      }
+
+
+      /*
+       * 恢复抽取模式
+       */
+      if (
+        [
+          "weighted",
+          "pure"
+        ].includes(
+          saved.weightMode
+        )
+      ) {
+        weightModeEl.value =
+          saved.weightMode;
+      }
+
+      refreshLearningUI();
+      return true;
+    }
+
+
+    function refreshLearningUI() {
+      syncGroupButtons();
+      updateStats();
+      updateSelectedInfo();
+      nextCard();
+    }
+
+
+    function loadState(
+      storageKey =
+        getActiveStorageKey()
+    ) {
+      const saved =
+        readLocalSnapshot(
+          storageKey
+        );
+
+      if (!saved) {
+        return false;
+      }
+
+      return applyStateSnapshot(
+        saved
+      );
     }
 
 
@@ -3749,15 +4480,15 @@ async function initializeAuth() {
        初始化 
        ======================================== */
 
-    loadState();
+    const hasInitialLocalState =
+      loadState(
+        STORAGE_KEY
+      );
 
-    syncGroupButtons();
-
-    updateStats();
-
-    updateSelectedInfo();
-
-    nextCard();
+    if (!hasInitialLocalState) {
+      resetLearningState();
+      refreshLearningUI();
+    }
 
     initializeAuth();
 
