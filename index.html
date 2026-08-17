@@ -1,0 +1,3071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#f3f4f6"
+  >
+
+  <title>五十音抽认卡</title>
+
+  <style>
+    /* ==============================
+       基础重置
+       ============================== */
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+
+      min-height: 100vh;
+      min-height: 100dvh;
+
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(12px, env(safe-area-inset-right))
+        max(20px, env(safe-area-inset-bottom))
+        max(12px, env(safe-area-inset-left));
+
+      background: #f3f4f6;
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "PingFang SC",
+        "Microsoft YaHei",
+        "Hiragino Sans",
+        "Yu Gothic",
+        sans-serif;
+
+      color: #202124;
+
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+
+    /* ==============================
+       主容器
+       ============================== */
+
+    .app {
+      width: min(100%, 720px);
+      margin: 0 auto;
+    }
+
+
+    /* ==============================
+       标题
+       ============================== */
+
+    h1 {
+      margin: 4px 0 6px;
+
+      text-align: center;
+
+      font-size: clamp(24px, 5vw, 30px);
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .subtitle {
+      margin-bottom: clamp(14px, 3vw, 22px);
+
+      text-align: center;
+
+      color: #7a7f87;
+
+      font-size: clamp(13px, 2.8vw, 15px);
+    }
+
+
+    /* ==============================
+       主面板
+       ============================== */
+
+    .panel {
+      width: 100%;
+
+      padding: clamp(14px, 3vw, 22px);
+
+      background: #ffffff;
+
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: clamp(14px, 3vw, 20px);
+
+      box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+
+
+    /* ==============================
+       设置区
+       ============================== */
+
+    .settings {
+      display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fit,
+          minmax(min(220px, 100%), 1fr)
+        );
+
+      gap: 12px;
+
+      margin-bottom: 18px;
+    }
+
+    .setting-item {
+      min-width: 0;
+    }
+
+    label,
+    .section-title {
+      display: block;
+
+      margin-bottom: 7px;
+
+      color: #6d7178;
+
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    select {
+      width: 100%;
+      min-height: 44px;
+
+      padding: 9px 12px;
+
+      background: #ffffff;
+      color: #222;
+
+      border: 1px solid #d9dce1;
+      border-radius: 10px;
+
+      font-family: inherit;
+      font-size: 14px;
+
+      outline: none;
+
+      transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    select:focus {
+      border-color: #777;
+
+      box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+
+    /* ==============================
+       范围工具栏
+       ============================== */
+
+    .range-toolbar {
+      display: flex;
+
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 10px;
+
+      margin-bottom: 10px;
+    }
+
+    .range-toolbar .section-title {
+      margin: 0;
+    }
+
+    .small-actions {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      justify-content: flex-end;
+
+      gap: 6px;
+    }
+
+    .mini-button {
+      min-height: 34px;
+
+      padding: 6px 10px;
+
+      background: #f8f8f8;
+
+      border: 1px solid #dedede;
+      border-radius: 8px;
+
+      color: #555;
+
+      font-size: 12px;
+
+      white-space: nowrap;
+    }
+
+    .mini-button.danger {
+      color: #9b3434;
+      background: #fff8f8;
+      border-color: #efd4d4;
+    }
+
+
+    /* ==============================
+       五十音范围
+       ============================== */
+
+    .groups {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+
+      margin-bottom: 10px;
+    }
+
+    .group-button {
+      flex: 0 0 auto;
+
+      min-height: 38px;
+
+      padding: 7px 14px;
+
+      background: #ffffff;
+
+      border: 1px solid #d4d7dc;
+      border-radius: 999px;
+
+      color: #555;
+
+      font-size: 14px;
+      font-weight: 500;
+
+      transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.1s ease;
+    }
+
+    .group-button.active {
+      background: #222;
+      color: #ffffff;
+
+      border-color: #222;
+    }
+
+    .selected-info {
+      min-height: 18px;
+
+      margin-bottom: clamp(14px, 3vw, 20px);
+
+      color: #92969d;
+
+      font-size: 12px;
+    }
+
+
+    /* ==============================
+       抽认卡
+       ============================== */
+
+    .card {
+      width: 100%;
+
+      height: clamp(220px, 35vh, 300px);
+      min-height: 220px;
+
+      padding: 20px;
+
+      display: flex;
+      flex-direction: column;
+
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 16px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #fbfbfc,
+          #f7f7f8
+        );
+
+      border: 1px solid #eceef1;
+      border-radius: clamp(14px, 3vw, 20px);
+
+      cursor: pointer;
+
+      user-select: none;
+      -webkit-user-select: none;
+
+      overflow: hidden;
+
+      transition:
+        transform 0.12s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    .question {
+      max-width: 100%;
+
+      font-size: clamp(72px, 18vw, 116px);
+
+      font-weight: 500;
+      line-height: 1;
+
+      text-align: center;
+
+      word-break: break-all;
+    }
+
+    .question.roman {
+      font-size: clamp(48px, 13vw, 78px);
+
+      font-weight: 600;
+    }
+
+    .answer {
+      min-height: 40px;
+
+      margin-top: clamp(14px, 3vw, 24px);
+
+      font-size: clamp(25px, 7vw, 36px);
+
+      font-weight: 650;
+      line-height: 1.2;
+
+      text-align: center;
+    }
+
+    .hint {
+      min-height: 22px;
+
+      margin-top: 10px;
+
+      padding: 0 8px;
+
+      color: #888d94;
+
+      font-size: clamp(12px, 3vw, 14px);
+
+      line-height: 1.5;
+
+      text-align: center;
+    }
+
+
+    /* ==============================
+       主操作按钮
+       ============================== */
+
+    .buttons {
+      display: grid;
+
+      grid-template-columns: 1fr 1fr;
+
+      gap: 10px;
+    }
+
+    button {
+      min-height: 46px;
+
+      border: none;
+      border-radius: 11px;
+
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 550;
+
+      cursor: pointer;
+
+      -webkit-tap-highlight-color: transparent;
+
+      transition:
+        transform 0.1s ease,
+        filter 0.15s ease,
+        background 0.15s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .show-answer {
+      grid-column: span 2;
+
+      background: #222;
+      color: #ffffff;
+    }
+
+    .wrong {
+      background: #f8e3e3;
+      color: #9b3434;
+    }
+
+    .correct {
+      background: #e1f2e3;
+      color: #34703c;
+    }
+
+
+    /* ==============================
+       统计
+       ============================== */
+
+    .stats {
+      margin-top: 20px;
+
+      padding-top: 17px;
+
+      border-top: 1px solid #eeeeee;
+    }
+
+    .stats-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, 1fr);
+
+      gap: 6px 20px;
+    }
+
+    .stats-row {
+      display: flex;
+
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 12px;
+
+      min-height: 30px;
+
+      color: #646970;
+
+      font-size: 14px;
+    }
+
+    .stats-row strong {
+      color: #222;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .weak-title {
+      margin-top: 16px;
+      margin-bottom: 9px;
+
+      color: #70757c;
+
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .weak-list {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 7px;
+
+      min-height: 30px;
+
+      color: #8b8f95;
+      font-size: 13px;
+    }
+
+    .weak-item {
+      padding: 6px 10px;
+
+      background: #f5f6f7;
+
+      border: 1px solid #ececec;
+      border-radius: 9px;
+
+      color: #555;
+
+      font-size: 13px;
+    }
+
+
+    /* ==============================
+       底部提示
+       ============================== */
+
+    .footer-tip {
+      margin-top: 16px;
+
+      color: #a0a4aa;
+
+      font-size: 12px;
+      line-height: 1.7;
+
+      text-align: center;
+    }
+
+
+    /* ==============================
+       鼠标设备 hover
+       ============================== */
+
+    @media (hover: hover) {
+      .card:hover {
+        background: #f9f9fa;
+
+        box-shadow:
+          0 5px 18px rgba(0, 0, 0, 0.05);
+      }
+
+      .group-button:hover:not(.active) {
+        background: #f5f5f5;
+      }
+
+      .mini-button:hover {
+        background: #f1f1f1;
+      }
+
+      button:hover {
+        filter: brightness(0.98);
+      }
+    }
+
+
+    /* ==============================
+       手机
+       ============================== */
+
+    @media (max-width: 600px) {
+      body {
+        padding-left:
+          max(10px, env(safe-area-inset-left));
+
+        padding-right:
+          max(10px, env(safe-area-inset-right));
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .settings {
+        grid-template-columns: 1fr;
+
+        gap: 9px;
+
+        margin-bottom: 14px;
+      }
+
+      .groups {
+        gap: 7px;
+      }
+
+      .group-button {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .card {
+        height: clamp(220px, 34vh, 270px);
+
+        margin-bottom: 12px;
+      }
+
+      .stats {
+        margin-top: 16px;
+      }
+    }
+
+
+    /* ==============================
+       超窄手机
+       ============================== */
+
+    @media (max-width: 360px) {
+      .range-toolbar {
+        align-items: flex-start;
+
+        flex-direction: column;
+      }
+
+      .small-actions {
+        justify-content: flex-start;
+      }
+
+      .buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .show-answer {
+        grid-column: auto;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .question {
+        font-size: clamp(66px, 22vw, 82px);
+      }
+
+      .question.roman {
+        font-size: clamp(44px, 16vw, 60px);
+      }
+    }
+
+
+    /* ==============================
+       手机横屏 / 低高度
+       ============================== */
+
+    @media
+      (max-height: 620px)
+      and (orientation: landscape) {
+
+      body {
+        padding-top:
+          max(8px, env(safe-area-inset-top));
+
+        padding-bottom:
+          max(8px, env(safe-area-inset-bottom));
+      }
+
+      h1 {
+        margin: 0 0 2px;
+
+        font-size: 20px;
+      }
+
+      .subtitle {
+        margin-bottom: 8px;
+
+        font-size: 12px;
+      }
+
+      .panel {
+        padding: 12px;
+      }
+
+      .settings {
+        margin-bottom: 10px;
+      }
+
+      .selected-info {
+        margin-bottom: 8px;
+      }
+
+      .card {
+        height: 150px;
+        min-height: 150px;
+
+        margin-bottom: 8px;
+      }
+
+      .question {
+        font-size: clamp(56px, 17vh, 84px);
+      }
+
+      .question.roman {
+        font-size: clamp(42px, 13vh, 64px);
+      }
+
+      .answer {
+        margin-top: 8px;
+
+        font-size: 24px;
+      }
+
+      .hint {
+        margin-top: 4px;
+
+        font-size: 11px;
+      }
+
+      button {
+        min-height: 40px;
+      }
+    }
+
+
+    /* ==============================
+       桌面大屏
+       ============================== */
+
+    @media (min-width: 1000px) {
+      body {
+        padding-top: 32px;
+        padding-bottom: 32px;
+      }
+
+      .app {
+        width: min(100%, 760px);
+      }
+
+      .panel {
+        padding: 24px;
+      }
+
+      .card {
+        height: 310px;
+      }
+    }
+
+
+    /* ==============================
+       减少动画偏好
+       ============================== */
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <main class="app">
+
+    <h1>五十音抽认卡</h1>
+
+    <div class="subtitle">
+      平假名 · 随机抽取 · 掌握度复习
+    </div>
+
+
+    <section class="panel">
+
+      <!-- ==============================
+           设置
+           ============================== -->
+
+      <div class="settings">
+
+        <div class="setting-item">
+
+          <label for="mode">
+            测试模式
+          </label>
+
+          <select id="mode">
+
+            <option value="kanaToRoman">
+              假名 → 罗马音
+            </option>
+
+            <option value="romanToKana">
+              罗马音 → 假名
+            </option>
+
+            <option value="random">
+              随机双向
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="setting-item">
+
+          <label for="weightMode">
+            抽取方式
+          </label>
+
+          <select id="weightMode">
+
+            <option value="weighted">
+              掌握度优先
+            </option>
+
+            <option value="pure">
+              完全随机
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==============================
+           范围
+           ============================== -->
+
+      <div class="range-toolbar">
+
+        <span class="section-title">
+          选择背诵范围
+        </span>
+
+
+        <div class="small-actions">
+
+          <button
+            class="mini-button"
+            id="selectAll"
+            type="button"
+          >
+            全选
+          </button>
+
+
+          <button
+            class="mini-button"
+            id="clearAll"
+            type="button"
+          >
+            清空
+          </button>
+
+
+          <button
+            class="mini-button danger"
+            id="resetProgress"
+            type="button"
+          >
+            重置记录
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="groups">
+
+        <button
+          class="group-button active"
+          data-group="a"
+          type="button"
+        >
+          あ行
+        </button>
+
+        <button
+          class="group-button active"
+          data-group="ka"
+          type="button"
+        >
+          か行
+        </button>
+
+        <button
+          class="group-button active"
+          data-group="sa"
+          type="button"
+        >
+          さ行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ta"
+          type="button"
+        >
+          た行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="na"
+          type="button"
+        >
+          な行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ha"
+          type="button"
+        >
+          は行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ma"
+          type="button"
+        >
+          ま行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ya"
+          type="button"
+        >
+          や行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="ra"
+          type="button"
+        >
+          ら行
+        </button>
+
+        <button
+          class="group-button"
+          data-group="wa"
+          type="button"
+        >
+          わ行
+        </button>
+
+      </div>
+
+
+      <div
+        class="selected-info"
+        id="selectedInfo"
+      ></div>
+
+
+      <!-- ==============================
+           卡片
+           ============================== -->
+
+      <div
+        class="card"
+        id="card"
+        role="button"
+        tabindex="0"
+        aria-label="点击显示答案"
+      >
+
+        <div
+          class="question"
+          id="question"
+        ></div>
+
+
+        <div
+          class="answer"
+          id="answer"
+        ></div>
+
+
+        <div
+          class="hint"
+          id="hint"
+        >
+          点击卡片或按空格查看答案
+        </div>
+
+      </div>
+
+
+      <!-- ==============================
+           操作按钮
+           ============================== -->
+
+      <div class="buttons">
+
+        <button
+          class="show-answer"
+          id="showAnswer"
+          type="button"
+        >
+          显示答案
+        </button>
+
+
+        <button
+          class="wrong"
+          id="wrong"
+          type="button"
+        >
+          ✕ 不认识
+        </button>
+
+
+        <button
+          class="correct"
+          id="correct"
+          type="button"
+        >
+          ✓ 认识
+        </button>
+
+      </div>
+
+
+      <!-- ==============================
+           统计
+           ============================== -->
+
+      <div class="stats">
+
+        <div class="stats-grid">
+
+          <div class="stats-row">
+            <span>已练习</span>
+            <strong id="total">0</strong>
+          </div>
+
+
+          <div class="stats-row">
+            <span>正确率</span>
+            <strong id="accuracy">0%</strong>
+          </div>
+
+
+          <div class="stats-row">
+            <span>认识</span>
+            <strong id="correctCount">0</strong>
+          </div>
+
+
+          <div class="stats-row">
+            <span>错误</span>
+            <strong id="wrongCount">0</strong>
+          </div>
+
+        </div>
+
+
+        <div class="weak-title">
+          当前薄弱假名
+        </div>
+
+
+        <div
+          class="weak-list"
+          id="weakList"
+        >
+          暂无
+        </div>
+
+      </div>
+
+
+      <div class="footer-tip">
+        空格：显示答案　
+        ←：不认识　
+        →：认识
+        <br>
+        建议每学完一行，再开启下一行。
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <script>
+
+    /* ========================================
+       五十音数据
+       ======================================== */
+
+    const kanaData = [
+
+      // あ行
+      {
+        kana: "あ",
+        roman: "a",
+        group: "a",
+        memory: "安 → あ → a"
+      },
+
+      {
+        kana: "い",
+        roman: "i",
+        group: "a",
+        memory: "以 → い → i"
+      },
+
+      {
+        kana: "う",
+        roman: "u",
+        group: "a",
+        memory: "宇 → う → u"
+      },
+
+      {
+        kana: "え",
+        roman: "e",
+        group: "a",
+        memory: "衣 → え → e"
+      },
+
+      {
+        kana: "お",
+        roman: "o",
+        group: "a",
+        memory: "於 → お → o；右上还有一点"
+      },
+
+
+      // か行
+      {
+        kana: "か",
+        roman: "ka",
+        group: "ka",
+        memory: "加 → か → ka"
+      },
+
+      {
+        kana: "き",
+        roman: "ki",
+        group: "ka",
+        memory: "幾 → き → ki；横线比较多"
+      },
+
+      {
+        kana: "く",
+        roman: "ku",
+        group: "ka",
+        memory: "久 → く → ku；也可以联想「哭 ku」"
+      },
+
+      {
+        kana: "け",
+        roman: "ke",
+        group: "ka",
+        memory: "計 → け → ke；联想「刻 ke 下记号」"
+      },
+
+      {
+        kana: "こ",
+        roman: "ko",
+        group: "ka",
+        memory: "己 → こ → ko；两条横线"
+      },
+
+
+      // さ行
+      {
+        kana: "さ",
+        roman: "sa",
+        group: "sa",
+        memory: "左 → さ → sa；也可联想「伞 sa」"
+      },
+
+      {
+        kana: "し",
+        roman: "shi",
+        group: "sa",
+        memory: "之 → し → shi"
+      },
+
+      {
+        kana: "す",
+        roman: "su",
+        group: "sa",
+        memory: "寸 → す → su；像丝线绕了一圈"
+      },
+
+      {
+        kana: "せ",
+        roman: "se",
+        group: "sa",
+        memory: "世 → せ → se"
+      },
+
+      {
+        kana: "そ",
+        roman: "so",
+        group: "sa",
+        memory: "曽 → そ → so；字形可以联想 S"
+      },
+
+
+      // た行
+      {
+        kana: "た",
+        roman: "ta",
+        group: "ta",
+        memory: "太 → た → ta"
+      },
+
+      {
+        kana: "ち",
+        roman: "chi",
+        group: "ta",
+        memory: "知 → ち → chi；注意不是 ti"
+      },
+
+      {
+        kana: "つ",
+        roman: "tsu",
+        group: "ta",
+        memory: "川 → つ → tsu；像一个大弯钩"
+      },
+
+      {
+        kana: "て",
+        roman: "te",
+        group: "ta",
+        memory: "天 → て → te"
+      },
+
+      {
+        kana: "と",
+        roman: "to",
+        group: "ta",
+        memory: "止 → と → to"
+      },
+
+
+      // な行
+      {
+        kana: "な",
+        roman: "na",
+        group: "na",
+        memory: "奈 → な → na"
+      },
+
+      {
+        kana: "に",
+        roman: "ni",
+        group: "na",
+        memory: "仁 → に → ni；两条横线很明显"
+      },
+
+      {
+        kana: "ぬ",
+        roman: "nu",
+        group: "na",
+        memory: "奴 → ぬ → nu；有圈并拖着尾巴"
+      },
+
+      {
+        kana: "ね",
+        roman: "ne",
+        group: "na",
+        memory: "祢 → ね → ne；右侧绕一个圈"
+      },
+
+      {
+        kana: "の",
+        roman: "no",
+        group: "na",
+        memory: "乃 → の → no；像一笔画出的圆圈"
+      },
+
+
+      // は行
+      {
+        kana: "は",
+        roman: "ha",
+        group: "ha",
+        memory: "波 → は → ha；注意和 ほ 区分"
+      },
+
+      {
+        kana: "ひ",
+        roman: "hi",
+        group: "ha",
+        memory: "比 → ひ → hi"
+      },
+
+      {
+        kana: "ふ",
+        roman: "fu",
+        group: "ha",
+        memory: "不 → ふ → fu；像呼出一口气"
+      },
+
+      {
+        kana: "へ",
+        roman: "he",
+        group: "ha",
+        memory: "部 → へ → he；字形像 ^"
+      },
+
+      {
+        kana: "ほ",
+        roman: "ho",
+        group: "ha",
+        memory: "保 → ほ → ho；比 は 多一横"
+      },
+
+
+      // ま行
+      {
+        kana: "ま",
+        roman: "ma",
+        group: "ma",
+        memory: "末 → ま → ma"
+      },
+
+      {
+        kana: "み",
+        roman: "mi",
+        group: "ma",
+        memory: "美 → み → mi"
+      },
+
+      {
+        kana: "む",
+        roman: "mu",
+        group: "ma",
+        memory: "武 → む → mu；下面卷起来"
+      },
+
+      {
+        kana: "め",
+        roman: "me",
+        group: "ma",
+        memory: "女 → め → me；注意和 ぬ 区分"
+      },
+
+      {
+        kana: "も",
+        roman: "mo",
+        group: "ma",
+        memory: "毛 → も → mo"
+      },
+
+
+      // や行
+      {
+        kana: "や",
+        roman: "ya",
+        group: "ya",
+        memory: "也 → や → ya"
+      },
+
+      {
+        kana: "ゆ",
+        roman: "yu",
+        group: "ya",
+        memory: "由 → ゆ → yu"
+      },
+
+      {
+        kana: "よ",
+        roman: "yo",
+        group: "ya",
+        memory: "与 → よ → yo"
+      },
+
+
+      // ら行
+      {
+        kana: "ら",
+        roman: "ra",
+        group: "ra",
+        memory: "良 → ら → ra"
+      },
+
+      {
+        kana: "り",
+        roman: "ri",
+        group: "ra",
+        memory: "利 → り → ri；通常写成两笔"
+      },
+
+      {
+        kana: "る",
+        roman: "ru",
+        group: "ra",
+        memory: "留 → る → ru；下面有小圈和尾巴"
+      },
+
+      {
+        kana: "れ",
+        roman: "re",
+        group: "ra",
+        memory: "礼 → れ → re；右边直接甩出去"
+      },
+
+      {
+        kana: "ろ",
+        roman: "ro",
+        group: "ra",
+        memory: "呂 → ろ → ro；比 る 更简单"
+      },
+
+
+      // わ行
+      {
+        kana: "わ",
+        roman: "wa",
+        group: "wa",
+        memory: "和 → わ → wa"
+      },
+
+      {
+        kana: "を",
+        roman: "o",
+        group: "wa",
+        memory: "遠 → を；现代日语通常读 o，也常写作 wo"
+      },
+
+      {
+        kana: "ん",
+        roman: "n",
+        group: "wa",
+        memory: "ん → n；鼻音，类似「嗯」的尾音"
+      }
+
+    ];
+
+
+    /* ========================================
+       配置
+       ======================================== */
+
+    const STORAGE_KEY =
+      "kanaFlashcardState";
+
+    const STORAGE_VERSION = 2;
+
+    const MAX_MASTERY = 5;
+
+
+    /* ========================================
+       页面状态
+       ======================================== */
+
+    let currentItem = null;
+
+    let currentDirection =
+      "kanaToRoman";
+
+    let answerVisible = false;
+
+
+    /*
+     * 默认就是你目前学过的前 15 个。
+     */
+    let selectedGroups =
+      new Set([
+        "a",
+        "ka",
+        "sa"
+      ]);
+
+
+    let stats = {
+      total: 0,
+      correct: 0,
+      wrong: 0
+    };
+
+
+    let kanaStats = {};
+
+
+    /* ========================================
+       默认假名状态
+       ======================================== */
+
+    function createDefaultKanaStats() {
+
+      const result = {};
+
+
+      kanaData.forEach(item => {
+
+        result[item.kana] = {
+
+          /*
+           * 历史正确数
+           */
+          correct: 0,
+
+          /*
+           * 历史错误数
+           */
+          wrong: 0,
+
+          /*
+           * 当前连续正确数
+           */
+          streak: 0,
+
+          /*
+           * 掌握度：
+           * 0 ~ 5
+           */
+          mastery: 0,
+
+          /*
+           * 最近一次结果
+           */
+          lastResult: null
+
+        };
+
+      });
+
+
+      return result;
+
+    }
+
+
+    kanaStats =
+      createDefaultKanaStats();
+
+
+    /* ========================================
+       DOM
+       ======================================== */
+
+    const questionEl =
+      document.getElementById(
+        "question"
+      );
+
+    const answerEl =
+      document.getElementById(
+        "answer"
+      );
+
+    const hintEl =
+      document.getElementById(
+        "hint"
+      );
+
+    const totalEl =
+      document.getElementById(
+        "total"
+      );
+
+    const correctCountEl =
+      document.getElementById(
+        "correctCount"
+      );
+
+    const wrongCountEl =
+      document.getElementById(
+        "wrongCount"
+      );
+
+    const accuracyEl =
+      document.getElementById(
+        "accuracy"
+      );
+
+    const weakListEl =
+      document.getElementById(
+        "weakList"
+      );
+
+    const modeEl =
+      document.getElementById(
+        "mode"
+      );
+
+    const weightModeEl =
+      document.getElementById(
+        "weightMode"
+      );
+
+    const selectedInfoEl =
+      document.getElementById(
+        "selectedInfo"
+      );
+
+    const cardEl =
+      document.getElementById(
+        "card"
+      );
+
+    const groupButtons =
+      document.querySelectorAll(
+        ".group-button"
+      );
+
+
+    /* ========================================
+       保存状态
+       ======================================== */
+
+    function saveState() {
+
+      const state = {
+
+        version:
+          STORAGE_VERSION,
+
+        selectedGroups:
+          [...selectedGroups],
+
+        stats,
+
+        kanaStats,
+
+        mode:
+          modeEl.value,
+
+        weightMode:
+          weightModeEl.value
+
+      };
+
+
+      try {
+
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(state)
+        );
+
+      } catch (error) {
+
+        console.error(
+          "保存学习记录失败：",
+          error
+        );
+
+      }
+
+    }
+
+
+    /* ========================================
+       从旧数据推算掌握度
+       ======================================== */
+
+    function inferMastery(
+      correct,
+      wrong
+    ) {
+
+      const total =
+        correct + wrong;
+
+
+      if (total === 0) {
+        return 0;
+      }
+
+
+      const accuracy =
+        correct / total;
+
+
+      if (
+        correct >= 8 &&
+        accuracy >= 0.92
+      ) {
+        return 5;
+      }
+
+
+      if (
+        correct >= 5 &&
+        accuracy >= 0.85
+      ) {
+        return 4;
+      }
+
+
+      if (
+        correct >= 3 &&
+        accuracy >= 0.75
+      ) {
+        return 3;
+      }
+
+
+      if (
+        accuracy >= 0.65
+      ) {
+        return 2;
+      }
+
+
+      if (
+        accuracy >= 0.5
+      ) {
+        return 1;
+      }
+
+
+      return 0;
+
+    }
+
+
+    /* ========================================
+       读取状态
+       ======================================== */
+
+    function loadState() {
+
+      try {
+
+        const raw =
+          localStorage.getItem(
+            STORAGE_KEY
+          );
+
+
+        if (!raw) {
+          return;
+        }
+
+
+        const saved =
+          JSON.parse(raw);
+
+
+        /*
+         * 恢复选择范围
+         */
+        if (
+          Array.isArray(
+            saved.selectedGroups
+          )
+        ) {
+
+          selectedGroups =
+            new Set(
+              saved.selectedGroups
+            );
+
+        }
+
+
+        /*
+         * 恢复总体统计
+         */
+        if (
+          saved.stats
+        ) {
+
+          stats = {
+
+            total:
+              Number(
+                saved.stats.total
+              ) || 0,
+
+            correct:
+              Number(
+                saved.stats.correct
+              ) || 0,
+
+            wrong:
+              Number(
+                saved.stats.wrong
+              ) || 0
+
+          };
+
+        }
+
+
+        /*
+         * 恢复每个假名记录
+         */
+        if (
+          saved.kanaStats
+        ) {
+
+          kanaData.forEach(
+            item => {
+
+              const old =
+                saved.kanaStats[
+                  item.kana
+                ];
+
+
+              if (!old) {
+                return;
+              }
+
+
+              const correct =
+                Number(
+                  old.correct
+                ) || 0;
+
+
+              const wrong =
+                Number(
+                  old.wrong
+                ) || 0;
+
+
+              let mastery;
+
+
+              /*
+               * 新版数据
+               */
+              if (
+                old.mastery !==
+                  undefined &&
+                Number.isFinite(
+                  Number(
+                    old.mastery
+                  )
+                )
+              ) {
+
+                mastery =
+                  Math.max(
+                    0,
+                    Math.min(
+                      MAX_MASTERY,
+                      Number(
+                        old.mastery
+                      )
+                    )
+                  );
+
+              }
+
+              /*
+               * 旧版数据自动迁移
+               */
+              else {
+
+                mastery =
+                  inferMastery(
+                    correct,
+                    wrong
+                  );
+
+              }
+
+
+              kanaStats[
+                item.kana
+              ] = {
+
+                correct,
+
+                wrong,
+
+                streak:
+                  Number(
+                    old.streak
+                  ) || 0,
+
+                mastery,
+
+                lastResult:
+                  [
+                    "correct",
+                    "wrong"
+                  ].includes(
+                    old.lastResult
+                  )
+                    ? old.lastResult
+                    : null
+
+              };
+
+            }
+          );
+
+        }
+
+
+        /*
+         * 恢复测试模式
+         */
+        if (
+          [
+            "kanaToRoman",
+            "romanToKana",
+            "random"
+          ].includes(
+            saved.mode
+          )
+        ) {
+
+          modeEl.value =
+            saved.mode;
+
+        }
+
+
+        /*
+         * 恢复抽取模式
+         */
+        if (
+          [
+            "weighted",
+            "pure"
+          ].includes(
+            saved.weightMode
+          )
+        ) {
+
+          weightModeEl.value =
+            saved.weightMode;
+
+        }
+
+
+        /*
+         * 自动升级旧数据。
+         */
+        saveState();
+
+      } catch (error) {
+
+        console.error(
+          "读取学习记录失败：",
+          error
+        );
+
+      }
+
+    }
+
+
+    /* ========================================
+       同步范围按钮
+       ======================================== */
+
+    function syncGroupButtons() {
+
+      groupButtons.forEach(
+        button => {
+
+          const group =
+            button.dataset.group;
+
+
+          button.classList.toggle(
+            "active",
+            selectedGroups.has(
+              group
+            )
+          );
+
+        }
+      );
+
+    }
+
+
+    /* ========================================
+       当前可抽取假名
+       ======================================== */
+
+    function getAvailableItems() {
+
+      return kanaData.filter(
+        item =>
+          selectedGroups.has(
+            item.group
+          )
+      );
+
+    }
+
+
+    /* ========================================
+       普通随机
+       ======================================== */
+
+    function pureRandom(items) {
+
+      if (
+        items.length === 0
+      ) {
+        return null;
+      }
+
+
+      const index =
+        Math.floor(
+          Math.random() *
+          items.length
+        );
+
+
+      return items[index];
+
+    }
+
+
+    /* ========================================
+       计算掌握度权重
+       ======================================== */
+
+    function getItemWeight(
+      item
+    ) {
+
+      const stat =
+        kanaStats[
+          item.kana
+        ];
+
+
+      /*
+       * mastery = 0 → 6
+       * mastery = 1 → 5
+       * mastery = 2 → 4
+       * mastery = 3 → 3
+       * mastery = 4 → 2
+       * mastery = 5 → 1
+       */
+      let weight =
+        MAX_MASTERY -
+        stat.mastery +
+        1;
+
+
+      /*
+       * 最近一次答错：
+       * 增加近期复习概率。
+       */
+      if (
+        stat.lastResult ===
+        "wrong"
+      ) {
+
+        weight += 3;
+
+      }
+
+
+      return Math.max(
+        1,
+        weight
+      );
+
+    }
+
+
+    /* ========================================
+       加权随机
+       ======================================== */
+
+    function weightedRandom(
+      items
+    ) {
+
+      /*
+       * 不直接构建巨大数组，
+       * 使用总权重随机，
+       * 后面数据增加也比较合适。
+       */
+
+      const weightedItems =
+        items.map(
+          item => ({
+            item,
+            weight:
+              getItemWeight(
+                item
+              )
+          })
+        );
+
+
+      const totalWeight =
+        weightedItems.reduce(
+          (
+            total,
+            entry
+          ) =>
+            total +
+            entry.weight,
+          0
+        );
+
+
+      let random =
+        Math.random() *
+        totalWeight;
+
+
+      for (
+        const entry
+        of weightedItems
+      ) {
+
+        random -=
+          entry.weight;
+
+
+        if (
+          random <= 0
+        ) {
+
+          return entry.item;
+
+        }
+
+      }
+
+
+      return items[
+        items.length - 1
+      ];
+
+    }
+
+
+    /* ========================================
+       获取随机题
+       ======================================== */
+
+    function getRandomItem() {
+
+      const items =
+        getAvailableItems();
+
+
+      if (
+        items.length === 0
+      ) {
+
+        return null;
+
+      }
+
+
+      if (
+        weightModeEl.value ===
+        "weighted"
+      ) {
+
+        return weightedRandom(
+          items
+        );
+
+      }
+
+
+      return pureRandom(
+        items
+      );
+
+    }
+
+
+    /* ========================================
+       测试方向
+       ======================================== */
+
+    function getDirection() {
+
+      if (
+        modeEl.value ===
+        "random"
+      ) {
+
+        return (
+          Math.random() >
+          0.5
+        )
+          ? "kanaToRoman"
+          : "romanToKana";
+
+      }
+
+
+      return modeEl.value;
+
+    }
+
+
+    /* ========================================
+       下一题
+       ======================================== */
+
+    function nextCard() {
+
+      currentItem =
+        getRandomItem();
+
+
+      answerVisible =
+        false;
+
+
+      answerEl.textContent =
+        "";
+
+
+      hintEl.textContent =
+        "点击卡片或按空格查看答案";
+
+
+      questionEl
+        .classList
+        .remove(
+          "roman"
+        );
+
+
+      /*
+       * 没选择任何范围
+       */
+      if (
+        !currentItem
+      ) {
+
+        questionEl.textContent =
+          "—";
+
+
+        hintEl.textContent =
+          "请至少选择一个背诵范围";
+
+
+        return;
+
+      }
+
+
+      currentDirection =
+        getDirection();
+
+
+      /*
+       * 假名 → 罗马音
+       */
+      if (
+        currentDirection ===
+        "kanaToRoman"
+      ) {
+
+        questionEl.textContent =
+          currentItem.kana;
+
+      }
+
+      /*
+       * 罗马音 → 假名
+       */
+      else {
+
+        questionEl.textContent =
+          currentItem.roman;
+
+
+        questionEl
+          .classList
+          .add(
+            "roman"
+          );
+
+      }
+
+    }
+
+
+    /* ========================================
+       显示答案
+       ======================================== */
+
+    function showAnswer() {
+
+      if (
+        !currentItem
+      ) {
+        return;
+      }
+
+
+      answerVisible =
+        true;
+
+
+      if (
+        currentDirection ===
+        "kanaToRoman"
+      ) {
+
+        answerEl.textContent =
+          currentItem.roman;
+
+      } else {
+
+        answerEl.textContent =
+          currentItem.kana;
+
+      }
+
+
+      const stat =
+        kanaStats[
+          currentItem.kana
+        ];
+
+
+      hintEl.textContent =
+        `${currentItem.memory} ｜ 掌握度 ${stat.mastery}/${MAX_MASTERY}`;
+
+    }
+
+
+    /* ========================================
+       更新掌握度
+       ======================================== */
+
+    function updateKanaMastery(
+      item,
+      isCorrect
+    ) {
+
+      const stat =
+        kanaStats[
+          item.kana
+        ];
+
+
+      /*
+       * 答对
+       */
+      if (
+        isCorrect
+      ) {
+
+        stat.correct++;
+
+        stat.streak++;
+
+        stat.lastResult =
+          "correct";
+
+
+        /*
+         * 连续答对两次：
+         * 掌握度 +1
+         */
+        if (
+          stat.streak >= 2
+        ) {
+
+          stat.mastery =
+            Math.min(
+              MAX_MASTERY,
+              stat.mastery + 1
+            );
+
+
+          stat.streak =
+            0;
+
+        }
+
+      }
+
+
+      /*
+       * 答错
+       */
+      else {
+
+        stat.wrong++;
+
+        stat.streak =
+          0;
+
+        stat.lastResult =
+          "wrong";
+
+
+        /*
+         * 答错降低 2 级。
+         */
+        stat.mastery =
+          Math.max(
+            0,
+            stat.mastery - 2
+          );
+
+      }
+
+    }
+
+
+    /* ========================================
+       标记结果
+       ======================================== */
+
+    function markAnswer(
+      isCorrect
+    ) {
+
+      if (
+        !currentItem
+      ) {
+        return;
+      }
+
+
+      /*
+       * 尚未显示答案时，
+       * 第一次操作只负责显示答案。
+       */
+      if (
+        !answerVisible
+      ) {
+
+        showAnswer();
+
+        return;
+
+      }
+
+
+      stats.total++;
+
+
+      if (
+        isCorrect
+      ) {
+
+        stats.correct++;
+
+      } else {
+
+        stats.wrong++;
+
+      }
+
+
+      updateKanaMastery(
+        currentItem,
+        isCorrect
+      );
+
+
+      saveState();
+
+      updateStats();
+
+      nextCard();
+
+    }
+
+
+    /* ========================================
+       更新统计
+       ======================================== */
+
+    function updateStats() {
+
+      totalEl.textContent =
+        stats.total;
+
+
+      correctCountEl.textContent =
+        stats.correct;
+
+
+      wrongCountEl.textContent =
+        stats.wrong;
+
+
+      const accuracy =
+        stats.total === 0
+          ? 0
+          : Math.round(
+              stats.correct /
+              stats.total *
+              100
+            );
+
+
+      accuracyEl.textContent =
+        accuracy + "%";
+
+
+      updateWeakList();
+
+    }
+
+
+    /* ========================================
+       薄弱假名
+       ======================================== */
+
+    function updateWeakList() {
+
+      const weakItems =
+        kanaData
+
+          /*
+           * 必须练过
+           */
+          .filter(
+            item => {
+
+              const stat =
+                kanaStats[
+                  item.kana
+                ];
+
+
+              return (
+                stat.correct +
+                stat.wrong >
+                0
+              ) &&
+              stat.mastery <
+                MAX_MASTERY;
+
+            }
+          )
+
+          /*
+           * 排序优先级：
+           *
+           * 1. 掌握度低
+           * 2. 最近答错
+           * 3. 历史错误多
+           */
+          .sort(
+            (
+              a,
+              b
+            ) => {
+
+              const statA =
+                kanaStats[
+                  a.kana
+                ];
+
+
+              const statB =
+                kanaStats[
+                  b.kana
+                ];
+
+
+              if (
+                statA.mastery !==
+                statB.mastery
+              ) {
+
+                return (
+                  statA.mastery -
+                  statB.mastery
+                );
+
+              }
+
+
+              if (
+                statA.lastResult !==
+                statB.lastResult
+              ) {
+
+                if (
+                  statA.lastResult ===
+                  "wrong"
+                ) {
+                  return -1;
+                }
+
+
+                if (
+                  statB.lastResult ===
+                  "wrong"
+                ) {
+                  return 1;
+                }
+
+              }
+
+
+              return (
+                statB.wrong -
+                statA.wrong
+              );
+
+            }
+          )
+
+          .slice(
+            0,
+            8
+          );
+
+
+      if (
+        weakItems.length ===
+        0
+      ) {
+
+        weakListEl.textContent =
+          "暂无";
+
+        return;
+
+      }
+
+
+      weakListEl.innerHTML =
+        "";
+
+
+      weakItems.forEach(
+        item => {
+
+          const stat =
+            kanaStats[
+              item.kana
+            ];
+
+
+          const element =
+            document.createElement(
+              "div"
+            );
+
+
+          element.className =
+            "weak-item";
+
+
+          element.textContent =
+            `${item.kana} ${item.roman} · 掌握 ${stat.mastery}/${MAX_MASTERY} · 错 ${stat.wrong}`;
+
+
+          weakListEl.appendChild(
+            element
+          );
+
+        }
+      );
+
+    }
+
+
+    /* ========================================
+       更新学习范围文字
+       ======================================== */
+
+    function updateSelectedInfo() {
+
+      const items =
+        getAvailableItems();
+
+
+      const masteredCount =
+        items.filter(
+          item =>
+            kanaStats[
+              item.kana
+            ].mastery ===
+            MAX_MASTERY
+        ).length;
+
+
+      selectedInfoEl.textContent =
+        `当前抽取 ${items.length} 个平假名 · 已掌握 ${masteredCount} 个`;
+
+    }
+
+
+    /* ========================================
+       行选择
+       ======================================== */
+
+    groupButtons.forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const group =
+              button.dataset.group;
+
+
+            if (
+              selectedGroups.has(
+                group
+              )
+            ) {
+
+              selectedGroups.delete(
+                group
+              );
+
+            } else {
+
+              selectedGroups.add(
+                group
+              );
+
+            }
+
+
+            syncGroupButtons();
+
+            updateSelectedInfo();
+
+            saveState();
+
+            nextCard();
+
+          }
+        );
+
+      }
+    );
+
+
+    /* ========================================
+       全选
+       ======================================== */
+
+    document
+      .getElementById(
+        "selectAll"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          selectedGroups =
+            new Set([
+              "a",
+              "ka",
+              "sa",
+              "ta",
+              "na",
+              "ha",
+              "ma",
+              "ya",
+              "ra",
+              "wa"
+            ]);
+
+
+          syncGroupButtons();
+
+          updateSelectedInfo();
+
+          saveState();
+
+          nextCard();
+
+        }
+      );
+
+
+    /* ========================================
+       清空选择
+       ======================================== */
+
+    document
+      .getElementById(
+        "clearAll"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          selectedGroups.clear();
+
+
+          syncGroupButtons();
+
+          updateSelectedInfo();
+
+          saveState();
+
+          nextCard();
+
+        }
+      );
+
+
+    /* ========================================
+       重置学习记录
+       ======================================== */
+
+    document
+      .getElementById(
+        "resetProgress"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          const confirmed =
+            window.confirm(
+              "确定要重置全部学习记录吗？\n\n当前选择的学习范围和设置会保留。"
+            );
+
+
+          if (
+            !confirmed
+          ) {
+            return;
+          }
+
+
+          stats = {
+            total: 0,
+            correct: 0,
+            wrong: 0
+          };
+
+
+          kanaStats =
+            createDefaultKanaStats();
+
+
+          saveState();
+
+          updateStats();
+
+          updateSelectedInfo();
+
+          nextCard();
+
+        }
+      );
+
+
+    /* ========================================
+       显示答案按钮
+       ======================================== */
+
+    document
+      .getElementById(
+        "showAnswer"
+      )
+      .addEventListener(
+        "click",
+        showAnswer
+      );
+
+
+    /* ========================================
+       不认识
+       ======================================== */
+
+    document
+      .getElementById(
+        "wrong"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          markAnswer(
+            false
+          );
+
+        }
+      );
+
+
+    /* ========================================
+       认识
+       ======================================== */
+
+    document
+      .getElementById(
+        "correct"
+      )
+      .addEventListener(
+        "click",
+        () => {
+
+          markAnswer(
+            true
+          );
+
+        }
+      );
+
+
+    /* ========================================
+       卡片点击
+       ======================================== */
+
+    cardEl.addEventListener(
+      "click",
+      showAnswer
+    );
+
+
+    /*
+     * 键盘用户：
+     * 卡片获得焦点后
+     * Enter 也可显示答案。
+     */
+    cardEl.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.code ===
+          "Enter"
+        ) {
+
+          event.preventDefault();
+
+          showAnswer();
+
+        }
+
+      }
+    );
+
+
+    /* ========================================
+       设置变化
+       ======================================== */
+
+    modeEl.addEventListener(
+      "change",
+      () => {
+
+        saveState();
+
+        nextCard();
+
+      }
+    );
+
+
+    weightModeEl.addEventListener(
+      "change",
+      () => {
+
+        saveState();
+
+        nextCard();
+
+      }
+    );
+
+
+    /* ========================================
+       全局键盘快捷键
+       ======================================== */
+
+    document.addEventListener(
+      "keydown",
+      event => {
+
+        /*
+         * 防止 select 正在操作时
+         * 快捷键产生干扰。
+         */
+        const tagName =
+          document.activeElement
+            ?.tagName
+            ?.toLowerCase();
+
+
+        if (
+          tagName ===
+          "select"
+        ) {
+          return;
+        }
+
+
+        /*
+         * 空格：
+         * 显示答案
+         */
+        if (
+          event.code ===
+          "Space"
+        ) {
+
+          event.preventDefault();
+
+          showAnswer();
+
+        }
+
+
+        /*
+         * 左箭头：
+         * 不认识
+         */
+        if (
+          event.code ===
+          "ArrowLeft"
+        ) {
+
+          event.preventDefault();
+
+          markAnswer(
+            false
+          );
+
+        }
+
+
+        /*
+         * 右箭头：
+         * 认识
+         */
+        if (
+          event.code ===
+          "ArrowRight"
+        ) {
+
+          event.preventDefault();
+
+          markAnswer(
+            true
+          );
+
+        }
+
+      }
+    );
+
+
+    /* ========================================
+       初始化
+       ======================================== */
+
+    loadState();
+
+    syncGroupButtons();
+
+    updateStats();
+
+    updateSelectedInfo();
+
+    nextCard();
+
+  </script>
+
+</body>
+</html>
