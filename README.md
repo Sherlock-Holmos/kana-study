@@ -1,102 +1,113 @@
-# Kana Study
+# Kana Study v9.0
 
-> 本版基于 GitHub `main` 提交 `05ef0829c55021c9a113473ef7ffbb40fa901c44` 重构。
+一个纯静态、可直接部署到 GitHub Pages 的日语假名学习系统。v9 将原来的“五十音抽认卡”升级为完整学习闭环：课程 → 学习会话 → 双向掌握度 → SRS 复习 → 假名表 → 长期进度。
 
-一个纯静态的五十音学习工具，使用 GitHub Pages 部署，Supabase Auth / Postgres 同步账号学习进度。
+## 主要功能
 
-## v8 信息架构优化
-
-这次不修改学习数据结构，重点重新划分“学习 / 复习 / 查看结果”三种用户任务：
-
-- `学习`：普通学习、当前学习范围、即时反馈、今日目标。
-- `复习`：到期复习、薄弱假名、最近错题三个明确入口。
-- `进度`：只查看数据，并拆成“总览 / 五十音 / 活跃度”三个二级视图。
-- 学习设置和账号继续使用弹窗，不新增低价值一级页面。
-- GitHub 风格 365 天学习活跃度热力图保留在“进度 → 活跃度”。
-- 专项复习答错后 3–5 题重现的机制保持不变。
-- PWA 静态缓存版本升级到 v8。
-
-## 信息架构
-
-```text
-五十音学习
-├── 学习
-│   ├── 抽认卡
-│   ├── 即时答题反馈
-│   ├── 今日目标
-│   └── 学习设置入口
-├── 复习
-│   ├── 到期复习
-│   ├── 薄弱假名
-│   └── 最近错题
-├── 进度
-│   ├── 总览
-│   │   ├── 总体掌握度
-│   │   ├── 已掌握 / 学习中 / 未学习 / 到期复习
-│   │   └── 累计与今日练习表现
-│   ├── 五十音
-│   │   └── 46 个基础平假名掌握矩阵
-│   └── 活跃度
-│       └── 过去 365 天 GitHub 风格学习热力图
-├── 学习设置弹窗
-└── 账号弹窗
-```
+- 5 个一级页面：首页 / 学习 / 复习 / 假名表 / 进度
+- 平假名与片假名，各 104 个可训练项目
+  - 46 个基础清音
+  - 25 个浊音 / 半浊音
+  - 33 个拗音
+- 促音与长音规则课
+- 课程制学习：认识 → 识别 → 主动回忆 → 混合测试
+- 每个假名分开记录：
+  - recognition：假名 → 罗马音
+  - recall：罗马音 → 假名
+- 自定义 SRS 调度：稳定度、难度、连续正确、lapse、下次复习时间
+- 答错后约 3–5 题短期重现，最多再强化 2 次
+- 到期复习 / 薄弱强化 / 最近 14 天错题 / 自由复习
+- Session 总结：题数、正确率、用时、错题
+- 假名详情：两个方向掌握度、累计表现、最近/下次复习、单项专项练习
+- 365 天 GitHub 风格学习活跃度热力图
+- 每日目标、连续学习、累计统计
+- Supabase Auth + `user_progress` JSONB 云同步
+- 游客 / 账号数据隔离与首次登录迁移
+- v5/v8 旧数据自动迁移为 v9 Schema
+- JSON 导出 / 导入（合并而非直接覆盖）
+- PWA / 离线 App Shell
+- ES Modules
+- Node 内置测试 + GitHub Actions CI
 
 ## 项目结构
 
 ```text
 kana-study/
-├── CNAME
 ├── index.html
-├── README.md
+├── CNAME
 ├── manifest.webmanifest
 ├── sw.js
-├── icons/
-│   ├── icon.svg
-│   ├── icon-192.png
-│   └── icon-512.png
+├── package.json
 ├── css/
-│   ├── base.css
-│   ├── auth.css
-│   ├── study.css
-│   ├── review.css
-│   ├── progress.css
-│   └── responsive.css
-└── js/
-    ├── config.js
-    ├── auth-sync.js
-    ├── kana-data.js
-    ├── progress.js
-    ├── study.js
-    ├── ui.js
-    ├── data-tools.js
-    └── app.js
+├── icons/
+├── src/
+│   ├── core/
+│   ├── data/
+│   ├── learning/
+│   ├── review/
+│   ├── sync/
+│   ├── components/
+│   ├── views/
+│   └── ui/
+├── test/
+├── scripts/
+├── supabase/schema.sql
+└── .github/workflows/ci.yml
 ```
 
-## 数据兼容
+## 本地运行
 
-本次没有升级 `STORAGE_VERSION`，仍沿用 v5 学习数据结构，也不需要修改 Supabase 表或 RLS。
-
-账号进度、游客隔离、多设备计数、每日学习记录、复习时间、导入导出和 PWA 离线能力均保留。
-
-## PWA / 离线
-
-应用通过 `sw.js` 缓存本地静态资源。首次仍需联网打开，使浏览器安装 Service Worker 并缓存资源。
-
-离线时可以继续学习，记录写入 localStorage；恢复网络后登录账号会继续同步。
-
-## 部署
-
-仍然是纯 HTML / CSS / JavaScript，无构建步骤。
+因为 v9 使用原生 ES Modules，不要直接双击 `index.html` 用 `file://` 打开。任选一个本地静态服务器：
 
 ```bash
-git add .
-git commit -m "refactor: separate study review and progress flows"
-git push
+python -m http.server 8000
 ```
 
-GitHub Pages 继续从 `main` 根目录部署即可。当前自定义域名由 `CNAME` 保留。
+然后访问 `http://localhost:8000/`。
 
-## 清理旧补丁
+## 检查
 
-当前 GitHub 仓库根目录中的 `apply-heatmap-v7.ps1` 是一次性迁移脚本，不属于运行时项目文件；v8 完整包不再包含它。覆盖项目后可以安全删除该脚本。
+```bash
+npm run check
+npm test
+```
+
+项目没有构建步骤，也不需要安装 npm 依赖。
+
+## Supabase
+
+沿用现有 Supabase 项目与 `public.user_progress` 表。若从零部署，可执行：
+
+```text
+supabase/schema.sql
+```
+
+浏览器内只使用 Publishable Key；不要把 `service_role` / secret key 放进仓库。
+
+## GitHub Pages
+
+仓库仍可直接从根目录发布。`CNAME` 保留为：
+
+```text
+nihongo.jokersh.site
+```
+
+## v9 数据模型
+
+顶层 `schemaVersion` 为 `9`。核心结构：
+
+```json
+{
+  "schemaVersion": 9,
+  "settings": {},
+  "curriculum": {},
+  "items": {},
+  "activity": {},
+  "lifetime": {},
+  "sessions": [],
+  "activeSession": null,
+  "meta": {}
+}
+```
+
+每个假名的两个方向单独记录 SRS 状态，并使用设备级单调计数器降低多设备合并时丢计数的风险。

@@ -3,489 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#f3f4f6">
+  <meta name="theme-color" content="#f6f7fb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="五十音学习">
-  <title>五十音学习</title>
+  <meta name="apple-mobile-web-app-title" content="Kana Study">
+  <meta name="description" content="课程制假名学习、双向掌握度、间隔复习与学习进度。">
+  <title>Kana Study · 假名学习系统</title>
 
-  <link rel="manifest" href="./manifest.webmanifest?v=8">
-  <link rel="icon" href="./icons/icon.svg?v=8" type="image/svg+xml">
-
-  <link rel="stylesheet" href="./css/base.css?v=8">
-  <link rel="stylesheet" href="./css/auth.css?v=8">
-  <link rel="stylesheet" href="./css/study.css?v=8">
-  <link rel="stylesheet" href="./css/review.css?v=8">
-  <link rel="stylesheet" href="./css/progress.css?v=8">
-  <link rel="stylesheet" href="./css/responsive.css?v=8">
+  <link rel="manifest" href="./manifest.webmanifest?v=9">
+  <link rel="icon" href="./icons/icon.svg?v=9" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png?v=9">
+  <link rel="stylesheet" href="./css/app.css?v=9">
+  <link rel="stylesheet" href="./css/responsive.css?v=9">
 </head>
 <body>
-  <main class="app">
+  <div class="app-shell">
     <header class="app-header">
-      <div class="app-heading">
-        <h1>五十音学习</h1>
-        <div class="subtitle">平假名 · 智能复习 · 云端同步</div>
-      </div>
+      <button class="brand" type="button" data-route="home" aria-label="返回首页">
+        <span class="brand-mark">あ</span>
+        <span><strong>Kana Study</strong><small>假名学习系统</small></span>
+      </button>
 
       <nav class="top-nav" aria-label="主导航">
-        <button class="top-nav-button active" type="button" data-view-target="study">学习</button>
-        <button class="top-nav-button" type="button" data-view-target="review">复习</button>
-        <button class="top-nav-button" type="button" data-view-target="progress">进度</button>
+        <button class="active" type="button" data-route="home">首页</button>
+        <button type="button" data-route="study">学习</button>
+        <button type="button" data-route="review">复习</button>
+        <button type="button" data-route="kana">假名表</button>
+        <button type="button" data-route="progress">进度</button>
       </nav>
 
-      <button
-        id="accountTrigger"
-        class="account-trigger"
-        type="button"
-        aria-haspopup="dialog"
-        aria-controls="authModal"
-      >
-        <span id="accountAvatar" class="account-avatar">人</span>
-        <span id="accountTriggerText" class="account-trigger-text">登录</span>
-        <span id="accountSyncDot" class="account-sync-dot" aria-hidden="true"></span>
+      <button id="accountTrigger" class="account-trigger" type="button" aria-haspopup="dialog">
+        <span class="account-avatar" data-account-avatar>人</span>
+        <span class="account-name" data-account-text>登录</span>
+        <i id="syncBadge" class="sync-badge" data-state="local" aria-hidden="true"></i>
       </button>
     </header>
 
-    <!-- 学习页 -->
-    <section id="studyView" class="app-view" data-view="study">
-      <section class="panel study-panel">
-        <div class="study-toolbar">
-          <div class="study-toolbar-copy">
-            <div class="study-toolbar-kicker">
-              <span class="eyebrow">当前练习</span>
-              <span id="sessionModeLabel" class="session-mode-label" hidden></span>
-            </div>
-            <strong id="settingsSummary">あ・か・さ · 假→罗 · 自评</strong>
-            <span id="selectedInfo" class="selected-info"></span>
-          </div>
-          <div class="study-toolbar-actions">
-            <button id="exitFocusedReview" class="focus-exit" type="button" hidden>退出专项</button>
-            <button id="openSettings" class="settings-trigger" type="button" aria-haspopup="dialog" aria-controls="settingsModal">
-              <span aria-hidden="true">⚙</span>
-              设置
-            </button>
-          </div>
-        </div>
+    <main id="viewRoot" class="view-root" aria-live="polite"></main>
 
-        <div
-          class="card"
-          id="card"
-          role="button"
-          tabindex="0"
-          aria-label="点击显示答案"
-        >
-          <div class="question" id="question"></div>
-          <div class="answer" id="answer"></div>
-          <div class="hint" id="hint">点击卡片或按空格查看答案</div>
-        </div>
-
-        <form id="answerForm" class="answer-form" hidden>
-          <input
-            id="answerInput"
-            class="answer-input"
-            type="text"
-            autocomplete="off"
-            autocapitalize="none"
-            spellcheck="false"
-            placeholder="输入答案后按 Enter"
-            aria-label="输入答案"
-          >
-          <button id="submitAnswer" class="answer-submit" type="submit">提交</button>
-          <button id="dontKnowInput" class="answer-skip" type="button">不会</button>
-        </form>
-
-        <div id="answerFeedback" class="answer-feedback" aria-live="polite" hidden></div>
-
-        <div class="buttons" id="selfButtons">
-          <button class="show-answer" id="showAnswer" type="button">显示答案</button>
-          <button class="wrong" id="wrong" type="button">✕ 不认识</button>
-          <button class="correct" id="correct" type="button">✓ 认识</button>
-        </div>
-
-        <div class="study-quick-summary" aria-label="今日学习概览">
-          <div class="goal-summary-row">
-            <div>
-              <span class="goal-label">今日目标</span>
-              <strong id="goalSummary">0 / 30</strong>
-            </div>
-            <span id="todaySummary">今日 0 题 · 正确率 0%</span>
-            <strong id="studyStreak">连续 0 天</strong>
-          </div>
-          <div class="goal-track" aria-hidden="true">
-            <div id="goalBar" class="goal-bar" style="width:0%"></div>
-          </div>
-        </div>
-
-        <div class="footer-tip">
-          自评：空格显示答案，← 不认识，→ 认识。输入模式直接键入答案并按 Enter。
-        </div>
-      </section>
-    </section>
-
-    <!-- 复习页 -->
-    <section id="reviewView" class="app-view" data-view="review" hidden>
-      <div class="review-heading">
-        <div>
-          <span class="eyebrow">复习中心</span>
-          <h2>今天要巩固什么</h2>
-        </div>
-        <div class="review-heading-note">从需要处理的内容直接开始，不必先翻统计数据</div>
-      </div>
-
-      <div class="review-grid">
-        <section class="review-card panel review-card-due">
-          <div class="review-card-topline">
-            <span class="review-card-icon" aria-hidden="true">期</span>
-            <span class="review-card-kicker">按复习计划</span>
-          </div>
-          <div class="review-card-title-row">
-            <div>
-              <h3>到期复习</h3>
-              <p>已经到达下次复习时间的假名。</p>
-            </div>
-            <strong id="reviewDueCount" class="review-count">0</strong>
-          </div>
-          <div id="reviewDuePreview" class="review-preview">暂无到期内容</div>
-          <button id="reviewStartDue" class="review-start primary" type="button">开始到期复习</button>
-        </section>
-
-        <section class="review-card panel review-card-weak">
-          <div class="review-card-topline">
-            <span class="review-card-icon" aria-hidden="true">弱</span>
-            <span class="review-card-kicker">按掌握度</span>
-          </div>
-          <div class="review-card-title-row">
-            <div>
-              <h3>薄弱假名</h3>
-              <p>优先处理掌握度低、错误较多的内容。</p>
-            </div>
-            <strong id="reviewWeakCount" class="review-count">0</strong>
-          </div>
-          <div id="weakList" class="weak-list review-preview">暂无</div>
-          <button id="reviewStartWeak" class="review-start primary" type="button">专项复习薄弱假名</button>
-        </section>
-
-        <section class="review-card panel review-card-recent">
-          <div class="review-card-topline">
-            <span class="review-card-icon" aria-hidden="true">错</span>
-            <span class="review-card-kicker">按近期表现</span>
-          </div>
-          <div class="review-card-title-row">
-            <div>
-              <h3>最近错题</h3>
-              <p>集中重练最近一次仍然答错的假名。</p>
-            </div>
-            <strong id="reviewRecentCount" class="review-count">0</strong>
-          </div>
-          <div id="recentWrongList" class="recent-wrong-list review-preview">暂无</div>
-          <button id="reviewStartRecent" class="review-start primary" type="button">复习最近错题</button>
-        </section>
-      </div>
-
-      <section class="review-guide panel">
-        <div>
-          <span class="eyebrow">复习策略</span>
-          <h3>答错后会短期重现</h3>
-        </div>
-        <p>专项复习中答错的假名会在约 3–5 题后再次出现，帮助你在短时间内重新提取记忆。退出专项后会恢复普通学习范围。</p>
-      </section>
-    </section>
-
-    <!-- 进度页 -->
-    <section id="progressView" class="app-view" data-view="progress" hidden>
-      <div class="progress-heading">
-        <div>
-          <span class="eyebrow">学习进度</span>
-          <h2>你的五十音掌握情况</h2>
-        </div>
-        <div id="progressUpdated" class="progress-updated">根据当前记录计算</div>
-      </div>
-
-      <nav class="progress-subnav" aria-label="进度分类">
-        <button class="progress-subnav-button active" type="button" data-progress-target="overview">总览</button>
-        <button class="progress-subnav-button" type="button" data-progress-target="kana">五十音</button>
-        <button class="progress-subnav-button" type="button" data-progress-target="activity">活跃度</button>
-      </nav>
-
-      <div class="progress-tab-panel" data-progress-panel="overview">
-        <section class="progress-overview panel">
-          <div class="progress-score-row">
-            <div>
-              <span class="progress-label">总体掌握度</span>
-              <strong id="progressPercent" class="progress-percent">0%</strong>
-            </div>
-            <div class="progress-mastered-copy">
-              <strong id="progressMastered">0 / 46</strong>
-              <span>完全掌握</span>
-            </div>
-          </div>
-          <div class="progress-track" aria-hidden="true">
-            <div id="progressBar" class="progress-bar" style="width:0%"></div>
-          </div>
-
-          <div class="level-grid">
-            <div class="level-card"><span>已掌握</span><strong id="levelMastered">0</strong></div>
-            <div class="level-card"><span>学习中</span><strong id="levelLearning">0</strong></div>
-            <div class="level-card"><span>未学习</span><strong id="levelUnseen">46</strong></div>
-            <div class="level-card"><span>到期复习</span><strong id="levelDue">0</strong></div>
-          </div>
-        </section>
-
-        <section class="progress-section panel">
-          <div class="section-heading-row">
-            <div>
-              <span class="eyebrow">累计结果</span>
-              <h3>练习表现</h3>
-            </div>
-          </div>
-          <div class="result-grid">
-            <div class="result-card"><span>已练习</span><strong id="total">0</strong></div>
-            <div class="result-card"><span>正确率</span><strong id="accuracy">0%</strong></div>
-            <div class="result-card"><span>正确</span><strong id="correctCount">0</strong></div>
-            <div class="result-card"><span>错误</span><strong id="wrongCount">0</strong></div>
-          </div>
-          <div class="today-detail">
-            <div><span>今日练习</span><strong id="progressTodayTotal">0 题</strong></div>
-            <div><span>今日正确率</span><strong id="progressTodayAccuracy">0%</strong></div>
-            <div><span>连续学习</span><strong id="progressStreak">0 天</strong></div>
-          </div>
-        </section>
-      </div>
-
-      <div class="progress-tab-panel" data-progress-panel="kana" hidden>
-        <section class="progress-section panel">
-          <div class="section-heading-row">
-            <div>
-              <span class="eyebrow">掌握矩阵</span>
-              <h3>46 个基础平假名</h3>
-            </div>
-            <div class="mastery-legend" aria-label="掌握度图例">
-              <span><i class="legend-dot unseen"></i>未学</span>
-              <span><i class="legend-dot learning"></i>学习中</span>
-              <span><i class="legend-dot mastered"></i>掌握</span>
-            </div>
-          </div>
-          <p class="progress-tab-intro">这里专门查看每个假名的掌握度。鼠标悬停或长按可查看累计正确、错误与掌握等级。</p>
-          <div id="masteryGrid" class="mastery-grid"></div>
-        </section>
-      </div>
-
-      <div class="progress-tab-panel" data-progress-panel="activity" hidden>
-        <section class="progress-section panel activity-section">
-          <div class="section-heading-row activity-heading-row">
-            <div>
-              <span class="eyebrow">过去 365 天</span>
-              <h3>学习活跃度</h3>
-            </div>
-            <div class="activity-summary" aria-label="学习活跃度摘要">
-              <span>今年学习 <strong id="activityYearDays">0</strong> 天</span>
-              <span>最长连续 <strong id="activityLongestStreak">0</strong> 天</span>
-            </div>
-          </div>
-
-          <div class="activity-layout">
-            <div class="activity-weekday-labels" aria-hidden="true">
-              <span></span><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span>
-            </div>
-            <div id="activityViewport" class="activity-viewport">
-              <div id="activityHeatmap" class="activity-heatmap" role="grid" aria-label="过去 365 天学习活跃度"></div>
-            </div>
-          </div>
-
-          <div class="activity-footer">
-            <div class="activity-legend" aria-label="学习量图例">
-              <span>少</span>
-              <i class="activity-cell level-0" aria-hidden="true"></i>
-              <i class="activity-cell level-1" aria-hidden="true"></i>
-              <i class="activity-cell level-2" aria-hidden="true"></i>
-              <i class="activity-cell level-3" aria-hidden="true"></i>
-              <i class="activity-cell level-4" aria-hidden="true"></i>
-              <span>多</span>
-            </div>
-            <span class="activity-mobile-tip">左右滑动可查看更早记录</span>
-          </div>
-
-          <div id="activityDetail" class="activity-detail" aria-live="polite">选择任意日期查看当天练习详情</div>
-        </section>
-      </div>
-    </section>
-  </main>
-
-  <!-- 手机底部导航 -->
-  <nav class="bottom-nav" aria-label="主导航">
-    <button class="bottom-nav-button active" type="button" data-view-target="study">
-      <span class="bottom-nav-icon" aria-hidden="true">学</span>
-      <span>学习</span>
-    </button>
-    <button class="bottom-nav-button" type="button" data-view-target="review">
-      <span class="bottom-nav-icon" aria-hidden="true">复</span>
-      <span>复习</span>
-    </button>
-    <button class="bottom-nav-button" type="button" data-view-target="progress">
-      <span class="bottom-nav-icon" aria-hidden="true">数</span>
-      <span>进度</span>
-    </button>
-  </nav>
-
-  <!-- 学习设置 -->
-  <div id="settingsModal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsDialogTitle" hidden>
-    <div class="settings-modal-backdrop" data-settings-close></div>
-    <section class="settings-dialog">
-      <div class="settings-dialog-header">
-        <div>
-          <span class="eyebrow">学习偏好</span>
-          <h2 id="settingsDialogTitle">学习设置</h2>
-        </div>
-        <button id="closeSettings" class="dialog-close" type="button" aria-label="关闭学习设置">×</button>
-      </div>
-
-      <div class="settings-dialog-body">
-        <div class="settings">
-          <div class="setting-item">
-            <label for="mode">测试方向</label>
-            <select id="mode">
-              <option value="kanaToRoman">假名 → 罗马音</option>
-              <option value="romanToKana">罗马音 → 假名</option>
-              <option value="random">随机双向</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label for="weightMode">抽取方式</label>
-            <select id="weightMode">
-              <option value="weighted">智能复习</option>
-              <option value="pure">完全随机</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label for="answerMode">作答方式</label>
-            <select id="answerMode">
-              <option value="self">自评认识 / 不认识</option>
-              <option value="input">输入答案（推荐）</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label for="dailyGoal">每日目标</label>
-            <select id="dailyGoal">
-              <option value="20">20 题</option>
-              <option value="30">30 题</option>
-              <option value="50">50 题</option>
-              <option value="100">100 题</option>
-            </select>
-          </div>
-
-          <div class="setting-item">
-            <label for="autoAdvance">输入正确后</label>
-            <select id="autoAdvance">
-              <option value="on">自动进入下一题</option>
-              <option value="off">手动进入下一题</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="settings-block">
-          <div class="range-toolbar">
-            <span class="section-title">学习范围</span>
-            <div class="small-actions">
-              <button class="mini-button" id="selectAll" type="button">全选</button>
-              <button class="mini-button" id="clearAll" type="button">清空</button>
-            </div>
-          </div>
-
-          <div class="groups">
-            <button class="group-button active" data-group="a" type="button">あ行</button>
-            <button class="group-button active" data-group="ka" type="button">か行</button>
-            <button class="group-button active" data-group="sa" type="button">さ行</button>
-            <button class="group-button" data-group="ta" type="button">た行</button>
-            <button class="group-button" data-group="na" type="button">な行</button>
-            <button class="group-button" data-group="ha" type="button">は行</button>
-            <button class="group-button" data-group="ma" type="button">ま行</button>
-            <button class="group-button" data-group="ya" type="button">や行</button>
-            <button class="group-button" data-group="ra" type="button">ら行</button>
-            <button class="group-button" data-group="wa" type="button">わ行</button>
-          </div>
-        </div>
-
-        <div class="settings-block data-management">
-          <div>
-            <span class="section-title">数据管理</span>
-            <p>可导出当前身份的完整学习进度。导入会与当前身份记录安全合并，并在登录时同步到云端。</p>
-          </div>
-          <div class="data-actions">
-            <button class="secondary-action" id="exportData" type="button">导出学习数据</button>
-            <button class="secondary-action" id="importData" type="button">导入学习数据</button>
-            <input id="importDataFile" type="file" accept="application/json,.json" hidden>
-            <button class="danger-action" id="resetProgress" type="button">重置当前学习记录</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-dialog-footer">
-        <button id="doneSettings" class="settings-done" type="button">完成</button>
-      </div>
-    </section>
+    <nav class="bottom-nav" aria-label="移动端主导航">
+      <button class="active" type="button" data-route="home"><span>⌂</span><small>首页</small></button>
+      <button type="button" data-route="study"><span>学</span><small>学习</small></button>
+      <button type="button" data-route="review"><span>复</span><small>复习</small></button>
+      <button type="button" data-route="kana"><span>あ</span><small>假名表</small></button>
+      <button type="button" data-route="progress"><span>图</span><small>进度</small></button>
+    </nav>
   </div>
 
-  <!-- 账号弹窗 -->
-  <div id="authModal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authDialogTitle" hidden>
-    <div class="auth-modal-backdrop" data-auth-close></div>
-    <section class="auth-dialog">
-      <button id="closeAuthModal" class="auth-close" type="button" aria-label="关闭账号窗口">×</button>
+  <div id="modalRoot" class="modal-root" hidden></div>
 
-      <div id="loggedOutPanel" class="auth-logged-out">
-        <div>
-          <h2 id="authDialogTitle" class="auth-dialog-title">登录账号</h2>
-          <div class="auth-dialog-subtitle">登录后可在不同设备之间同步五十音学习进度。</div>
-        </div>
-        <div>
-          <label class="auth-field-label" for="authEmail">邮箱</label>
-          <input id="authEmail" class="auth-input" type="email" autocomplete="email" placeholder="name@example.com">
-        </div>
-        <div>
-          <label class="auth-field-label" for="authPassword">密码</label>
-          <input id="authPassword" class="auth-input" type="password" autocomplete="current-password" placeholder="至少 8 位">
-        </div>
-        <div class="auth-buttons">
-          <button id="loginButton" class="auth-button primary" type="button">登录</button>
-          <button id="registerButton" class="auth-button" type="button">注册新账号</button>
-        </div>
-        <div id="authMessage" class="auth-message"></div>
-      </div>
-
-      <div id="loggedInPanel" class="auth-logged-in" hidden>
-        <div>
-          <h2 class="auth-dialog-title">账号</h2>
-          <div class="auth-dialog-subtitle">当前学习记录会保存在本机，并在联网时同步到云端。</div>
-        </div>
-        <div class="account-card">
-          <div id="accountCardAvatar" class="account-card-avatar">人</div>
-          <div class="user-info">
-            <span>当前账号</span>
-            <strong id="userEmail"></strong>
-          </div>
-        </div>
-        <div class="sync-row">
-          <span class="sync-row-label">学习进度</span>
-          <span class="sync-status-stack">
-            <span id="syncStatus" class="sync-status">仅本地保存</span>
-            <small id="syncStatusDetail" class="sync-status-detail">游客数据仅保存在当前浏览器</small>
-          </span>
-        </div>
-        <button id="logoutButton" class="auth-button logout-button" type="button">退出登录</button>
-      </div>
-    </section>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./js/config.js?v=8"></script>
-  <script src="./js/auth-sync.js?v=8"></script>
-  <script src="./js/kana-data.js?v=8"></script>
-  <script src="./js/progress.js?v=8"></script>
-  <script src="./js/study.js?v=8"></script>
-  <script src="./js/ui.js?v=8"></script>
-  <script src="./js/data-tools.js?v=8"></script>
-  <script src="./js/app.js?v=8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0"></script>
+  <script type="module" src="./src/app.js?v=9"></script>
 </body>
 </html>
