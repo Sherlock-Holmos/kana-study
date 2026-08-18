@@ -1,10 +1,25 @@
-import { SKILL_LABELS } from "../core/constants.js";
+import { SKILL_LABELS, TYPE_LABELS } from "../core/constants.js";
 import { escapeHtml, formatRelativeReview } from "../core/utils.js";
 import { getLearningItem } from "../data/content.js";
 import { getSkillsForType, skillKey } from "../domain/skills.js";
 import { getSkillTotals } from "../core/state.js";
 
-function itemPrimary(item) { return item?.expression || item?.pattern || item?.kana || ""; }
+function itemPrimary(item) {
+  return item?.expression || item?.pattern || item?.character || item?.kana || item?.title || item?.jp || "";
+}
+
+function itemSecondary(item) {
+  if (item.type === "vocabulary") return `${item.reading} · ${item.meanings.join(" / ")}`;
+  if (item.type === "grammar") return item.meanings.join(" / ");
+  if (item.type === "kanji") {
+    const on = (item.onReadings || []).join(" · ") || "—";
+    const kun = (item.kunReadings || []).join(" · ") || "—";
+    return `${item.meanings.join(" / ")} · 音读 ${on} · 训读 ${kun}`;
+  }
+  if (item.type === "reading") return item.passage;
+  if (item.type === "listening") return item.question;
+  return `${item.roman || ""} · ${item.memory || item.zh || ""}`;
+}
 
 export function renderModal(modal, state, user, syncStatus) {
   if (!modal?.kind) return "";
@@ -18,6 +33,7 @@ export function renderModal(modal, state, user, syncStatus) {
       <label>每日目标<select id="dailyGoal"><option value="20">20 题</option><option value="30">30 题</option><option value="50">50 题</option><option value="100">100 题</option></select></label>
       <label>每日新内容<select id="newItems"><option value="5">5 项</option><option value="8">8 项</option><option value="12">12 项</option><option value="16">16 项</option></select></label>
       <label class="switch-row"><input id="autoAdvance" type="checkbox">答对后自动进入下一题</label>
+      <div class="setting-note">听力题使用浏览器 Web Speech API 合成日语语音；不同系统的语音音色可能不同。</div>
       <div class="data-actions"><button data-export>导出学习数据</button><label class="button-like">导入学习数据<input id="importFile" type="file" accept="application/json" hidden></label><button class="danger-outline" data-reset>重置当前学习记录</button></div>
     </section>`;
   }
@@ -25,10 +41,12 @@ export function renderModal(modal, state, user, syncStatus) {
     const item = getLearningItem(modal.itemId);
     if (!item) return "";
     const skills = getSkillsForType(item.type);
-    const secondary = item.type === "vocabulary" ? `${item.reading} · ${item.meanings.join(" / ")}` : item.type === "grammar" ? item.meanings.join(" / ") : `${item.roman || ""} · ${item.memory || ""}`;
-    return `<div class="modal-backdrop" data-close-modal></div><section class="modal-card item-modal"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">${escapeHtml(item.type)} · ${escapeHtml(item.level || "")}</span><h2 class="item-modal-title">${escapeHtml(itemPrimary(item))}</h2><p>${escapeHtml(secondary)}</p>
+    return `<div class="modal-backdrop" data-close-modal></div><section class="modal-card item-modal"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">${escapeHtml(TYPE_LABELS[item.type] || item.type)} · ${escapeHtml(item.level || "")}</span><h2 class="item-modal-title">${escapeHtml(itemPrimary(item))}</h2><p>${escapeHtml(itemSecondary(item))}</p>
       ${item.explanation ? `<div class="detail-block"><strong>说明</strong><p>${escapeHtml(item.explanation)}</p></div>` : ""}
       ${item.formation ? `<div class="detail-block"><strong>接续</strong>${item.formation.map(x => `<span class="pill">${escapeHtml(x)}</span>`).join("")}</div>` : ""}
+      ${item.examples ? `<div class="detail-block"><strong>例词</strong><p>${escapeHtml(item.examples.join(" · "))}</p></div>` : ""}
+      ${item.type === "reading" ? `<div class="detail-block"><strong>问题</strong><p>${escapeHtml(item.question)}</p><p class="muted-copy">参考译意：${escapeHtml(item.translation || "")}</p></div>` : ""}
+      ${item.type === "listening" ? `<div class="detail-block"><strong>听力原文</strong><p>${escapeHtml(item.transcript)}</p><p class="muted-copy">${escapeHtml(item.translation || "")}</p></div>` : ""}
       <div class="skill-list">${skills.map(skill => { const ss=state.skills?.[skillKey(item.id,skill)]; const t=getSkillTotals(ss); const total=t.correct+t.wrong; return `<div class="skill-row"><div><strong>${SKILL_LABELS[skill] || skill}</strong><small>${total} 次 · 下次 ${formatRelativeReview(ss?.nextReviewAt)}</small></div><span>${Number(ss?.mastery || 0)}/5</span></div>`; }).join("")}</div>
       <button class="primary" data-practice-item="${escapeHtml(item.id)}">专项练习</button></section>`;
   }

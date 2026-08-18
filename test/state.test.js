@@ -12,7 +12,7 @@ test("default state contains multi-skill vocabulary and grammar progress", () =>
   assert.ok(state.skills[skillKey("grammar:teiru", "application")]);
 });
 
-test("v9 kana state migrates into v10 skill map", () => {
+test("v9 kana state migrates into v11 skill map", () => {
   const v9 = {
     schemaVersion: 9,
     settings: { dailyGoal: 50 },
@@ -26,8 +26,21 @@ test("v9 kana state migrates into v10 skill map", () => {
     activity: {}, lifetime: { devices: {} }, sessions: []
   };
   const state = sanitizeState(v9);
-  assert.equal(state.schemaVersion, 10);
+  assert.equal(state.schemaVersion, 11);
   assert.equal(state.settings.dailyGoal, 50);
   assert.equal(state.skills[skillKey("hiragana:あ", "recognition")].mastery, 4);
   assert.equal(state.skills[skillKey("hiragana:あ", "recall")].mastery, 2);
+});
+
+test("v10 state upgrades to v11 while preserving skills and adding new domains", () => {
+  const v10 = createDefaultState();
+  v10.schemaVersion = 10;
+  const oldKey = skillKey("vocab:taberu", "meaning");
+  v10.skills[oldKey].mastery = 4;
+  const state = sanitizeState(v10);
+  assert.equal(state.schemaVersion, 11);
+  assert.equal(state.skills[oldKey].mastery, 4);
+  assert.ok(state.skills[skillKey("kanji:日", "meaning")]);
+  assert.ok(state.skills[skillKey("reading:n5-01", "comprehension")]);
+  assert.ok(state.skills[skillKey("listening:n5-01", "comprehension")]);
 });

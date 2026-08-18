@@ -1,7 +1,7 @@
 import { getCurrentStreak, getTodaySummary, getTypeProgress } from "../core/metrics.js";
 import { getRecommendedLesson } from "../data/curriculum.js";
 import { getDuePairs, getWeakPairs } from "../review/selectors.js";
-import { TYPE_LABELS } from "../core/constants.js";
+import { PROGRESS_DOMAIN_TYPES, TYPE_LABELS } from "../core/constants.js";
 
 export function renderHome(state) {
   const today = getTodaySummary(state);
@@ -11,13 +11,13 @@ export function renderHome(state) {
   const next = getRecommendedLesson(state.curriculum.completedLessons);
   const goal = Number(state.settings.dailyGoal || 30);
   const goalPct = Math.min(100, Math.round(today.total / goal * 100));
-  const progresses = ["kana", "vocabulary", "grammar"].map(type => ({ type, ...getTypeProgress(state, type) }));
+  const progresses = PROGRESS_DOMAIN_TYPES.map(type => ({ type, ...getTypeProgress(state, type) }));
   return `
     <section class="hero panel">
       <div>
-        <span class="eyebrow">今日学习</span>
+        <span class="eyebrow">今日学习 · N5 核心路线</span>
         <h1>继续你的日语学习</h1>
-        <p>系统会把课程、新内容和到期复习组合成一个可执行的学习计划。</p>
+        <p>假名、词汇、语法、汉字、阅读和听力统一进入课程与 SRS 复习计划。</p>
       </div>
       <button class="primary big" type="button" data-action="daily">开始今日学习</button>
     </section>
@@ -34,7 +34,7 @@ export function renderHome(state) {
 
     <section class="panel section-block">
       <div class="section-title-row"><div><span class="eyebrow">能力概览</span><h2>当前学习版图</h2></div><button type="button" data-route="progress">查看完整进度</button></div>
-      <div class="domain-grid">
+      <div class="domain-grid domain-grid-six">
         ${progresses.map(p => `<article class="domain-card"><span>${TYPE_LABELS[p.type]}</span><strong>${p.percent}%</strong><div class="progress-track small"><i style="width:${p.percent}%"></i></div><small>已掌握 ${p.mastered} / ${p.total}</small></article>`).join("")}
       </div>
     </section>

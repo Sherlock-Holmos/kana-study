@@ -1,14 +1,14 @@
-const CACHE_NAME = "japanese-study-v10.0.1";
+const CACHE_NAME = "japanese-study-v11";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/app.css?v=10.0.1",
-  "./css/responsive.css?v=10.0.1",
-  "./manifest.webmanifest?v=10.0.1",
-  "./icons/icon.svg?v=10.0.1",
-  "./icons/icon-192.png?v=10.0.1",
-  "./icons/icon-512.png?v=10.0.1",
-  "./src/app.js?v=10.0.1",
+  "./css/app.css?v=11",
+  "./css/responsive.css?v=11",
+  "./manifest.webmanifest?v=11",
+  "./icons/icon.svg?v=11",
+  "./icons/icon-192.png?v=11",
+  "./icons/icon-512.png?v=11",
+  "./src/app.js?v=11",
   "./src/app.js",
   "./src/components/heatmap.js",
   "./src/core/constants.js",
@@ -22,6 +22,13 @@ const APP_SHELL = [
   "./src/data/japanese-lessons.js",
   "./src/data/kana-curriculum.js",
   "./src/data/kana.js",
+  "./src/data/kanji.js",
+  "./src/data/listening.js",
+  "./src/data/n5-grammar-extra.js",
+  "./src/data/n5-lessons-extra.js",
+  "./src/data/n5-sentences-extra.js",
+  "./src/data/n5-vocabulary-extra.js",
+  "./src/data/reading.js",
   "./src/data/sentences.js",
   "./src/data/vocabulary.js",
   "./src/domain/skills.js",
@@ -85,23 +92,12 @@ async function cacheFirst(request) {
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
   const isDocument = request.mode === "navigate" || request.destination === "document";
   const isCode = request.destination === "script" || request.destination === "style" || url.pathname.endsWith(".js") || url.pathname.endsWith(".css");
   const isStaticMedia = ["image", "font"].includes(request.destination);
-
-  if (isDocument || isCode) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  if (isStaticMedia) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
+  if (isDocument || isCode) { event.respondWith(networkFirst(request)); return; }
+  if (isStaticMedia) { event.respondWith(cacheFirst(request)); return; }
   event.respondWith(networkFirst(request));
 });

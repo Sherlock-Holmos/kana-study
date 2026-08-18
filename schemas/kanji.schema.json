@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Japanese Study Kanji Item",
+  "type": "object",
+  "required": ["id", "type", "character", "meanings", "onReadings", "kunReadings", "level", "tags"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^kanji:" },
+    "type": { "const": "kanji" },
+    "character": { "type": "string", "minLength": 1 },
+    "meanings": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "onReadings": { "type": "array", "items": { "type": "string" } },
+    "kunReadings": { "type": "array", "items": { "type": "string" } },
+    "examples": { "type": "array", "items": { "type": "string" } },
+    "level": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

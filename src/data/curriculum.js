@@ -1,7 +1,9 @@
 import { KANA_CURRICULUM, KANA_PHASES } from "./kana-curriculum.js";
 import { JAPANESE_LESSONS } from "./japanese-lessons.js";
+import { N5_EXPANSION_LESSONS, N5_EXPANSION_PHASES } from "./n5-lessons-extra.js";
 
-export const CURRICULUM = [...KANA_CURRICULUM, ...JAPANESE_LESSONS];
+export const ALL_JAPANESE_LESSONS = [...JAPANESE_LESSONS, ...N5_EXPANSION_LESSONS];
+export const CURRICULUM = [...KANA_CURRICULUM, ...ALL_JAPANESE_LESSONS];
 export const LESSON_BY_ID = Object.fromEntries(CURRICULUM.map(item => [item.id, item]));
 
 export const PHASES = [
@@ -14,12 +16,13 @@ export const PHASES = [
   { id: "n5-ability", label: "N5 · 能力", description: "理解、能力、想要" },
   { id: "n5-shopping", label: "N5 · 购物", description: "价格、比较与选择" },
   { id: "n5-connect", label: "N5 · 连接表达", description: "原因、范围和比较" },
-  { id: "n4-entry", label: "N4 · 入门", description: "列举、想法、同时进行" }
+  { id: "n4-entry", label: "N4 · 入门", description: "列举、想法、同时进行" },
+  ...N5_EXPANSION_PHASES
 ];
 
 export function getRecommendedLesson(completedLessons = []) {
   const done = new Set(completedLessons);
-  const japanese = JAPANESE_LESSONS.find(lesson => !done.has(lesson.id));
+  const japanese = ALL_JAPANESE_LESSONS.find(lesson => !done.has(lesson.id));
   if (japanese) return japanese;
   return KANA_CURRICULUM.find(lesson => !done.has(lesson.id)) || null;
 }

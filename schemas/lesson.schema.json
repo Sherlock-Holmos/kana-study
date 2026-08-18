@@ -1,15 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Japanese Study Integrated Lesson",
+  "title": "Japanese Study Lesson",
   "type": "object",
-  "required": ["id", "phase", "title", "description"],
+  "required": ["id", "phase", "title"],
   "properties": {
-    "id": { "type": "string" },
-    "phase": { "type": "string" },
-    "title": { "type": "string" },
+    "id": { "type": "string", "minLength": 1 },
+    "phase": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
+    "itemIds": { "type": "array", "items": { "type": "string" } },
     "vocabulary": { "type": "array", "items": { "type": "string", "pattern": "^vocab:" } },
     "grammar": { "type": "array", "items": { "type": "string", "pattern": "^grammar:" } },
-    "sentences": { "type": "array", "items": { "type": "string", "pattern": "^sentence:" } }
+    "kanji": { "type": "array", "items": { "type": "string", "pattern": "^kanji:" } },
+    "sentences": { "type": "array", "items": { "type": "string", "pattern": "^sentence:" } },
+    "reading": { "type": "array", "items": { "type": "string", "pattern": "^reading:" } },
+    "listening": { "type": "array", "items": { "type": "string", "pattern": "^listening:" } },
+    "kind": { "type": "string" },
+    "cards": { "type": "array" }
   }
 }

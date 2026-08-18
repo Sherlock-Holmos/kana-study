@@ -1,5 +1,4 @@
-import { LEARNING_ITEM_BY_ID, LEARNING_ITEMS } from "../data/content.js";
-import { SENTENCE_ITEMS } from "../data/sentences.js";
+import { LEARNING_ITEM_BY_ID, LEARNING_ITEMS, ALL_SENTENCE_ITEMS } from "../data/content.js";
 import { shuffle } from "../core/utils.js";
 
 function normalize(value) {
@@ -9,9 +8,9 @@ function normalize(value) {
 function distractorsFor(item, field, count = 3) {
   const pool = LEARNING_ITEMS.filter(candidate => candidate.type === item.type && candidate.id !== item.id);
   return shuffle(pool.map(candidate => {
-    if (field === "meaning") return candidate.meanings?.[0] || candidate.zh || candidate.title;
-    if (field === "reading") return candidate.reading || candidate.roman || candidate.title;
-    return candidate.expression || candidate.kana || candidate.pattern || candidate.title;
+    if (field === "meaning") return candidate.meanings?.[0] || candidate.zh || candidate.translation || candidate.title;
+    if (field === "reading") return candidate.reading || candidate.roman || candidate.onReadings?.[0] || candidate.kunReadings?.[0] || candidate.title;
+    return candidate.expression || candidate.character || candidate.kana || candidate.pattern || candidate.title;
   }).filter(Boolean)).slice(0, count);
 }
 
@@ -56,9 +55,9 @@ export function buildExercise(itemId, skill) {
 
   if (item.type === "grammar") {
     if (skill === "application") {
-      const matching = SENTENCE_ITEMS.filter(sentence => sentence.grammar?.includes(item.id));
+      const matching = ALL_SENTENCE_ITEMS.filter(sentence => sentence.grammar?.includes(item.id));
       const target = matching[0];
-      const otherSentences = shuffle(SENTENCE_ITEMS.filter(sentence => !sentence.grammar?.includes(item.id))).slice(0, 3);
+      const otherSentences = shuffle(ALL_SENTENCE_ITEMS.filter(sentence => !sentence.grammar?.includes(item.id))).slice(0, 3);
       if (target) {
         return choice(
           `哪一句最能体现「${item.pattern}」？`,
@@ -74,8 +73,50 @@ export function buildExercise(itemId, skill) {
     });
   }
 
+  if (item.type === "kanji") {
+    if (skill === "reading") {
+      const accepted = [...(item.onReadings || []), ...(item.kunReadings || [])].filter(Boolean);
+      return typing(item.character, accepted, {
+        directionLabel: "汉字 → 读音",
+        answerLabel: accepted.join(" / "),
+        secondary: item.meanings?.[0] || ""
+      });
+    }
+    return choice(item.character, item.meanings[0], distractorsFor(item, "meaning"), {
+      directionLabel: "汉字 → 意义",
+      answerLabel: item.meanings[0],
+      secondary: [...(item.onReadings || []), ...(item.kunReadings || [])].slice(0, 4).join(" · ")
+    });
+  }
+
+  if (item.type === "reading") {
+    return {
+      kind: "reading-choice",
+      prompt: item.question,
+      passage: item.passage,
+      options: item.options,
+      accepted: [item.answer],
+      answerLabel: item.answer,
+      directionLabel: "N5 阅读理解",
+      explanation: item.translation || ""
+    };
+  }
+
+  if (item.type === "listening") {
+    return {
+      kind: "listening-choice",
+      prompt: item.question,
+      audioText: item.transcript,
+      options: item.options,
+      accepted: [item.answer],
+      answerLabel: item.answer,
+      directionLabel: "N5 听力理解",
+      explanation: item.translation || ""
+    };
+  }
+
   if (item.type === "sentence") {
-    return choice(item.jp, item.zh, shuffle(SENTENCE_ITEMS.filter(s => s.id !== item.id).map(s => s.zh)).slice(0, 3), {
+    return choice(item.jp, item.zh, shuffle(ALL_SENTENCE_ITEMS.filter(s => s.id !== item.id).map(s => s.zh)).slice(0, 3), {
       directionLabel: "句子理解",
       answerLabel: item.zh,
       secondary: item.reading

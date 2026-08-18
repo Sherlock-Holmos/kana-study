@@ -1,204 +1,165 @@
-# Japanese Study v10.0.1
+# Japanese Study v11
 
-一个从 Kana Study 重构而来的离线优先日语学习系统。产品层不再把“假名、词汇、语法”做成三个互不相关的小工具，而是使用统一的课程、技能、练习、SRS、Session 和进度模型。
+Japanese Study 是一个纯静态、可部署到 GitHub Pages 的日语学习系统。v11 将 v10 的「假名 + 词汇 + 语法」平台扩展为面向 N5 核心学习路线的六域学习系统：
 
+- 假名：平假名 / 片假名、清音、浊音/半浊音、拗音
+- 词汇：N5 核心词汇与生活场景扩展
+- 语法：N5 核心语法 + 少量 N4 入门衔接
+- 汉字：N5 常用核心汉字
+- 阅读：短篇 N5 阅读理解
+- 听力：基于 Web Speech API 的日语合成语音理解题
 
-## v10.0.1 Hotfix
+> 说明：JLPT 官方并不发布唯一、封闭的 N5 词汇/语法清单。本项目的“N5”表示面向 N5 入门能力的核心覆盖，不声称是官方题库或官方完整清单。
 
-本包包含 v10 首次部署后发现的前端可靠性修复：
+## v11 内容规模
 
-- 修复顶部导航、Logo 和移动端底部导航点击无响应：改为 document 级 `data-route` 事件代理
-- `navigate()` 显式写入 `#route`，避免依赖浏览器对 hash 的隐式规范化
-- Service Worker 缓存从全局 cache-first 改为：HTML / JS / CSS network-first，图标 cache-first
-- Cache 名升级为 `japanese-study-v10.0.1`，并预缓存完整 ES Module App Shell
-- 增加启动失败兜底界面，模块异常时不再只显示空白主体
-- 增加 browserless smoke test，CI 会真实导入 `src/app.js`、渲染首页并验证全局导航
-- 保留并更新 v5/v8/v9 → v10 数据迁移测试
+运行 `npm run check` 会打印当前实际内容数量。当前版本包含：
 
-部署时建议用本包内容**完整替换**旧源码，而不是只覆盖同名文件；这样可以顺便清理旧版遗留的 `js/` 和旧 CSS 文件。
+- 208 个可训练假名项
+- 487 个词汇项
+- 95 个语法项
+- 118 个汉字项
+- 111 条例句
+- 24 篇阅读理解
+- 24 组听力理解
+- 76 节课程（包含 42 节假名课程和综合日语课程）
 
-## 当前包含
+## 学习模型
 
-- 208 个假名训练项：平假名 104 + 片假名 104
-- 135 个基础词汇
-- 36 条 N5 / N4 入门语法
-- 40 条关联例句
-- 58 节课程
-  - 42 节假名课程/规则课
-  - 16 节综合日语课程
-- 统一 SRS：假名、词汇、语法共享调度引擎
-- 多技能掌握度
-  - 假名：识别 / 主动回忆
-  - 词汇：词义 / 读音 / 中→日
-  - 语法：理解 / 应用
-- 到期复习、薄弱强化、最近 14 天错题
-- 错题 3–5 题后短期重现
-- 课程 Session、完成总结
-- 内容库：假名 / 词汇 / 语法搜索与详情
-- GitHub 风格 365 天学习活跃度
-- PWA / 离线缓存
-- Supabase 登录和多设备同步
-- v8 / v9 学习记录迁移
-- 数据导入 / 导出
-- GitHub Actions 自动检查与测试
+所有内容统一进入 Skill / SRS 模型：
 
-> 当前项目已经完成“完整学习平台”的代码结构，但内容语料不是完整 JLPT N1 全量词库/语法库。当前内置的是可实际使用的 N5 主体 + N4 入门种子内容。后续扩充内容只需新增 `src/data/` 数据，不需要再次推翻学习引擎。
+- 假名：识别、主动回忆
+- 词汇：词义、读音、中→日产出
+- 语法：理解、应用
+- 汉字：意义、读音
+- 阅读：理解
+- 听力：理解
 
-## 一级页面
+每个技能独立维护：
 
-- 首页：今日目标、待复习、推荐课程、能力概览
+- mastery
+- stabilityDays
+- difficulty
+- correctStreak
+- lapseCount
+- lastReviewedAt
+- nextReviewAt
+- 多设备计数器
+
+## 页面结构
+
+- 首页：今日目标、到期复习、推荐课程、六域能力概览
 - 学习：课程路线
-- 复习：到期 / 薄弱 / 最近错题 / 分类专项
-- 内容库：假名 / 词汇 / 语法
-- 进度：总览 / 能力 / 365 天活跃度
+- 复习：到期、薄弱、最近错题、六域专项复习
+- 内容库：假名 / 词汇 / 语法 / 汉字 / 阅读 / 听力
+- 进度：总览、六域能力、365 天学习热力图
 
-答题过程使用独立的 `#study` 页面，不占主导航名额。
+## 听力
 
-## 项目结构
+听力题使用浏览器 `SpeechSynthesis` / Web Speech API 合成 `ja-JP` 日语语音。
 
-```text
-japanese-study/
-├── index.html
-├── manifest.webmanifest
-├── sw.js
-├── CNAME
-├── css/
-├── icons/
-├── schemas/
-├── src/
-│   ├── core/
-│   ├── data/
-│   ├── domain/
-│   ├── learning/
-│   ├── review/
-│   ├── sync/
-│   ├── components/
-│   ├── ui/
-│   └── views/
-├── supabase/
-├── scripts/
-├── test/
-└── .github/workflows/
-```
+- Chrome / Edge / Safari 的可用音色取决于操作系统
+- 没有安装日语语音时，浏览器可能使用默认声音或无法播放
+- 听力题在提交答案前不显示原文，提交后会显示原文和参考译意
 
-## 本地检查
+## 数据与 Supabase
 
-只需要 Node.js 22+：
+v11 的用户学习数据 Schema 版本为 `11`。
+
+现有 v5 / v8 / v9 / v10 本地数据会经过 `sanitizeState()` 迁移到 v11；新增加的词汇、语法、汉字、阅读和听力 Skill 会自动使用默认状态补齐。
+
+Supabase 规范化表使用通用 `skill_key + progress JSONB`，因此 v10 表结构已经能够保存 v11 新内容类型，不强制迁移数据库。
+
+仓库同时提供：
+
+- `supabase/schema-v11.sql`：推荐的规范化表结构
+- `supabase/schema.sql`：旧 `user_progress` 兼容表
+
+如果规范化表不存在，前端仍会回退到旧 `user_progress` 快照。
+
+## 本地验证
+
+需要 Node.js 22（CI 使用 Node 22）：
 
 ```bash
 npm run verify
 ```
 
-等价于：
+它会执行：
 
-```bash
+```text
 npm run check
 npm test
 npm run smoke
 ```
 
-项目本身仍是纯静态站点，不需要 npm build。
+覆盖：
 
-## Supabase
-
-### 推荐：v10 规范化表
-
-在 Supabase SQL Editor 执行：
-
-```text
-supabase/schema-v10.sql
-```
-
-会创建：
-
-- `user_settings`
-- `user_course_progress`
-- `user_item_progress`
-- `user_daily_stats`
-- `user_learning_meta`
-- `study_sessions`
-
-并开启 RLS，每个用户只能访问自己的记录。
-
-### 兼容旧项目
-
-如果你暂时没有执行 `schema-v10.sql`，代码会自动回退到旧的：
-
-```text
-public.user_progress
-```
-
-因此可以先直接部署，再决定什么时候执行数据库升级。
-
-当规范化表存在但还没有数据时，应用会继续读取旧 `user_progress`；下一次同步会写入 v10 表，从而完成渐进迁移。
+- JS 语法
+- ES Module 文件引用
+- 内容 ID 唯一性
+- 课程内容引用
+- N5 六域最低内容规模
+- 阅读 / 听力正确答案合法性
+- Service Worker App Shell 引用
+- 数据迁移
+- SRS
+- 多设备合并
+- 错题短期重现
+- 汉字 / 阅读 / 听力题型
+- 首页启动与全局导航 Smoke Test
 
 ## 部署
 
-这是 GitHub Pages 兼容的静态项目。保持仓库根目录发布即可。
+项目无需构建工具。直接把仓库根目录部署到 GitHub Pages 即可。
 
-自定义域名仍使用：
-
-```text
-nihongo.jokersh.site
-```
-
-## 内容扩展
-
-核心内容位于：
+当前项目保留：
 
 ```text
-src/data/vocabulary.js
-src/data/grammar.js
-src/data/sentences.js
-src/data/japanese-lessons.js
+CNAME -> nihongo.jokersh.site
 ```
 
-内容约束参考：
+部署更新后如果浏览器仍显示旧页面，可先进行一次强制刷新。v11 的 Service Worker Cache 名称为 `japanese-study-v11`，代码和 HTML 使用 network-first，避免旧模块与新模块混用导致白屏。
+
+## 项目结构
 
 ```text
-schemas/vocabulary.schema.json
-schemas/grammar.schema.json
-schemas/lesson.schema.json
+src/
+├── app.js
+├── components/
+├── core/
+├── data/
+│   ├── kana.js
+│   ├── vocabulary.js
+│   ├── n5-vocabulary-extra.js
+│   ├── grammar.js
+│   ├── n5-grammar-extra.js
+│   ├── kanji.js
+│   ├── sentences.js
+│   ├── n5-sentences-extra.js
+│   ├── reading.js
+│   ├── listening.js
+│   ├── japanese-lessons.js
+│   ├── n5-lessons-extra.js
+│   └── curriculum.js
+├── domain/
+├── learning/
+├── review/
+├── sync/
+├── ui/
+└── views/
 ```
 
-`scripts/check.mjs` 会验证：
+## 后续扩展
 
-- ID 是否重复
-- 课程引用是否存在
-- 例句引用的词汇/语法是否存在
-- ES Module 相对 import 是否存在
-- 所有 JS 是否能通过语法检查
+当前架构已经可以继续增加：
 
-因此后续可以让 Agent 批量扩充 N5/N4/N3 内容，同时由 CI 阻止明显的数据结构错误进入 main。
+- N4 / N3 内容包
+- 真人音频替代 Web Speech API
+- 更丰富的听力题型
+- 长篇阅读
+- 汉字书写训练
+- 阅读语法标注
+- 发音/口语训练
 
-## 数据模型
-
-学习进度不是一个 `mastery` 数字，而是按技能维度存储，例如：
-
-```text
-vocab:taberu::meaning
-vocab:taberu::reading
-vocab:taberu::production
-
-grammar:teiru::meaning
-grammar:teiru::application
-
-hiragana:し::recognition
-hiragana:し::recall
-```
-
-每个技能独立保存：
-
-```text
-mastery
-stabilityDays
-difficulty
-correctStreak
-lapseCount
-lastResult
-lastReviewedAt
-nextReviewAt
-counters
-```
-
-这使以后加入汉字、听力、阅读时无需再重写 SRS。
+这些扩展不需要再次推翻 Skill / SRS / Session / Supabase 主架构。

@@ -68,7 +68,7 @@ async function loadNormalized(userId) {
   const hasAny = settingsRes.data || courseRes.data || metaRes.data || (skillsRes.data?.length || 0) || (dailyRes.data?.length || 0) || (sessionsRes.data?.length || 0);
   if (!hasAny) return null;
   return {
-    schemaVersion: 10,
+    schemaVersion: 11,
     settings: settingsRes.data?.settings || {},
     curriculum: {
       completedLessons: courseRes.data?.completed_lessons || [],

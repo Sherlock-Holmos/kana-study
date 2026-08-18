@@ -4,7 +4,10 @@ export const SKILLS_BY_TYPE = {
   [ITEM_TYPES.KANA]: ["recognition", "recall"],
   [ITEM_TYPES.VOCABULARY]: ["meaning", "reading", "production"],
   [ITEM_TYPES.GRAMMAR]: ["meaning", "application"],
-  [ITEM_TYPES.SENTENCE]: ["comprehension"]
+  [ITEM_TYPES.KANJI]: ["meaning", "reading"],
+  [ITEM_TYPES.SENTENCE]: ["comprehension"],
+  [ITEM_TYPES.READING]: ["comprehension"],
+  [ITEM_TYPES.LISTENING]: ["comprehension"]
 };
 
 export function getSkillsForType(type) {

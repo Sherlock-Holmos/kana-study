@@ -28,18 +28,26 @@ function queueForKanaLesson(lesson) {
 function queueForJapaneseLesson(lesson) {
   const vocab = lesson.vocabulary || [];
   const grammar = lesson.grammar || [];
+  const kanji = lesson.kanji || [];
   const sentences = lesson.sentences || [];
+  const reading = lesson.reading || [];
+  const listening = lesson.listening || [];
   const queue = [];
-  queue.push(...vocab.map(introEntry), ...grammar.map(introEntry));
+  queue.push(...vocab.map(introEntry), ...grammar.map(introEntry), ...kanji.map(introEntry));
   queue.push(...shuffle(vocab).map(id => quizEntry(id, "meaning", "vocab-meaning")));
   queue.push(...shuffle(vocab).map(id => quizEntry(id, "reading", "vocab-reading")));
   queue.push(...shuffle(vocab).slice(0, Math.min(5, vocab.length)).map(id => quizEntry(id, "production", "vocab-production")));
   queue.push(...grammar.map(id => quizEntry(id, "meaning", "grammar-meaning")));
   queue.push(...grammar.map(id => quizEntry(id, "application", "grammar-application")));
+  queue.push(...shuffle(kanji).map(id => quizEntry(id, "meaning", "kanji-meaning")));
+  queue.push(...shuffle(kanji).map(id => quizEntry(id, "reading", "kanji-reading")));
   queue.push(...sentences.map(sentenceEntry));
+  queue.push(...reading.map(id => quizEntry(id, "comprehension", "reading")));
+  queue.push(...listening.map(id => quizEntry(id, "comprehension", "listening")));
   const mixed = shuffle([
     ...vocab.slice(0, 5).map(id => quizEntry(id, Math.random() > .5 ? "meaning" : "reading", "mixed")),
-    ...grammar.slice(0, 2).map(id => quizEntry(id, "application", "mixed"))
+    ...grammar.slice(0, 2).map(id => quizEntry(id, "application", "mixed")),
+    ...kanji.slice(0, 4).map(id => quizEntry(id, Math.random() > .5 ? "meaning" : "reading", "mixed"))
   ]);
   queue.push(...mixed);
   return queue;
@@ -74,7 +82,7 @@ export function createReviewSession(mode, pairs, title = "复习") {
 export function createItemSession(item) {
   const skills = getSkillsForType(item.type);
   return {
-    id: randomId("session"), type: "item", title: `专项练习 · ${item.expression || item.pattern || item.kana}`,
+    id: randomId("session"), type: "item", title: `专项练习 · ${item.expression || item.pattern || item.character || item.kana || item.title || "内容"}`,
     startedAt: new Date().toISOString(), completedAt: null, cursor: 0,
     queue: [introEntry(item.id), ...skills.flatMap(skill => [quizEntry(item.id, skill, "focused"), quizEntry(item.id, skill, "focused")])], results: []
   };

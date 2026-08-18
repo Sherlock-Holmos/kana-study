@@ -25,3 +25,18 @@
   .section-title-row { align-items:flex-start; }.summary-pills { display:grid; }.account-trigger { padding-right:5px; }
   .modal-card { padding: 24px 18px; }.item-modal-title{font-size:34px}
 }
+
+@media (max-width: 900px) {
+  .domain-grid-six, .domain-progress-list-six { grid-template-columns: repeat(2, 1fr); }
+  .library-grid-wide { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .domain-grid-six, .domain-progress-list-six { grid-template-columns: 1fr; }
+  .library-grid-wide { grid-template-columns: 1fr; }
+  .library-toolbar { align-items: stretch; }
+  .library-segmented { width: 100%; }
+  .quiz-reading-passage { padding: 16px; font-size: 16px; line-height: 1.9; }
+  .listening-stage { margin-top: 30px; }
+  .study-glyph { font-size: 96px; }
+}

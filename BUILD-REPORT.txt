@@ -1,0 +1,30 @@
+Japanese Study v11.0.0 build report
+
+Verification command:
+  npm run verify
+
+Result:
+  JS syntax: 47 files OK
+  Kana: 208
+  Vocabulary: 487
+  Grammar: 95
+  Kanji: 118
+  Sentences: 111
+  Reading: 24
+  Listening: 24
+  Lessons: 76
+  Unit tests: 21 passed / 0 failed
+  Browserless smoke: home render + delegated navigation OK
+
+Major v11 additions:
+  - Kanji domain and SRS skills
+  - Reading comprehension domain
+  - Listening comprehension domain using Web Speech API
+  - Expanded N5 vocabulary and grammar content packs
+  - 18 new integrated N5 lessons
+  - Six-domain library/review/progress UI
+  - v10 -> v11 state migration compatibility
+  - v11 Service Worker cache/app-shell
+
+Note:
+  A real Chromium --dump-dom smoke attempt was made in the artifact environment, but Chromium hung on environment-level DBus/zygote issues and timed out. Browserless application smoke and all Node verification succeeded.

@@ -1,4 +1,4 @@
-import { CLOUD_SYNC_DELAY_MS, MAX_SESSION_HISTORY, VIEW_NAMES } from "./core/constants.js";
+import { CLOUD_SYNC_DELAY_MS, MAX_SESSION_HISTORY, TYPE_LABELS, VIEW_NAMES } from "./core/constants.js";
 import { createDefaultState, sanitizeState } from "./core/state.js";
 import { exportStateFile, getDeviceId, loadLocalState, removeGuestState, saveLocalState } from "./core/storage.js";
 import { localDateKey, nowIso } from "./core/utils.js";
@@ -114,6 +114,24 @@ function recordLearningResult(entry, isCorrect) {
   incrementCounters(isCorrect);
 }
 
+function speakJapanese(text) {
+  const value = String(text || "").trim();
+  if (!value) return;
+  if (!globalThis.speechSynthesis || typeof globalThis.SpeechSynthesisUtterance === "undefined") {
+    alert("当前浏览器不支持语音合成。可以在支持 Web Speech API 的 Chrome / Edge / Safari 中使用听力播放。");
+    return;
+  }
+  globalThis.speechSynthesis.cancel();
+  const utterance = new globalThis.SpeechSynthesisUtterance(value);
+  utterance.lang = "ja-JP";
+  utterance.rate = 0.82;
+  utterance.pitch = 1;
+  const voices = globalThis.speechSynthesis.getVoices?.() || [];
+  const japanese = voices.find(voice => /^ja(?:-|_)/i.test(voice.lang || ""));
+  if (japanese) utterance.voice = japanese;
+  globalThis.speechSynthesis.speak(utterance);
+}
+
 function resetQuizRuntime() {
   clearTimeout(autoAdvanceTimer);
   runtime.feedback = null;
@@ -179,10 +197,10 @@ function startReview(mode = "due", type = null) {
   if (!canReplaceSession()) return;
   const pairs = reviewPairs(mode, type);
   if (!pairs.length) {
-    alert(type ? `当前没有需要复习的${type === "kana" ? "假名" : type === "vocabulary" ? "词汇" : "语法"}。` : "当前没有符合条件的复习内容。");
+    alert(type ? `当前没有需要复习的${TYPE_LABELS[type] || type}。` : "当前没有符合条件的复习内容。");
     return;
   }
-  const title = mode === "weak" ? "薄弱强化" : mode === "mistakes" ? "最近错题" : type ? `${type === "kana" ? "假名" : type === "vocabulary" ? "词汇" : "语法"}到期复习` : "到期复习";
+  const title = mode === "weak" ? "薄弱强化" : mode === "mistakes" ? "最近错题" : type ? `${TYPE_LABELS[type] || type}到期复习` : "到期复习";
   state.activeSession = createReviewSession(mode, pairs, title);
   resetQuizRuntime();
   commit(false);
@@ -322,6 +340,7 @@ const commonActions = {
   advanceSession,
   finishSession,
   practiceItem,
+  speakJapanese,
   openItem: itemId => openModal("item", { itemId }),
   setLibraryType: value => { runtime.libraryType = value; runtime.libraryQuery = ""; render(); },
   setLibraryQuery: value => { runtime.libraryQuery = value; render(); },
@@ -377,4 +396,4 @@ onAuthStateChange(nextUser => { if (!nextUser && user) { user = null; state = lo
 render();
 initializeAuth();
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=10.0.1").catch(console.warn));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=11").catch(console.warn));

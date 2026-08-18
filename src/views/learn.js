@@ -3,7 +3,7 @@ import { PHASES, getPhaseLessons, getLessonProgress } from "../data/curriculum.j
 export function renderLearn(state) {
   const done = new Set(state.curriculum.completedLessons || []);
   return `
-    <section class="page-heading"><div><span class="eyebrow">课程路线</span><h1>学习</h1><p>从假名基础到 N5、N4 入门，按课程逐步推进。</p></div></section>
+    <section class="page-heading"><div><span class="eyebrow">课程路线 · v11</span><h1>学习</h1><p>从假名基础进入 N5 词汇、语法、汉字、阅读与听力，按课程逐步推进。</p></div></section>
     <div class="phase-list">
       ${PHASES.map(phase => {
         const progress = getLessonProgress([...done], phase.id);

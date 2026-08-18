@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 export const STORAGE_KEY = "japaneseStudyState";
 export const LEGACY_STORAGE_KEYS = ["kanaFlashcardState"];
 export const USER_STORAGE_PREFIX = `${STORAGE_KEY}:user:`;
@@ -15,14 +15,20 @@ export const ITEM_TYPES = {
   KANA: "kana",
   VOCABULARY: "vocabulary",
   GRAMMAR: "grammar",
-  SENTENCE: "sentence"
+  KANJI: "kanji",
+  SENTENCE: "sentence",
+  READING: "reading",
+  LISTENING: "listening"
 };
 
 export const TYPE_LABELS = {
   kana: "假名",
   vocabulary: "词汇",
   grammar: "语法",
-  sentence: "例句"
+  kanji: "汉字",
+  sentence: "例句",
+  reading: "阅读",
+  listening: "听力"
 };
 
 export const SKILL_LABELS = {
@@ -34,3 +40,6 @@ export const SKILL_LABELS = {
   application: "应用",
   comprehension: "理解"
 };
+
+export const PROGRESS_DOMAIN_TYPES = ["kana", "vocabulary", "grammar", "kanji", "reading", "listening"];
+export const REVIEWABLE_TYPES = ["kana", "vocabulary", "grammar", "kanji", "reading", "listening"];

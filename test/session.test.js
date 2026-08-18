@@ -17,3 +17,10 @@ test("wrong quiz is reinserted for short-term reinforcement", () => {
   assert.equal(session.queue.length, before);
   assert.ok(session.queue.some(entry => entry.stage === "reinforce"));
 });
+
+test("v11 N5 lesson can mix kanji, reading and listening", () => {
+  const session = createLessonSession("jp-n5-34");
+  assert.ok(session.queue.some(entry => entry.kind === "quiz" && entry.stage === "kanji-meaning"));
+  assert.ok(session.queue.some(entry => entry.kind === "quiz" && entry.stage === "reading"));
+  assert.ok(session.queue.some(entry => entry.kind === "quiz" && entry.stage === "listening"));
+});
