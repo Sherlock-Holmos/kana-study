@@ -35,7 +35,7 @@
     width: min(calc(100% - 24px), 360px);
     transform: translateX(-50%);
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     padding: 5px;
     background: rgba(255,255,255,.92);
@@ -84,6 +84,23 @@
   .mastery-item { min-height: 58px; border-radius: 9px; }
   .mastery-item .kana { font-size: 21px; }
   .section-heading-row { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .review-heading { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .review-heading-note { max-width: none; text-align: left; }
+  .review-grid { grid-template-columns: 1fr; }
+  .review-card { min-height: 0; }
+  .review-guide { grid-template-columns: 1fr; gap: 8px; }
+  .progress-subnav {
+    width: 100%;
+    position: sticky;
+    top: max(6px, env(safe-area-inset-top));
+    z-index: 100;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: rgba(243,244,246,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .progress-subnav-button { padding-left: 8px; padding-right: 8px; }
 }
 
 @media (max-width: 380px) {
@@ -149,15 +166,6 @@
   }
   .data-actions .danger-action {
     grid-column: 1 / -1;
-  }
-  .recent-wrong-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .progress-actions {
-    justify-content: stretch;
-  }
-  .progress-action {
-    flex: 1 1 160px;
   }
   .activity-summary {
     justify-content: flex-start;

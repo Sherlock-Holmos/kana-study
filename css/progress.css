@@ -11,6 +11,43 @@
 .progress-heading h2 { margin: 0; font-size: clamp(21px, 4vw, 27px); letter-spacing: -.025em; }
 .progress-updated { color: #a0a4aa; font-size: 11px; white-space: nowrap; }
 
+.progress-subnav {
+  width: fit-content;
+  display: flex;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 4px;
+  background: rgba(255,255,255,.74);
+  border: 1px solid rgba(0,0,0,.055);
+  border-radius: 12px;
+}
+.progress-subnav-button {
+  min-height: 36px;
+  padding: 7px 16px;
+  background: transparent;
+  color: #858a92;
+  border: 0;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 680;
+  cursor: pointer;
+}
+.progress-subnav-button.active {
+  background: #202124;
+  color: #fff;
+}
+.progress-tab-panel { animation: progressTabIn .14s ease-out; }
+.progress-tab-intro {
+  margin: -3px 0 14px;
+  color: #999da4;
+  font-size: 10px;
+  line-height: 1.55;
+}
+@keyframes progressTabIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .progress-overview, .progress-section { margin-bottom: 14px; }
 .progress-score-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
 .progress-label { display: block; margin-bottom: 3px; color: #858a92; font-size: 12px; }
@@ -57,10 +94,6 @@
 .mastery-item.mastered { background: #292b2f; border-color: #292b2f; color: #fff; }
 .mastery-item.mastered .roman, .mastery-item.mastered .mastery-value { color: rgba(255,255,255,.66); }
 .mastery-item.weak { box-shadow: inset 0 0 0 1px #e9caca; }
-
-.weak-list { display: flex; flex-wrap: wrap; gap: 7px; min-height: 30px; color: #8b8f95; font-size: 13px; }
-.weak-item { padding: 7px 10px; background: #f5f6f7; border: 1px solid #ececec; border-radius: 9px; color: #555; font-size: 12px; }
-.progress-weak-list:empty::after { content: "暂无"; color: #999da4; }
 
 .activity-heading-row { align-items: start; }
 .activity-summary {
@@ -186,69 +219,4 @@
 .activity-detail strong {
   color: #454950;
   font-size: 11px;
-}
-
-/* ==============================
-   v6 复习入口 / 最近易错
-   ============================== */
-.progress-actions {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
-.progress-actions.compact {
-  justify-content: flex-start;
-  margin-top: 12px;
-}
-.progress-action {
-  min-height: 40px;
-  padding: 8px 13px;
-  background: #f7f8f9;
-  color: #555a61;
-  border: 1px solid #e0e2e5;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 650;
-}
-.progress-action.primary {
-  background: #202124;
-  color: #fff;
-  border-color: #202124;
-}
-.progress-action:disabled {
-  opacity: .48;
-  cursor: not-allowed;
-}
-
-.recent-wrong-list {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  color: #8f939a;
-  font-size: 12px;
-}
-.recent-wrong-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: baseline;
-  gap: 4px 7px;
-  padding: 11px 12px;
-  background: #faf7f7;
-  border: 1px solid #eee1e1;
-  border-radius: 11px;
-}
-.recent-wrong-item strong {
-  color: #8f3f3f;
-  font-size: 22px;
-}
-.recent-wrong-item span {
-  color: #60656d;
-  font-size: 11px;
-}
-.recent-wrong-item small {
-  grid-column: 1 / -1;
-  color: #999da4;
-  font-size: 10px;
 }

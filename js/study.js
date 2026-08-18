@@ -88,7 +88,8 @@
 
       const labels = {
         due: "到期复习",
-        weak: "薄弱专项"
+        weak: "薄弱专项",
+        recent: "最近错题"
       };
 
       const label = labels[focusedReviewMode];
@@ -102,13 +103,17 @@
       const items =
         mode === "due"
           ? getDueReviewItems()
-          : getWeakReviewItems(12);
+          : mode === "recent"
+            ? getRecentWrongItems(12)
+            : getWeakReviewItems(12);
 
       if (items.length === 0) {
         window.alert(
           mode === "due"
             ? "目前没有到期需要复习的假名。"
-            : "目前还没有可识别的薄弱假名。"
+            : mode === "recent"
+              ? "目前没有最近答错的假名。"
+              : "目前还没有可识别的薄弱假名。"
         );
         return false;
       }
@@ -928,6 +933,13 @@
         updateProgressDashboard();
       }
 
+      if (
+        typeof updateReviewDashboard ===
+        "function"
+      ) {
+        updateReviewDashboard();
+      }
+
     }
 
 
@@ -1103,9 +1115,16 @@
           }
         ).length;
 
+      const focusedReviewLabel =
+        ({
+          due: "到期复习",
+          weak: "薄弱专项",
+          recent: "最近错题"
+        })[focusedReviewMode];
+
       selectedInfoEl.textContent =
         focusedReviewMode
-          ? `${focusedReviewMode === "due" ? "到期复习" : "薄弱专项"} · 当前 ${items.length} 个假名 · 答错会在 3–5 题后再次出现`
+          ? `${focusedReviewLabel || "专项复习"} · 当前 ${items.length} 个假名 · 答错会在 3–5 题后再次出现`
           : `当前抽取 ${items.length} 个平假名 · 已掌握 ${masteredCount} 个 · 到期复习 ${dueCount} 个`;
 
       const selectedLabels =

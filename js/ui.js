@@ -3,6 +3,7 @@
    ======================================== */
 
 let activeView = "study";
+let activeProgressTab = "overview";
 
 const appViews =
   document.querySelectorAll(
@@ -12,6 +13,51 @@ const appViews =
 const viewButtons =
   document.querySelectorAll(
     "[data-view-target]"
+  );
+
+const progressTabButtons =
+  document.querySelectorAll(
+    "[data-progress-target]"
+  );
+
+const progressTabPanels =
+  document.querySelectorAll(
+    "[data-progress-panel]"
+  );
+
+const reviewDueCountEl =
+  document.getElementById(
+    "reviewDueCount"
+  );
+
+const reviewWeakCountEl =
+  document.getElementById(
+    "reviewWeakCount"
+  );
+
+const reviewRecentCountEl =
+  document.getElementById(
+    "reviewRecentCount"
+  );
+
+const reviewDuePreviewEl =
+  document.getElementById(
+    "reviewDuePreview"
+  );
+
+const reviewStartDueButton =
+  document.getElementById(
+    "reviewStartDue"
+  );
+
+const reviewStartWeakButton =
+  document.getElementById(
+    "reviewStartWeak"
+  );
+
+const reviewStartRecentButton =
+  document.getElementById(
+    "reviewStartRecent"
   );
 
 const settingsModalEl =
@@ -119,24 +165,122 @@ const progressUpdatedEl =
     "progressUpdated"
   );
 
-const startDueReviewButton =
-  document.getElementById(
-    "startDueReview"
-  );
-
-const startWeakReviewButton =
-  document.getElementById(
-    "startWeakReview"
-  );
-
-const startSmartReviewButton =
-  document.getElementById(
-    "startSmartReview"
-  );
 
 
 function isStudyViewActive() {
   return activeView === "study";
+}
+
+
+function getHashState() {
+  const hash =
+    window.location.hash ||
+    "#study";
+
+  if (hash === "#review") {
+    return {
+      view: "review",
+      progressTab: activeProgressTab
+    };
+  }
+
+  if (hash.startsWith("#progress")) {
+    const requestedTab =
+      hash.replace(
+        "#progress-",
+        ""
+      );
+
+    const progressTab =
+      [
+        "overview",
+        "kana",
+        "activity"
+      ].includes(requestedTab)
+        ? requestedTab
+        : "overview";
+
+    return {
+      view: "progress",
+      progressTab
+    };
+  }
+
+  return {
+    view: "study",
+    progressTab: activeProgressTab
+  };
+}
+
+
+function switchProgressTab(
+  tab,
+  updateHash = true
+) {
+  const targetTab =
+    [
+      "overview",
+      "kana",
+      "activity"
+    ].includes(tab)
+      ? tab
+      : "overview";
+
+  activeProgressTab =
+    targetTab;
+
+  progressTabPanels.forEach(
+    panel => {
+      panel.hidden =
+        panel.dataset.progressPanel !==
+        targetTab;
+    }
+  );
+
+  progressTabButtons.forEach(
+    button => {
+      const isActive =
+        button.dataset.progressTarget ===
+        targetTab;
+
+      button.classList.toggle(
+        "active",
+        isActive
+      );
+
+      button.setAttribute(
+        "aria-selected",
+        String(isActive)
+      );
+    }
+  );
+
+  if (targetTab === "kana") {
+    renderMasteryGrid();
+  } else if (
+    targetTab === "activity"
+  ) {
+    renderActivityHeatmap();
+  }
+
+  if (
+    updateHash &&
+    activeView === "progress"
+  ) {
+    const nextHash =
+      `#progress-${targetTab}`;
+
+    if (
+      window.location.hash !==
+      nextHash
+    ) {
+      history.replaceState(
+        null,
+        "",
+        nextHash
+      );
+    }
+  }
 }
 
 
@@ -145,8 +289,12 @@ function switchView(
   updateHash = true
 ) {
   const targetView =
-    view === "progress"
-      ? "progress"
+    [
+      "study",
+      "review",
+      "progress"
+    ].includes(view)
+      ? view
       : "study";
 
   activeView = targetView;
@@ -185,6 +333,14 @@ function switchView(
 
   if (targetView === "progress") {
     updateProgressDashboard();
+    switchProgressTab(
+      activeProgressTab,
+      false
+    );
+  } else if (
+    targetView === "review"
+  ) {
+    updateReviewDashboard();
   } else if (
     window.matchMedia?.(
       "(pointer: fine)"
@@ -206,7 +362,9 @@ function switchView(
 
   if (updateHash) {
     const nextHash =
-      `#${targetView}`;
+      targetView === "progress"
+        ? `#progress-${activeProgressTab}`
+        : `#${targetView}`;
 
     if (
       window.location.hash !==
@@ -936,28 +1094,6 @@ function updateProgressDashboard() {
   levelDueEl.textContent =
     due;
 
-  if (startDueReviewButton) {
-    startDueReviewButton.disabled =
-      due === 0;
-    startDueReviewButton.textContent =
-      due > 0
-        ? `开始到期复习（${due}）`
-        : "暂无到期复习";
-  }
-
-  if (startWeakReviewButton) {
-    const weakCount =
-      typeof getWeakReviewItems === "function"
-        ? getWeakReviewItems(12).length
-        : 0;
-
-    startWeakReviewButton.disabled =
-      weakCount === 0;
-    startWeakReviewButton.textContent =
-      weakCount > 0
-        ? `专项复习薄弱假名（${weakCount}）`
-        : "暂无薄弱假名";
-  }
 
   const today =
     getDailyTotals(
@@ -988,11 +1124,128 @@ function updateProgressDashboard() {
   progressUpdatedEl.textContent =
     `已练习 ${practiced}/${kanaData.length} 个假名`;
 
-  renderMasteryGrid();
-  renderActivityHeatmap();
+  if (activeProgressTab === "kana") {
+    renderMasteryGrid();
+  } else if (
+    activeProgressTab === "activity"
+  ) {
+    renderActivityHeatmap();
+  }
+}
 
-  if (typeof updateRecentWrongList === "function") {
+
+function renderReviewKanaPreview(
+  element,
+  items,
+  emptyText
+) {
+  if (!element) {
+    return;
+  }
+
+  if (items.length === 0) {
+    element.textContent =
+      emptyText;
+    return;
+  }
+
+  element.innerHTML =
+    items
+      .slice(0, 10)
+      .map(
+        item =>
+          `<span class="review-kana-chip"><strong>${item.kana}</strong><small>${item.roman}</small></span>`
+      )
+      .join("");
+}
+
+
+function updateReviewDashboard() {
+  if (!reviewDueCountEl) {
+    return;
+  }
+
+  const dueItems =
+    typeof getDueReviewItems ===
+      "function"
+      ? getDueReviewItems()
+      : [];
+
+  const weakItems =
+    typeof getWeakReviewItems ===
+      "function"
+      ? getWeakReviewItems(12)
+      : [];
+
+  const recentItems =
+    typeof getRecentWrongItems ===
+      "function"
+      ? getRecentWrongItems(12)
+      : [];
+
+  reviewDueCountEl.textContent =
+    dueItems.length;
+
+  reviewWeakCountEl.textContent =
+    weakItems.length;
+
+  reviewRecentCountEl.textContent =
+    recentItems.length;
+
+  renderReviewKanaPreview(
+    reviewDuePreviewEl,
+    dueItems,
+    "暂无到期内容"
+  );
+
+  if (
+    typeof updateWeakList ===
+    "function"
+  ) {
+    updateWeakList();
+  }
+
+  if (
+    typeof updateRecentWrongList ===
+    "function"
+  ) {
     updateRecentWrongList();
+  }
+
+  [
+    [reviewStartDueButton, dueItems],
+    [reviewStartWeakButton, weakItems],
+    [reviewStartRecentButton, recentItems]
+  ].forEach(
+    ([button, items]) => {
+      if (!button) {
+        return;
+      }
+
+      button.disabled =
+        items.length === 0;
+    }
+  );
+
+  if (reviewStartDueButton) {
+    reviewStartDueButton.textContent =
+      dueItems.length > 0
+        ? `开始到期复习（${dueItems.length}）`
+        : "暂无到期复习";
+  }
+
+  if (reviewStartWeakButton) {
+    reviewStartWeakButton.textContent =
+      weakItems.length > 0
+        ? `专项复习薄弱假名（${weakItems.length}）`
+        : "暂无薄弱假名";
+  }
+
+  if (reviewStartRecentButton) {
+    reviewStartRecentButton.textContent =
+      recentItems.length > 0
+        ? `复习最近错题（${recentItems.length}）`
+        : "暂无最近错题";
   }
 }
 
@@ -1005,6 +1258,19 @@ function initializeUi() {
         () => {
           switchView(
             button.dataset.viewTarget
+          );
+        }
+      );
+    }
+  );
+
+  progressTabButtons.forEach(
+    button => {
+      button.addEventListener(
+        "click",
+        () => {
+          switchProgressTab(
+            button.dataset.progressTarget
           );
         }
       );
@@ -1026,30 +1292,19 @@ function initializeUi() {
     closeSettingsModal
   );
 
-  startDueReviewButton?.addEventListener(
+  reviewStartDueButton?.addEventListener(
     "click",
     () => startFocusedReview("due")
   );
 
-  startWeakReviewButton?.addEventListener(
+  reviewStartWeakButton?.addEventListener(
     "click",
     () => startFocusedReview("weak")
   );
 
-  startSmartReviewButton?.addEventListener(
+  reviewStartRecentButton?.addEventListener(
     "click",
-    () => {
-      focusedReviewMode = null;
-      focusedKanaSet = null;
-      wrongReplayQueue = [];
-      updateFocusedReviewUi();
-      weightModeEl.value = "weighted";
-      markSettingsChanged();
-      saveState();
-      updateSelectedInfo();
-      nextCard();
-      switchView("study");
-    }
+    () => startFocusedReview("recent")
   );
 
   exitFocusedReviewEl?.addEventListener(
@@ -1073,27 +1328,31 @@ function initializeUi() {
   window.addEventListener(
     "hashchange",
     () => {
-      const target =
-        window.location.hash ===
-          "#progress"
-          ? "progress"
-          : "study";
+      const state =
+        getHashState();
+
+      if (
+        state.view === "progress"
+      ) {
+        activeProgressTab =
+          state.progressTab;
+      }
 
       switchView(
-        target,
+        state.view,
         false
       );
     }
   );
 
-  const initialView =
-    window.location.hash ===
-      "#progress"
-      ? "progress"
-      : "study";
+  const initialState =
+    getHashState();
+
+  activeProgressTab =
+    initialState.progressTab;
 
   switchView(
-    initialView,
+    initialState.view,
     false
   );
 }
