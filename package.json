@@ -1,11 +1,12 @@
 {
   "name": "japanese-study",
-  "version": "10.0.0",
+  "version": "10.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "check": "node scripts/check.mjs",
     "test": "node --test test/*.test.js",
-    "verify": "npm run check && npm test"
+    "verify": "npm run check && npm test && npm run smoke",
+    "smoke": "node scripts/smoke.mjs"
   }
 }

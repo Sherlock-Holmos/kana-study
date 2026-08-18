@@ -157,3 +157,7 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .sync-panel { display: grid; gap: 3px; padding: 15px; border-radius: 14px; background: var(--surface-2); margin: 16px 0; }.sync-panel small { color: var(--muted); }
 .item-modal-title { font-size: 42px; }.detail-block { margin: 18px 0; }.detail-block strong { display: block; margin-bottom: 7px; }.detail-block .pill { display: inline-block; margin: 3px 4px 3px 0; }
 .skill-list { display: grid; gap: 8px; margin: 22px 0; }.skill-row { display:flex; justify-content:space-between; gap:16px; align-items:center; background:var(--surface-2); padding:12px 14px; border-radius:13px; }.skill-row strong,.skill-row small{display:block}.skill-row small{color:var(--muted);margin-top:3px}.skill-row > span{font-weight:800}.form-message{color:var(--bad);margin-top:10px}.empty{padding:30px;color:var(--muted);text-align:center}.bottom-nav{display:none}
+
+.fatal-state { width: min(760px, 100%); margin: 48px auto; padding: 32px; }
+.fatal-state h1 { margin: 8px 0 10px; }
+.fatal-state p { color: var(--muted); line-height: 1.7; overflow-wrap: anywhere; }

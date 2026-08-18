@@ -1,6 +1,21 @@
-# Japanese Study v10
+# Japanese Study v10.0.1
 
 一个从 Kana Study 重构而来的离线优先日语学习系统。产品层不再把“假名、词汇、语法”做成三个互不相关的小工具，而是使用统一的课程、技能、练习、SRS、Session 和进度模型。
+
+
+## v10.0.1 Hotfix
+
+本包包含 v10 首次部署后发现的前端可靠性修复：
+
+- 修复顶部导航、Logo 和移动端底部导航点击无响应：改为 document 级 `data-route` 事件代理
+- `navigate()` 显式写入 `#route`，避免依赖浏览器对 hash 的隐式规范化
+- Service Worker 缓存从全局 cache-first 改为：HTML / JS / CSS network-first，图标 cache-first
+- Cache 名升级为 `japanese-study-v10.0.1`，并预缓存完整 ES Module App Shell
+- 增加启动失败兜底界面，模块异常时不再只显示空白主体
+- 增加 browserless smoke test，CI 会真实导入 `src/app.js`、渲染首页并验证全局导航
+- 保留并更新 v5/v8/v9 → v10 数据迁移测试
+
+部署时建议用本包内容**完整替换**旧源码，而不是只覆盖同名文件；这样可以顺便清理旧版遗留的 `js/` 和旧 CSS 文件。
 
 ## 当前包含
 
@@ -79,6 +94,7 @@ npm run verify
 ```bash
 npm run check
 npm test
+npm run smoke
 ```
 
 项目本身仍是纯静态站点，不需要 npm build。

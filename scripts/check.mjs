@@ -21,7 +21,9 @@ function walk(dir, result = []) {
 
 const jsFiles = walk(join(project, "src")).filter(path => path.endsWith(".js"));
 jsFiles.push(...walk(join(project, "test")).filter(path => path.endsWith(".js")));
-for (const file of jsFiles) execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
+jsFiles.push(...walk(join(project, "scripts")).filter(path => path.endsWith(".js") || path.endsWith(".mjs")));
+jsFiles.push(join(project, "sw.js"));
+for (const file of [...new Set(jsFiles)]) execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

@@ -50,7 +50,7 @@ function routeFromHash() {
 
 function navigate(route) {
   const target = VIEW_NAMES.includes(route) ? route : "home";
-  if (location.hash !== `#${target}`) location.hash = target;
+  if (location.hash !== `#${target}`) location.hash = `#${target}`;
   else render();
 }
 
@@ -328,10 +328,6 @@ const commonActions = {
   setProgressTab: value => { runtime.progressTab = value; render(); }
 };
 
-function bindCommonRoutes() {
-  root.querySelectorAll("[data-route]").forEach(btn => btn.addEventListener("click", () => navigate(btn.dataset.route)));
-}
-
 function render() {
   const route = routeFromHash();
   navButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.route === route));
@@ -341,7 +337,6 @@ function render() {
   else if (route === "review") { root.innerHTML = renderReview(state); bindReview(root, commonActions); }
   else if (route === "library") { root.innerHTML = renderLibrary(state, runtime); bindLibrary(root, commonActions); }
   else { root.innerHTML = renderProgress(state, runtime); bindProgress(root, commonActions); }
-  bindCommonRoutes();
   updateHeader();
   renderModalLayer();
 }
@@ -365,6 +360,14 @@ async function initializeAuth() {
   render();
 }
 
+document.addEventListener("click", event => {
+  const trigger = event.target.closest?.("[data-route]");
+  if (!trigger) return;
+  const route = trigger.dataset.route;
+  if (!route) return;
+  navigate(route);
+});
+
 accountTrigger.addEventListener("click", () => openModal("account"));
 settingsTrigger.addEventListener("click", () => openModal("settings"));
 window.addEventListener("hashchange", render);
@@ -374,4 +377,4 @@ onAuthStateChange(nextUser => { if (!nextUser && user) { user = null; state = lo
 render();
 initializeAuth();
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=10").catch(console.warn));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=10.0.1").catch(console.warn));
