@@ -1,0 +1,21 @@
+{
+  "release": "n5-2026.08-v15",
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-18T08:15:07.853Z",
+  "totals": {
+    "kana": 208,
+    "vocabulary": 487,
+    "grammar": 95,
+    "kanji": 118,
+    "sentence": 111,
+    "reading": 24,
+    "listening": 24
+  },
+  "review": {
+    "reviewed": 0,
+    "automatedValidated": 1067,
+    "lowConfidence": 0,
+    "missingAbilities": 0,
+    "missingTopics": 0
+  }
+}
