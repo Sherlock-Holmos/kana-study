@@ -1,12 +1,14 @@
 {
   "name": "japanese-study",
-  "version": "12.0.0",
+  "version": "13.0.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
     "test": "node --test test/*.test.js",
     "smoke": "node scripts/smoke.mjs",
-    "verify": "npm run check && npm test && npm run smoke"
+    "smoke:dist": "node scripts/smoke-dist.mjs",
+    "verify": "npm run build && npm run check && npm test && npm run smoke && npm run smoke:dist"
   }
 }

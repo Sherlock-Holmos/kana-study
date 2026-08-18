@@ -1,17 +1,29 @@
-Japanese Study v12.0.0
-======================
+Japanese Study v13.0.0 - Stable Hashed Build
+=============================================
 
-Major changes
--------------
-1. Daily Planner with light / standard / intensive workload modes.
-2. Daily sessions can combine due review, weak-item reinforcement and a recommended course.
-3. Course metadata: objectives, prerequisites, estimated minutes, difficulty, mastery target.
-4. SRS 2.0 evidence weighting by exercise type and response speed.
-5. Skill state now tracks reviewCount, evidenceScore, averageResponseMs, lastResponseMs and lastQuality.
-6. Listening workflow supports normal/slow playback and reveals transcript only after answering.
-7. N5 completion metric combines six skill domains and curriculum completion.
-8. Content governance metadata and CI validation.
-9. schemaVersion upgraded to 12 with backward migration support.
+Purpose
+-------
+Eliminate cross-version ES Module mixing caused by browser, Service Worker or CDN caching.
+The user-visible regression that motivated this release was a production startup failure where
+views/home.js requested getN5Completion while a stale core/metrics.js was served without that export.
+
+Production architecture
+-----------------------
+1. Maintained source remains under src/.
+2. scripts/build.mjs recursively resolves the ES Module dependency graph.
+3. Every production JavaScript module is rewritten to reference content-hashed dependencies.
+4. CSS, PWA manifest and icons also receive content hashes.
+5. index.html references only hashed production assets.
+6. build-manifest.json records the complete current source -> production mapping.
+7. Service Worker cache name includes the deterministic buildId.
+8. Hashed /assets/ resources are cache-first; HTML/stable files are network-first.
+9. Service Worker registration uses updateViaCache: "none".
+10. Old hashed files are allowed to remain in the repository for stale-CDN-index compatibility.
+
+Application/data versions
+-------------------------
+App version: 13.0.0
+User data schemaVersion: 12 (unchanged; no unnecessary migration)
 
 Content corpus
 --------------
@@ -27,7 +39,15 @@ Lessons: 76
 Verification
 ------------
 Run: npm run verify
-Expected: syntax/content checks + unit tests + browserless application smoke test.
+
+Pipeline:
+- deterministic hashed production build
+- source + production JavaScript syntax checks
+- content/reference integrity checks
+- production asset/hash graph checks
+- 28 unit tests
+- source browserless application smoke test
+- production hashed-module-graph smoke test
 
 Important limitations
 ---------------------

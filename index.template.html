@@ -9,11 +9,11 @@
   <meta name="apple-mobile-web-app-title" content="Japanese Study">
   <meta name="description" content="假名、词汇、语法、汉字、阅读、听力、课程、SRS 复习与长期学习进度。">
   <title>Japanese Study v13 · 日语学习系统</title>
-  <link rel="manifest" href="./assets/manifest.a6633c8b2910.webmanifest">
-  <link rel="icon" href="./assets/icons/icon.a160406cf98f.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./assets/icons/icon-192.0779a5c0b4f7.png">
-  <link rel="stylesheet" href="./assets/css/app.6c3fbd4608e5.css">
-  <meta name="japanese-study-build" content="e02f7aafecd11009">
+  <link rel="manifest" href="__MANIFEST__">
+  <link rel="icon" href="__ICON_SVG__" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="__ICON_192__">
+  <link rel="stylesheet" href="__CSS__">
+  <meta name="japanese-study-build" content="__BUILD_ID__">
 </head>
 <body>
   <div class="app-shell">
@@ -72,7 +72,7 @@
     window.addEventListener("unhandledrejection", event => window.__showJapaneseStudyFatal(event.reason));
   </script>
   <script type="module">
-    import("./assets/js/app.9ea7291524f4.js").catch(window.__showJapaneseStudyFatal);
+    import("__APP_ENTRY__").catch(window.__showJapaneseStudyFatal);
   </script>
 </body>
 </html>
