@@ -1,32 +1,18 @@
-Japanese Study v13.0.0 - Stable Hashed Build
-=============================================
+Japanese Study v14.0.0 - N5 Production Ready
+============================================================
 
-Purpose
--------
-Eliminate cross-version ES Module mixing caused by browser, Service Worker or CDN caching.
-The user-visible regression that motivated this release was a production startup failure where
-views/home.js requested getN5Completion while a stale core/metrics.js was served without that export.
+Build
+-----
+App version: 14.0.0
+Data schema: 12
+Build ID: de2b2f4a4a95c156
+Production entry: ./assets/js/app.777783100ba7.js
+Production stylesheet: ./assets/css/app.8f75552a3fa7.css
+Current production modules: 43
+Old hashed assets retained for rolling-cache compatibility.
 
-Production architecture
------------------------
-1. Maintained source remains under src/.
-2. scripts/build.mjs recursively resolves the ES Module dependency graph.
-3. Every production JavaScript module is rewritten to reference content-hashed dependencies.
-4. CSS, PWA manifest and icons also receive content hashes.
-5. index.html references only hashed production assets.
-6. build-manifest.json records the complete current source -> production mapping.
-7. Service Worker cache name includes the deterministic buildId.
-8. Hashed /assets/ resources are cache-first; HTML/stable files are network-first.
-9. Service Worker registration uses updateViaCache: "none".
-10. Old hashed files are allowed to remain in the repository for stale-CDN-index compatibility.
-
-Application/data versions
--------------------------
-App version: 13.0.0
-User data schemaVersion: 12 (unchanged; no unnecessary migration)
-
-Content corpus
---------------
+Learning corpus
+---------------
 Kana: 208
 Vocabulary: 487
 Grammar: 95
@@ -35,22 +21,55 @@ Sentences: 111
 Reading: 24
 Listening: 24
 Lessons: 76
+Assessments: 6
+
+v14 features
+------------
+- N5 diagnostic assessment
+- Kana checkpoint
+- N5 foundation checkpoint
+- N5 kanji checkpoint
+- Reading/listening checkpoint
+- N5 core comprehensive mock
+- Assessment scores are stored separately from SRS mastery/stability
+- Assessment questions do not reveal answers immediately
+- Assessment wrong answers do not enter short-term replay
+- Progress page includes assessment history and latest scores
+- Content library exposes automated-validation vs human-review status
+- Password reset email and PASSWORD_RECOVERY flow
+- Logged-in password change
+- Manual cloud sync button
+- PWA new-version-ready reload banner
+- Dynamic build versioning from package.json
+- HTTP production resource smoke test
 
 Verification
 ------------
-Run: npm run verify
+Command: npm run verify
 
-Pipeline:
-- deterministic hashed production build
-- source + production JavaScript syntax checks
-- content/reference integrity checks
-- production asset/hash graph checks
-- 28 unit tests
-- source browserless application smoke test
-- production hashed-module-graph smoke test
+Result:
+- Hashed production build: PASS
+- Source/built syntax and content checks: PASS
+- Unit tests: 36 passed, 0 failed
+- Browserless app smoke: PASS
+- Production hashed module graph smoke: PASS
+- HTTP production smoke: PASS (52 current resources returned 200)
 
-Important limitations
----------------------
-- Listening uses browser Web Speech API, not bundled human recordings.
-- Corpus is a project-authored N5 core corpus, not an official JLPT exhaustive list.
-- Automated validation does not mean every language item has been manually reviewed by a professional editor.
+Browser environment note
+------------------------
+A system Chromium --headless --dump-dom run was attempted in this execution
+environment. Chromium did not complete because the container lacks the expected
+DBus/zygote runtime environment and timed out before returning DOM output.
+This result is NOT counted as a passed browser E2E test.
+
+Supabase
+--------
+v14 does not require a database schema migration. Assessment history reuses
+study_sessions.payload. Continue using supabase/schema-v12.sql.
+Password reset requires the deployed site URL to be allowed in Supabase Auth
+Redirect URLs.
+
+Security
+--------
+Only the Supabase publishable key is present in browser code. No service-role
+or secret key is included.

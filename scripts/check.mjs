@@ -4,12 +4,19 @@ import { join, relative, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { KANA_ITEMS } from "../src/data/kana.js";
 import { ALL_VOCABULARY_ITEMS, ALL_GRAMMAR_ITEMS, ALL_SENTENCE_ITEMS, LEARNING_ITEMS } from "../src/data/content.js";
+import { CONTENT_REVIEW_STATUSES } from "../src/data/content-quality.js";
 import { KANJI_ITEMS } from "../src/data/kanji.js";
 import { READING_ITEMS } from "../src/data/reading.js";
 import { LISTENING_ITEMS } from "../src/data/listening.js";
 import { CURRICULUM } from "../src/data/curriculum.js";
+import { ASSESSMENT_DEFINITIONS } from "../src/assessment/catalog.js";
+import { SCHEMA_VERSION } from "../src/core/constants.js";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const packageJson = JSON.parse(readFileSync(join(project, "package.json"), "utf8"));
+const appVersion = String(packageJson.version || "0.0.0");
+const appMajor = appVersion.split(".")[0];
+
 function walk(dir, result = []) {
   if (!existsSync(dir)) return result;
   for (const name of readdirSync(dir)) {
@@ -40,6 +47,7 @@ uniqueIds(READING_ITEMS, "阅读");
 uniqueIds(LISTENING_ITEMS, "听力");
 uniqueIds(CURRICULUM, "课程");
 uniqueIds(LEARNING_ITEMS, "全部学习内容");
+uniqueIds(ASSESSMENT_DEFINITIONS, "测验定义");
 
 assert(KANA_ITEMS.length === 208, "假名训练项应保持 208");
 assert(ALL_VOCABULARY_ITEMS.length >= 450, "N5 词汇核心库应至少 450 项");
@@ -49,10 +57,11 @@ assert(ALL_SENTENCE_ITEMS.length >= 100, "例句应至少 100 条");
 assert(READING_ITEMS.length >= 20, "N5 阅读应至少 20 篇");
 assert(LISTENING_ITEMS.length >= 20, "N5 听力应至少 20 组");
 assert(CURRICULUM.length >= 70, "课程总数应至少 70 节");
+assert(ASSESSMENT_DEFINITIONS.length >= 5, "至少应提供 5 个诊断/阶段测验");
 
 for (const item of LEARNING_ITEMS) {
   assert(item.source, `${item.id} 缺少 source`);
-  assert(item.reviewStatus, `${item.id} 缺少 reviewStatus`);
+  assert(CONTENT_REVIEW_STATUSES.includes(item.reviewStatus), `${item.id} reviewStatus 非法：${item.reviewStatus}`);
   assert(Number(item.contentVersion) >= 1, `${item.id} 缺少 contentVersion`);
   assert(Number(item.confidence) > 0 && Number(item.confidence) <= 1, `${item.id} confidence 非法`);
 }
@@ -61,6 +70,16 @@ for (const lesson of CURRICULUM) {
   assert(Array.isArray(lesson.prerequisites), `课程 ${lesson.id} prerequisites 非法`);
   assert(Number(lesson.estimatedMinutes) > 0, `课程 ${lesson.id} estimatedMinutes 非法`);
   assert(Number(lesson.masteryRequirement) >= 50 && Number(lesson.masteryRequirement) <= 100, `课程 ${lesson.id} masteryRequirement 非法`);
+}
+for (const assessment of ASSESSMENT_DEFINITIONS) {
+  const questionCount = Object.values(assessment.blueprint || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+  assert(questionCount >= 10, `测验 ${assessment.id} 题量不足`);
+  assert(Number(assessment.passScore) >= 50 && Number(assessment.passScore) <= 100, `测验 ${assessment.id} passScore 非法`);
+  assert(Number(assessment.estimatedMinutes) > 0, `测验 ${assessment.id} estimatedMinutes 非法`);
+  assert(Array.isArray(assessment.recommendedAfterPhases), `测验 ${assessment.id} recommendedAfterPhases 非法`);
+  for (const type of Object.keys(assessment.blueprint || {})) {
+    assert(["kana", "vocabulary", "grammar", "kanji", "reading", "listening"].includes(type), `测验 ${assessment.id} 使用未知类型 ${type}`);
+  }
 }
 for (const item of [...READING_ITEMS, ...LISTENING_ITEMS]) assert(item.options.includes(item.answer), `${item.id} 的正确答案必须存在于选项中`);
 
@@ -86,7 +105,8 @@ for (const file of sourceJs) {
 const buildManifestPath = join(project, "build-manifest.json");
 assert(existsSync(buildManifestPath), "缺少 build-manifest.json，请先运行 npm run build");
 const buildManifest = JSON.parse(readFileSync(buildManifestPath, "utf8"));
-assert(buildManifest.appVersion === "13.0.0", "生产构建版本不是 13.0.0");
+assert(buildManifest.appVersion === appVersion, `生产构建版本不是 ${appVersion}`);
+assert(buildManifest.dataSchemaVersion === SCHEMA_VERSION, `生产构建数据 Schema 不是 ${SCHEMA_VERSION}`);
 assert(/^[0-9a-f]{16}$/.test(buildManifest.buildId), "buildId 格式非法");
 for (const href of [buildManifest.entry, buildManifest.stylesheet, buildManifest.webmanifest, ...Object.values(buildManifest.icons), ...Object.values(buildManifest.modules)]) {
   assert(/^\.\/assets\//.test(href), `生产资源不是 assets 哈希资源：${href}`);
@@ -111,13 +131,15 @@ assert(!/\?v=\d+/.test(index), "生产 index.html 不应使用手工 ?v= 版本�
 for (const href of [buildManifest.entry, buildManifest.stylesheet, buildManifest.webmanifest, buildManifest.icons["icon.svg"], buildManifest.icons["icon-192.png"]]) {
   assert(index.includes(href), `index.html 未引用当前构建资源：${href}`);
 }
+assert(index.includes('id="updateBanner"'), "生产 index.html 缺少版本更新提示 UI");
 
 const sw = readFileSync(join(project, "sw.js"), "utf8");
-assert(sw.includes(`japanese-study-v13-${buildManifest.buildId}`), "Service Worker cache 名称未绑定 buildId");
+assert(sw.includes(`japanese-study-v${appMajor}-${buildManifest.buildId}`), "Service Worker cache 名称未绑定版本与 buildId");
 assert(sw.includes('url.pathname.includes("/assets/")'), "Service Worker 未对哈希资源使用独立缓存策略");
 assert(sw.includes(buildManifest.entry), "Service Worker 未预缓存当前入口模块");
 assert(readFileSync(join(project, "src", "app.js"), "utf8").includes('updateViaCache: "none"'), "Service Worker 注册未禁用更新缓存");
 
+console.log(`Version: ${appVersion}`);
 console.log(`JS syntax: source ${sourceJs.length}, built ${builtJs.length} files OK`);
 console.log(`Kana: ${KANA_ITEMS.length}`);
 console.log(`Vocabulary: ${ALL_VOCABULARY_ITEMS.length}`);
@@ -127,5 +149,6 @@ console.log(`Sentences: ${ALL_SENTENCE_ITEMS.length}`);
 console.log(`Reading: ${READING_ITEMS.length}`);
 console.log(`Listening: ${LISTENING_ITEMS.length}`);
 console.log(`Lessons: ${CURRICULUM.length}`);
+console.log(`Assessments: ${ASSESSMENT_DEFINITIONS.length}`);
 console.log(`Production build: ${buildManifest.buildId}`);
-console.log("Content + hashed module graph: OK");
+console.log("Content + assessment + hashed module graph: OK");

@@ -1,8 +1,8 @@
-import { getCurrentStreak, getLifetimeTotals, getN5Completion, getTodaySummary, getTypeProgress } from "../core/metrics.js";
-import { buildHeatmap } from "../components/heatmap.js";
-import { getAssessmentHistory, getAssessmentOverview } from "../assessment/engine.js";
-import { PROGRESS_DOMAIN_TYPES, TYPE_LABELS } from "../core/constants.js";
-import { escapeHtml, percent } from "../core/utils.js";
+import { getCurrentStreak, getLifetimeTotals, getN5Completion, getTodaySummary, getTypeProgress } from "./core-metrics.c232ee133a48.js";
+import { buildHeatmap } from "./components-heatmap.9726064fd025.js";
+import { getAssessmentHistory, getAssessmentOverview } from "./assessment-engine.a8066b1e5f90.js";
+import { PROGRESS_DOMAIN_TYPES, TYPE_LABELS } from "./core-constants.e6543be44c91.js";
+import { escapeHtml, percent } from "./core-utils.8125d8a6489d.js";
 
 function formatCompletedAt(value) {
   const date = new Date(value || "");

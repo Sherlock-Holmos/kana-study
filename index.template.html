@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Japanese Study">
   <meta name="description" content="假名、词汇、语法、汉字、阅读、听力、课程、SRS 复习与长期学习进度。">
-  <title>Japanese Study v13 · 日语学习系统</title>
+  <title>Japanese Study v14 · N5 Production Ready</title>
   <link rel="manifest" href="__MANIFEST__">
   <link rel="icon" href="__ICON_SVG__" type="image/svg+xml">
   <link rel="apple-touch-icon" href="__ICON_192__">
@@ -20,7 +20,7 @@
     <header class="app-header">
       <button class="brand" type="button" data-route="home" aria-label="返回首页">
         <span class="brand-mark">日</span>
-        <span><strong>Japanese Study</strong><small>N5 完整学习体验 · v13</small></span>
+        <span><strong>Japanese Study</strong><small>N5 Production Ready · v14</small></span>
       </button>
       <nav class="top-nav" aria-label="主导航">
         <button class="active" type="button" data-route="home">首页</button>
@@ -38,6 +38,11 @@
         </button>
       </div>
     </header>
+
+    <div id="updateBanner" class="update-banner" hidden role="status" aria-live="polite">
+      <span><strong>新版本已就绪</strong> · 刷新后切换到最新构建，当前学习数据不会丢失。</span>
+      <button class="primary" type="button" data-update-reload>刷新更新</button>
+    </div>
 
     <main id="viewRoot" class="view-root" aria-live="polite"></main>
 

@@ -1,6 +1,6 @@
 {
   "name": "japanese-study",
-  "version": "13.0.0",
+  "version": "14.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "test": "node --test test/*.test.js",
     "smoke": "node scripts/smoke.mjs",
     "smoke:dist": "node scripts/smoke-dist.mjs",
-    "verify": "npm run build && npm run check && npm test && npm run smoke && npm run smoke:dist"
+    "verify": "npm run build && npm run check && npm test && npm run smoke && npm run smoke:dist && npm run smoke:http",
+    "smoke:http": "node scripts/http-smoke.mjs"
   }
 }

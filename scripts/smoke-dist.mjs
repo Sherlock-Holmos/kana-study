@@ -65,10 +65,10 @@ await new Promise(resolvePromise => setTimeout(resolvePromise, 0));
 
 assert.match(root.innerHTML, /今天学什么/, "生产构建首页应成功渲染");
 assert.ok(documentListeners.has("click"), "生产构建应绑定全局路由事件代理");
-const routeTrigger = { dataset: { route: "progress" } };
+const routeTrigger = { dataset: { route: "learn" } };
 documentListeners.get("click")({ target: { closest(selector) { return selector === "[data-route]" ? routeTrigger : null; } } });
-assert.equal(locationStub.hash, "#progress", "生产构建导航应更新 hash");
+assert.equal(locationStub.hash, "#learn", "生产构建导航应更新 hash");
 windowListeners.get("hashchange")?.();
-assert.match(root.innerHTML, /学习数据|N5/, "生产构建进度页应正常渲染");
+assert.match(root.innerHTML, /N5 诊断与阶段测验/, "生产构建学习页应包含阶段测验入口");
 
 console.log(`Production module graph smoke: ${manifest.buildId} OK`);

@@ -52,3 +52,18 @@
   .listening-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
   .lesson-meta-line { gap: 5px; }
 }
+
+@media (max-width: 900px) {
+  .assessment-card-grid,
+  .assessment-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .content-quality-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .update-banner { top: 66px; align-items: flex-start; }
+  .assessment-card-grid,
+  .assessment-progress-grid { grid-template-columns: 1fr; }
+  .assessment-card p { min-height: 0; }
+  .content-quality-strip { grid-template-columns: 1fr 1fr; }
+  .assessment-domain-row { grid-template-columns: 1fr auto auto; }
+}

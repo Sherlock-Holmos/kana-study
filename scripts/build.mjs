@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SCHEMA_VERSION } from "../src/core/constants.js";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const srcRoot = join(project, "src");
@@ -15,6 +16,9 @@ const assetsRoot = join(project, "assets");
 const jsOut = join(assetsRoot, "js");
 const cssOut = join(assetsRoot, "css");
 const iconOut = join(assetsRoot, "icons");
+const packageJson = JSON.parse(readFileSync(join(project, "package.json"), "utf8"));
+const APP_VERSION = String(packageJson.version || "0.0.0");
+const APP_MAJOR = APP_VERSION.split(".")[0] || "0";
 
 for (const dir of [assetsRoot, jsOut, cssOut, iconOut]) mkdirSync(dir, { recursive: true });
 
@@ -101,9 +105,9 @@ for (const name of ["icon.svg", "icon-192.png", "icon-512.png"]) {
 }
 
 const manifestObject = {
-  name: "Japanese Study v13 · 日语学习系统",
+  name: `Japanese Study v${APP_MAJOR} · 日语学习系统`,
   short_name: "Japanese Study",
-  description: "N5 完整学习体验：今日计划、课程目标、SRS 2.0、假名、词汇、语法、汉字、阅读与听力。v13 使用内容哈希静态资源，避免跨版本模块混用。",
+  description: "N5 Production Ready：今日计划、课程、独立阶段测验、SRS 2.0、假名、词汇、语法、汉字、阅读、听力与云端同步。生产资源使用内容哈希避免跨版本模块混用。",
   start_url: "./#home",
   scope: "./",
   display: "standalone",
@@ -124,6 +128,8 @@ const manifestHref = `./assets/${manifestName}`;
 
 const modules = [...moduleCache.values()].sort((a, b) => a.source.localeCompare(b.source));
 const buildSeed = JSON.stringify({
+  appVersion: APP_VERSION,
+  dataSchemaVersion: SCHEMA_VERSION,
   app: app.digest,
   css: cssDigest,
   manifest: manifestDigest,
@@ -149,7 +155,7 @@ const immutableAssets = [
   ...modules.map(item => item.href)
 ];
 
-const sw = `const CACHE_NAME = "japanese-study-v13-${buildId}";\n` +
+const sw = `const CACHE_NAME = "japanese-study-v${APP_MAJOR}-${buildId}";\n` +
 `const APP_SHELL = ${JSON.stringify(["./", "./index.html", ...immutableAssets], null, 2)};\n\n` +
 `self.addEventListener("install", event => {\n` +
 `  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));\n` +
@@ -168,7 +174,6 @@ const sw = `const CACHE_NAME = "japanese-study-v13-${buildId}";\n` +
 `    if (cached) return cached;\n` +
 `    if (request.mode === "navigate") return (await cache.match("./index.html")) || Response.error();\n` +
 `    throw error;\n` +
-`  }\n` +
 `}\n\n` +
 `async function cacheFirst(request) {\n` +
 `  const cache = await caches.open(CACHE_NAME);\n` +
@@ -190,8 +195,8 @@ const sw = `const CACHE_NAME = "japanese-study-v13-${buildId}";\n` +
 writeIfChanged(join(project, "sw.js"), sw);
 
 const buildManifest = {
-  appVersion: "13.0.0",
-  dataSchemaVersion: 12,
+  appVersion: APP_VERSION,
+  dataSchemaVersion: SCHEMA_VERSION,
   buildId,
   entry: app.href,
   stylesheet: cssHref,
@@ -201,8 +206,9 @@ const buildManifest = {
   generatedAt: new Date().toISOString()
 };
 writeIfChanged(join(project, "build-manifest.json"), JSON.stringify(buildManifest, null, 2) + "\n");
-writeIfChanged(join(project, "version.json"), JSON.stringify({ version: "13.0.0", buildId, dataSchemaVersion: 12 }, null, 2) + "\n");
+writeIfChanged(join(project, "version.json"), JSON.stringify({ version: APP_VERSION, buildId, dataSchemaVersion: SCHEMA_VERSION }, null, 2) + "\n");
 
+console.log(`Version: ${APP_VERSION}`);
 console.log(`Build ID: ${buildId}`);
 console.log(`Entry: ${app.href}`);
 console.log(`CSS: ${cssHref}`);

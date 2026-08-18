@@ -86,5 +86,6 @@ assert.equal(locationStub.hash, "#learn", "点击顶部/底部 data-route 后应
 
 windowListeners.get("hashchange")?.();
 assert.match(root.innerHTML, /课程路线/, "hashchange 后应该渲染学习页");
+assert.match(root.innerHTML, /N5 诊断与阶段测验/, "学习页应该包含独立阶段测验入口");
 
 console.log("Browserless app smoke: home render + delegated navigation OK");

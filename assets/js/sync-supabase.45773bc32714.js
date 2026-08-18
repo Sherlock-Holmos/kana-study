@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION } from "../core/constants.js";
+import { SCHEMA_VERSION } from "./core-constants.e6543be44c91.js";
 
 const SUPABASE_URL = "https://actgbctprjohjqhxwvlz.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_g2TZB_-n02_IDT3tVpHhNA_-8yAUxEy";

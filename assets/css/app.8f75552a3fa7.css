@@ -318,3 +318,76 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .content-quality-note { margin: 0 0 14px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .content-meta-detailed { flex-wrap: wrap; }
 .account-actions { flex-wrap: wrap; }
+
+
+/* responsive.css */
+
+@media (max-width: 900px) {
+  .app-header { grid-template-columns: 1fr auto; padding: 12px 16px; }
+  .top-nav { display: none; }
+  .brand small, .account-name { display: none; }
+  .view-root { width: min(100% - 24px, 760px); margin-top: 20px; margin-bottom: 92px; }
+  .bottom-nav { position: fixed; z-index: 30; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5,1fr); padding: 7px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.92); box-shadow: 0 18px 50px rgba(20,24,34,.16); backdrop-filter: blur(18px); }
+  .bottom-nav button { border: 0; background: transparent; border-radius: 13px; padding: 7px 3px; color: var(--muted); }
+  .bottom-nav button.active { background: var(--text); color: white; }
+  .bottom-nav span,.bottom-nav small { display:block; }.bottom-nav span{font-size:18px}.bottom-nav small{font-size:10px;margin-top:2px}
+  .dashboard-grid, .review-grid, .domain-progress-list { grid-template-columns: 1fr; }
+  .domain-grid { grid-template-columns: repeat(3,1fr); }
+  .library-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+@media (max-width: 640px) {
+  .page-heading, .hero { display: block; }
+  .hero { padding: 24px; }.hero .big { width: 100%; margin-top: 20px; }
+  .domain-grid { grid-template-columns: 1fr; }
+  .library-toolbar { display: grid; }.library-toolbar input { width: 100%; }
+  .library-grid { grid-template-columns: 1fr; }
+  .phase-card { padding: 17px; }.lesson-row { grid-template-columns: 38px 1fr auto; padding: 11px; }
+  .study-card { min-height: 390px; padding: 24px 18px; }.study-glyph{font-size:100px}.study-word{font-size:48px}.study-pattern{font-size:34px}
+  .choice-grid { grid-template-columns: 1fr; }.answer-form { grid-template-columns: 1fr 1fr; }.answer-form input { grid-column: 1 / -1; }
+  .summary-grid { grid-template-columns: repeat(2,1fr); }.summary-actions{display:grid}.summary-actions button{width:100%}
+  .section-title-row { align-items:flex-start; }.summary-pills { display:grid; }.account-trigger { padding-right:5px; }
+  .modal-card { padding: 24px 18px; }.item-modal-title{font-size:34px}
+}
+
+@media (max-width: 900px) {
+  .domain-grid-six, .domain-progress-list-six { grid-template-columns: repeat(2, 1fr); }
+  .library-grid-wide { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .domain-grid-six, .domain-progress-list-six { grid-template-columns: 1fr; }
+  .library-grid-wide { grid-template-columns: 1fr; }
+  .library-toolbar { align-items: stretch; }
+  .library-segmented { width: 100%; }
+  .quiz-reading-passage { padding: 16px; font-size: 16px; line-height: 1.9; }
+  .listening-stage { margin-top: 30px; }
+  .study-glyph { font-size: 96px; }
+}
+
+@media (max-width: 900px) {
+  .daily-dashboard { grid-template-columns: 1fr; }
+  .daily-hero { align-items: stretch; }
+}
+
+@media (max-width: 640px) {
+  .plan-mode-switch { width: 100%; display: grid; grid-template-columns: repeat(3,1fr); }
+  .plan-mode-switch button { padding: 9px 4px !important; }
+  .listening-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .lesson-meta-line { gap: 5px; }
+}
+
+@media (max-width: 900px) {
+  .assessment-card-grid,
+  .assessment-progress-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .content-quality-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 620px) {
+  .update-banner { top: 66px; align-items: flex-start; }
+  .assessment-card-grid,
+  .assessment-progress-grid { grid-template-columns: 1fr; }
+  .assessment-card p { min-height: 0; }
+  .content-quality-strip { grid-template-columns: 1fr 1fr; }
+  .assessment-domain-row { grid-template-columns: 1fr auto auto; }
+}

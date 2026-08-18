@@ -1,8 +1,8 @@
-import { SKILL_LABELS, TYPE_LABELS } from "../core/constants.js";
-import { escapeHtml, formatRelativeReview } from "../core/utils.js";
-import { getLearningItem } from "../data/content.js";
-import { getSkillsForType, skillKey } from "../domain/skills.js";
-import { getSkillTotals } from "../core/state.js";
+import { SKILL_LABELS, TYPE_LABELS } from "./core-constants.e6543be44c91.js";
+import { escapeHtml, formatRelativeReview } from "./core-utils.8125d8a6489d.js";
+import { getLearningItem } from "./data-content.f6876516c78d.js";
+import { getSkillsForType, skillKey } from "./domain-skills.1fb627364197.js";
+import { getSkillTotals } from "./core-state.5c7346cbbc32.js";
 
 function itemPrimary(item) {
   return item?.expression || item?.pattern || item?.character || item?.kana || item?.title || item?.jp || "";

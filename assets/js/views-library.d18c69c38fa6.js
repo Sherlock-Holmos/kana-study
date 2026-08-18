@@ -1,8 +1,8 @@
-import { escapeHtml } from "../core/utils.js";
-import { getItemsByType, getSearchText } from "../data/content.js";
-import { getItemMastery } from "../core/state.js";
-import { TYPE_LABELS } from "../core/constants.js";
-import { getContentQualitySummary } from "../data/content-quality.js";
+import { escapeHtml } from "./core-utils.8125d8a6489d.js";
+import { getItemsByType, getSearchText } from "./data-content.f6876516c78d.js";
+import { getItemMastery } from "./core-state.5c7346cbbc32.js";
+import { TYPE_LABELS } from "./core-constants.e6543be44c91.js";
+import { getContentQualitySummary } from "./data-content-quality.a38185e58f15.js";
 
 function itemTitle(item) {
   if (item.type === "kana") return `${item.kana} · ${item.roman}`;

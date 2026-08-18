@@ -1,7 +1,7 @@
-import { PHASES, getPhaseLessons, getLessonProgress, getRecommendedLesson } from "../data/curriculum.js";
-import { ASSESSMENT_DEFINITIONS } from "../assessment/catalog.js";
-import { getAssessmentOverview } from "../assessment/engine.js";
-import { escapeHtml } from "../core/utils.js";
+import { PHASES, getPhaseLessons, getLessonProgress, getRecommendedLesson } from "./data-curriculum.9d44927613fd.js";
+import { ASSESSMENT_DEFINITIONS } from "./assessment-catalog.d76cdcd41424.js";
+import { getAssessmentOverview } from "./assessment-engine.a8066b1e5f90.js";
+import { escapeHtml } from "./core-utils.8125d8a6489d.js";
 
 function renderObjectives(lesson) {
   const list = (lesson.objectives || []).slice(0, 2);

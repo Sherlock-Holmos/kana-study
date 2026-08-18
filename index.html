@@ -8,19 +8,19 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Japanese Study">
   <meta name="description" content="假名、词汇、语法、汉字、阅读、听力、课程、SRS 复习与长期学习进度。">
-  <title>Japanese Study v13 · 日语学习系统</title>
-  <link rel="manifest" href="./assets/manifest.a6633c8b2910.webmanifest">
+  <title>Japanese Study v14 · N5 Production Ready</title>
+  <link rel="manifest" href="./assets/manifest.29423720046c.webmanifest">
   <link rel="icon" href="./assets/icons/icon.a160406cf98f.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./assets/icons/icon-192.0779a5c0b4f7.png">
-  <link rel="stylesheet" href="./assets/css/app.6c3fbd4608e5.css">
-  <meta name="japanese-study-build" content="e02f7aafecd11009">
+  <link rel="stylesheet" href="./assets/css/app.8f75552a3fa7.css">
+  <meta name="japanese-study-build" content="de2b2f4a4a95c156">
 </head>
 <body>
   <div class="app-shell">
     <header class="app-header">
       <button class="brand" type="button" data-route="home" aria-label="返回首页">
         <span class="brand-mark">日</span>
-        <span><strong>Japanese Study</strong><small>N5 完整学习体验 · v13</small></span>
+        <span><strong>Japanese Study</strong><small>N5 Production Ready · v14</small></span>
       </button>
       <nav class="top-nav" aria-label="主导航">
         <button class="active" type="button" data-route="home">首页</button>
@@ -38,6 +38,11 @@
         </button>
       </div>
     </header>
+
+    <div id="updateBanner" class="update-banner" hidden role="status" aria-live="polite">
+      <span><strong>新版本已就绪</strong> · 刷新后切换到最新构建，当前学习数据不会丢失。</span>
+      <button class="primary" type="button" data-update-reload>刷新更新</button>
+    </div>
 
     <main id="viewRoot" class="view-root" aria-live="polite"></main>
 
@@ -72,7 +77,7 @@
     window.addEventListener("unhandledrejection", event => window.__showJapaneseStudyFatal(event.reason));
   </script>
   <script type="module">
-    import("./assets/js/app.9ea7291524f4.js").catch(window.__showJapaneseStudyFatal);
+    import("./assets/js/app.777783100ba7.js").catch(window.__showJapaneseStudyFatal);
   </script>
 </body>
 </html>

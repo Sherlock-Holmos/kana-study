@@ -1,7 +1,7 @@
-import { LESSON_BY_ID } from "../data/curriculum.js";
-import { getLearningItem } from "../data/content.js";
-import { getSkillsForType } from "../domain/skills.js";
-import { randomId, shuffle } from "../core/utils.js";
+import { LESSON_BY_ID } from "./data-curriculum.9d44927613fd.js";
+import { getLearningItem } from "./data-content.f6876516c78d.js";
+import { getSkillsForType } from "./domain-skills.1fb627364197.js";
+import { randomId, shuffle } from "./core-utils.8125d8a6489d.js";
 
 function quizEntry(itemId, skill, stage = "practice", replayCount = 0) {
   return { id: randomId("quiz"), kind: "quiz", itemId, skill, stage, replayCount };
