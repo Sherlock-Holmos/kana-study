@@ -107,7 +107,7 @@ for (const name of ["icon.svg", "icon-192.png", "icon-512.png"]) {
 const manifestObject = {
   name: `Japanese Study v${APP_MAJOR} · 日语学习系统`,
   short_name: "Japanese Study",
-  description: "N5 Learning Quality：Adaptive Planner 2.0、复习债务、能力诊断、Assessment 2.0、Audio Layer、增量同步、SRS 2.0 与内容哈希生产构建。",
+  description: "N5 Production Complete：Question Bank 2.0、Speaking Foundation、Content Pipeline、Audio 3.0 fallback、Adaptive Planner、增量同步与内容哈希生产构建。",
   start_url: "./#home",
   scope: "./",
   display: "standalone",

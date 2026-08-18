@@ -15,6 +15,10 @@ function sentenceEntry(sentenceId) {
   return { id: randomId("sentence"), kind: "sentence", itemId: sentenceId };
 }
 
+function speakingEntry(sentenceId) {
+  return { id: randomId("speaking"), kind: "speaking", itemId: sentenceId, stage: "shadowing" };
+}
+
 function queueForKanaLesson(lesson) {
   const itemIds = lesson.itemIds || [];
   return [
@@ -43,6 +47,7 @@ function queueForJapaneseLesson(lesson) {
   queue.push(...shuffle(kanji).map(id => quizEntry(id, "meaning", "kanji-meaning")));
   queue.push(...shuffle(kanji).map(id => quizEntry(id, "reading", "kanji-reading")));
   queue.push(...sentences.map(sentenceEntry));
+  queue.push(...sentences.slice(0, 2).map(speakingEntry));
   queue.push(...reading.map(id => quizEntry(id, "comprehension", "reading")));
   queue.push(...listening.map(id => quizEntry(id, "comprehension", "listening")));
   queue.push(...shuffle([
@@ -134,13 +139,33 @@ export function recordQuizResult(session, isCorrect, userAnswer = "", meta = {})
     stage: current.stage,
     replay: current.replayCount > 0,
     responseMs: Math.max(0, Number(meta.responseMs || 0)),
-    quality: Number(meta.quality || 1)
+    quality: Number(meta.quality || 1),
+    questionId: current.questionId || null,
+    variantType: current.variantType || null,
+    difficulty: current.difficulty || null,
+    abilities: Array.isArray(current.abilities) ? [...current.abilities] : []
   });
   if (meta.allowReplay !== false && !isCorrect && current.replayCount < 2) {
     const replay = quizEntry(current.itemId, current.skill, "reinforce", current.replayCount + 1);
     const position = Math.min(next.queue.length, 3 + Math.floor(Math.random() * 3));
     next.queue.splice(position, 0, replay);
   }
+  if (!next.queue.length) next.completedAt = new Date().toISOString();
+  return next;
+}
+
+export function recordSpeakingResult(session, rating = "done", meta = {}) {
+  const current = getCurrentEntry(session);
+  if (!current || current.kind !== "speaking") return session;
+  const next = { ...session, queue: [...(session.queue || [])], speakingResults: [...(session.speakingResults || [])] };
+  next.queue.shift();
+  next.cursor = Number(next.cursor || 0) + 1;
+  next.speakingResults.push({
+    itemId: current.itemId,
+    rating,
+    durationMs: Math.max(0, Number(meta.durationMs || 0)),
+    at: new Date().toISOString()
+  });
   if (!next.queue.length) next.completedAt = new Date().toISOString();
   return next;
 }

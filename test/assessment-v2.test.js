@@ -3,15 +3,16 @@ import assert from "node:assert/strict";
 import { createDefaultState } from "../src/core/state.js";
 import { createAssessmentSession, summarizeAssessment } from "../src/assessment/engine.js";
 
-test("assessment v2 records blueprint version and avoids recent questions when possible", () => {
+test("assessment v3 uses question bank and avoids recent variants and avoids recent questions when possible", () => {
   const state = createDefaultState();
   const first = createAssessmentSession("diagnostic-n5", state);
   first.completedAt = new Date().toISOString();
-  first.results = first.queue.map(q => ({ itemId: q.itemId, skill: q.skill, correct: true }));
+  first.results = first.queue.map(q => ({ itemId: q.itemId, skill: q.skill, questionId: q.questionId, correct: true }));
   state.sessions.push(first);
   const second = createAssessmentSession("diagnostic-n5", state);
-  const overlap = second.queue.filter(q => first.results.some(r => r.itemId === q.itemId)).length;
-  assert.equal(second.blueprintVersion, 2);
+  const overlap = second.queue.filter(q => first.results.some(r => r.questionId === q.questionId)).length;
+  assert.equal(second.blueprintVersion, 3);
+  assert.equal(second.questionBankVersion, 2);
   assert.ok(overlap < second.queue.length);
 });
 

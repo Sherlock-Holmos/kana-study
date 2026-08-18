@@ -327,3 +327,14 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .review-grid > .review-card:nth-child(4) { grid-column:auto; }
 @media (max-width: 900px) { .ability-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width: 560px) { .ability-profile-grid { grid-template-columns:1fr; } }
+
+/* v16 production-complete additions */
+.speaking-card { max-width: 760px; margin: 0 auto; }
+.speaking-card h2 { font-size: clamp(2rem, 6vw, 3.6rem); margin: 1rem 0 .4rem; }
+.speaking-steps { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+.speaking-steps span { padding: .45rem .7rem; border-radius: 999px; background: var(--soft, #f2f4f8); font-size: .88rem; }
+.speaking-recorder { display: grid; gap: .75rem; margin: 1rem 0; padding: 1rem; border: 1px solid var(--border, #e6e8ee); border-radius: 14px; }
+.speaking-playback { width: 100%; }
+.recording-indicator { font-weight: 700; }
+.speaking-rating { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
+.danger-soft { border-color: #e5a0a0; background: #fff4f4; }

@@ -1,52 +1,56 @@
-Japanese Study v15.0.0 — Clean Full-Replacement Build Report
-Date: 2026-08-18
+Japanese Study v16.0.0 — Build Report
+=======================================
 
-Purpose:
-  This package is prepared for full repository replacement. It contains the complete v15 source tree, tests, CI workflow, schemas, Supabase SQL, and only the current production hashed assets. Old v13/v14/v15 build hashes were removed before the final build.
+Release
+-------
+App version: 16.0.0
+Data schema: 14
+Content schema: 1
+Content release: n5-2026.08-v16
+Production build ID: 2458ff03b8028a2a
 
-Verification command:
-  npm run verify
+Content
+-------
+Kana: 208
+Vocabulary: 487
+Grammar: 95
+Kanji: 118
+Sentences: 111
+Reading: 24
+Listening: 24
+Lessons: 76
+Assessments: 6
+Question variants: 2351
 
-Results:
-  App version: 15.0.0
-  Content release: n5-2026.08-v15
-  Data schema: 13
-  Production build ID: 5ac6df5bdd31ba0e
-  Source JS modules: 49
-  Current hashed production JS: 49
-  Current production asset files: 54
-  Unit tests: 43 passed, 0 failed
-  Browserless app smoke: PASS
-  Production hashed module-graph smoke: PASS
-  HTTP production smoke: PASS (58 resources)
+Verification actually executed
+------------------------------
+npm run verify: PASS
 
-Corpus:
-  Kana: 208
-  Vocabulary: 487
-  Grammar: 95
-  Kanji: 118
-  Sentences: 111
-  Reading: 24
-  Listening: 24
-  Lessons: 76
-  Assessments: 6
+- content:build: PASS
+- content:report: PASS
+- hashed production build: PASS
+- source / production syntax + reference checks: PASS
+- unit tests: 49 passed, 0 failed
+- browserless source smoke: PASS
+- production module graph smoke: PASS
+- HTTP production smoke: PASS (60 resources)
 
-v15 quality features implemented:
-  - Adaptive Planner 2.0
-  - Review Debt / backlog throttling
-  - Adaptive new-content budget
-  - Ability Profile with skill/topic diagnostics
-  - Assessment 2.0 with recent-question avoidance and ability-level results
-  - Lesson completion vs mastery state
-  - Audio abstraction with explicit audio URL support + Web Speech fallback
-  - Slow-response review selector
-  - Incremental cloud sync metadata and dirty tracking
-  - Safe reset path that clears normalized cloud rows before re-upload
-  - Content schema/release metadata and generated quality report
-  - Hashed production build and service-worker update protection
+Production assets
+-----------------
+Source JS modules: 51
+Current hashed production JS modules: 51
+Entry: ./assets/js/app.1655b4be43fd.js
+CSS: ./assets/css/app.e0dd3afae1c7.css
 
-Known limits:
-  - Current listening corpus does not bundle professional human recordings. Existing items fall back to browser TTS unless audio URLs are added.
-  - Automated content validation is not professional Japanese-teacher review.
-  - A full Playwright browser suite is not executed in this environment; browserless app smoke, production module graph smoke and HTTP smoke passed.
-  - v15 keeps the runtime corpus in src/data/*.js for backward compatibility.
+Real-browser E2E
+----------------
+Playwright desktop/mobile E2E specs and a GitHub Actions workflow are included.
+The current sandbox has Python Playwright and system Chromium, but direct localhost navigation is blocked by the environment policy with net::ERR_BLOCKED_BY_ADMINISTRATOR. Therefore real-browser E2E is NOT claimed as locally passed in this build report.
+On GitHub Actions, .github/workflows/e2e.yml installs @playwright/test + Chromium and runs npm run e2e.
+
+Important product limitations
+-----------------------------
+1. Automated content validation is not professional teacher review. Current report: 0 human-reviewed / 1067 automated-validated.
+2. The repository contains the Audio 3.0 fixed-audio abstraction but does not fabricate a human-recorded audio pack. Missing fixed audio uses Web Speech fallback.
+3. Speaking recording is local and ephemeral. v16 intentionally does not claim automatic pronunciation scoring.
+4. content/generated/ is an independently versioned JSON release artifact. Runtime content is still sourced from the existing JS content graph in v16; this preserves compatibility while establishing the future external-content boundary.

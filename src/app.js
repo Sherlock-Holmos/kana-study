@@ -10,12 +10,13 @@ import { buildExercise, isExerciseAnswerCorrect } from "./learning/exercises.js"
 import { getAnswerEvidence } from "./learning/evidence.js";
 import { applyPlanSnapshot, buildDailyPlan } from "./learning/planner.js";
 import { updateSkillAfterAnswer } from "./learning/srs.js";
-import { advanceSimpleEntry, createDailySession, createItemSession, createLessonSession, createReviewSession, getCurrentEntry, recordQuizResult, summarizeSession } from "./learning/session.js";
+import { advanceSimpleEntry, createDailySession, createItemSession, createLessonSession, createReviewSession, getCurrentEntry, recordQuizResult, recordSpeakingResult, summarizeSession } from "./learning/session.js";
 import { getDuePairs, getRecentMistakePairs, getSlowPairs, getWeakPairs } from "./review/selectors.js";
 import { mergeStates } from "./sync/merge.js";
 import { getCurrentUser, loadCloudProgress, onAuthStateChange, saveCloudProgress, sendPasswordReset, signIn, signOut, signUp, updatePassword } from "./sync/supabase.js";
 import { markDateDirty, markSessionDirty, markSkillDirty, clearDirtyState } from "./sync/dirty-tracker.js";
 import { playLearningAudio } from "./audio/player.js";
+import { disposeSpeakingPlayback, startSpeakingRecording, stopSpeakingRecording, supportsSpeakingRecording } from "./speaking/recorder.js";
 import { renderHome, bindHome } from "./views/home.js";
 import { renderLearn, bindLearn } from "./views/learn.js";
 import { renderStudy, bindStudy } from "./views/study.js";
@@ -45,7 +46,8 @@ const runtime = {
   progressTab: "overview",
   feedback: null,
   pendingResult: null,
-  questionStartedAt: Date.now()
+  questionStartedAt: Date.now(),
+  speaking: { supported: supportsSpeakingRecording(), recording: false, playbackUrl: null, durationMs: 0 }
 };
 
 let syncStatus = { label: "仅本地保存", detail: "未登录账号", state: "local" };
@@ -130,6 +132,40 @@ async function speakItem(itemId, rate = 0.92) {
   if (!item) return;
   try { await playLearningAudio(item, Number(rate) < 0.8 ? "slow" : "normal"); }
   catch (error) { alert(error.message || "音频播放失败。"); }
+}
+
+async function startSpeakingRecordingAction() {
+  try {
+    await startSpeakingRecording();
+    runtime.speaking.recording = true;
+    runtime.speaking.playbackUrl = null;
+    runtime.speaking.durationMs = 0;
+    render();
+  } catch (error) { alert(error.message || "无法开始录音。"); }
+}
+
+async function stopSpeakingRecordingAction() {
+  try {
+    const result = await stopSpeakingRecording();
+    runtime.speaking.recording = false;
+    runtime.speaking.playbackUrl = result.url;
+    runtime.speaking.durationMs = result.durationMs;
+    render();
+  } catch (error) { alert(error.message || "无法停止录音。"); }
+}
+
+function completeSpeaking(rating = "done") {
+  const entry = getCurrentEntry(state.activeSession);
+  if (!entry || entry.kind !== "speaking") return;
+  state.activeSession = recordSpeakingResult(state.activeSession, rating, { durationMs: runtime.speaking.durationMs });
+  state.speaking ||= { attempts: 0, completed: 0, retry: 0, totalDurationMs: 0, lastPracticedAt: null };
+  state.speaking.attempts += 1;
+  state.speaking[rating === "retry" ? "retry" : "completed"] += 1;
+  state.speaking.totalDurationMs += Math.max(0, Number(runtime.speaking.durationMs || 0));
+  state.speaking.lastPracticedAt = nowIso();
+  disposeSpeakingPlayback();
+  runtime.speaking = { supported: supportsSpeakingRecording(), recording: false, playbackUrl: null, durationMs: 0 };
+  commit();
 }
 
 function resetQuizRuntime() {
@@ -434,6 +470,9 @@ const commonActions = {
   finishSession,
   practiceItem,
   speakItem,
+  startSpeakingRecording: startSpeakingRecordingAction,
+  stopSpeakingRecording: stopSpeakingRecordingAction,
+  completeSpeaking,
   setDailyPlanMode,
   openItem: itemId => openModal("item", { itemId }),
   setLibraryType: value => { runtime.libraryType = value; runtime.libraryQuery = ""; render(); },

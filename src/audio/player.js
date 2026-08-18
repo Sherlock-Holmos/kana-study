@@ -1,4 +1,4 @@
-import { getAudioSource } from "./repository.js";
+import { getAudioSource, getAudioText } from "./repository.js";
 import { speakWithWebSpeech } from "./speech-fallback.js";
 
 let currentAudio = null;
@@ -17,7 +17,7 @@ export async function playLearningAudio(item, mode = "normal") {
     return { source: "audio", url: source };
   }
   const rate = mode === "slow" ? 0.72 : 0.92;
-  const ok = speakWithWebSpeech(item?.transcript || item?.expression || item?.character || item?.kana || "", rate);
-  if (!ok) throw new Error("当前浏览器既没有可用音频，也不支持 Web Speech API。");
+  const ok = speakWithWebSpeech(getAudioText(item), rate);
+  if (!ok) throw new Error("当前浏览器既没有可用固定音频，也不支持 Web Speech API。");
   return { source: "tts" };
 }

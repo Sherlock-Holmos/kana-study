@@ -21,6 +21,27 @@ function renderSentence(item) {
   return `<div class="study-card sentence-card"><span class="eyebrow">例句</span><h2>${escapeHtml(item?.jp || "")}</h2><p>${escapeHtml(item?.reading || "")}</p><strong>${escapeHtml(item?.zh || "")}</strong></div>`;
 }
 
+function renderSpeaking(item, runtime) {
+  const speaking = runtime.speaking || {};
+  const supported = speaking.supported !== false;
+  const recording = Boolean(speaking.recording);
+  const playback = speaking.playbackUrl ? `<audio class="speaking-playback" controls src="${escapeHtml(speaking.playbackUrl)}"></audio>` : "";
+  return `<div class="study-card speaking-card">
+    <span class="eyebrow">口语基础 · Shadowing</span>
+    <h2 lang="ja">${escapeHtml(item?.jp || "")}</h2>
+    <p>${escapeHtml(item?.reading || "")}</p>
+    <small>${escapeHtml(item?.zh || "")}</small>
+    <div class="speaking-steps"><span>1 听原句</span><span>2 跟读</span><span>3 回听</span><span>4 自评</span></div>
+    <div class="listening-controls"><button class="primary" type="button" data-speak-item="${escapeHtml(item?.id || "")}" data-speak-rate="0.92">▶ 播放原句</button><button type="button" data-speak-item="${escapeHtml(item?.id || "")}" data-speak-rate="0.72">慢速</button></div>
+    <div class="speaking-recorder">
+      ${supported ? recording ? `<button class="danger-soft" type="button" data-speaking-stop>■ 停止录音</button><span class="recording-indicator">正在录音…</span>` : `<button type="button" data-speaking-start>● 开始录音</button>` : `<small>当前环境不支持麦克风录音，可直接播放后跟读。</small>`}
+      ${playback}
+    </div>
+    <div class="speaking-rating"><button class="primary" type="button" data-speaking-complete="done">跟读完成</button><button type="button" data-speaking-complete="retry">需要再练</button></div>
+    <p class="muted-copy">v16 不会伪造发音分数。录音仅保存在当前浏览器内存中，用于立即回听；不会上传云端。</p>
+  </div>`;
+}
+
 function renderRule(entry) {
   const card = entry.card || {};
   return `<div class="study-card intro-card"><span class="eyebrow">规则</span><div class="study-pattern">${escapeHtml(card.symbol || "")}</div><h2>${escapeHtml(card.title || "")}</h2><p>${escapeHtml(card.body || "")}</p><strong>${escapeHtml(card.example || "")}</strong></div>`;
@@ -96,9 +117,10 @@ export function renderStudy(state, runtime) {
   if (entry.kind === "intro") content = renderIntro(getLearningItem(entry.itemId));
   else if (entry.kind === "sentence") content = renderSentence(getLearningItem(entry.itemId));
   else if (entry.kind === "rule") content = renderRule(entry);
+  else if (entry.kind === "speaking") content = renderSpeaking(getLearningItem(entry.itemId), runtime);
   else content = renderQuiz(entry, runtime, session);
 
-  return `<section class="study-shell"><div class="study-top"><div><span class="eyebrow">${escapeHtml(session.title || "学习")}</span><strong>${session.cursor + 1} / ${total}</strong></div><div class="study-session-meta">${session.type === "assessment" ? "测验结果独立于 SRS" : session.estimatedMinutes ? `预计 ${session.estimatedMinutes} 分钟` : ""}</div><div class="progress-track small"><i style="width:${pct}%"></i></div></div>${content}${entry.kind !== "quiz" ? `<button class="primary continue-button" type="button" data-advance>继续</button>` : ""}</section>`;
+  return `<section class="study-shell"><div class="study-top"><div><span class="eyebrow">${escapeHtml(session.title || "学习")}</span><strong>${session.cursor + 1} / ${total}</strong></div><div class="study-session-meta">${session.type === "assessment" ? "测验结果独立于 SRS" : session.estimatedMinutes ? `预计 ${session.estimatedMinutes} 分钟` : ""}</div><div class="progress-track small"><i style="width:${pct}%"></i></div></div>${content}${!["quiz", "speaking"].includes(entry.kind) ? `<button class="primary continue-button" type="button" data-advance>继续</button>` : ""}</section>`;
 }
 
 export function bindStudy(root, actions) {
@@ -109,5 +131,8 @@ export function bindStudy(root, actions) {
   root.querySelector("[data-advance]")?.addEventListener("click", actions.advanceSession);
   root.querySelectorAll("[data-finish-route]").forEach(btn => btn.addEventListener("click", () => actions.finishSession(btn.dataset.finishRoute || null)));
   root.querySelectorAll("[data-speak-item]").forEach(btn => btn.addEventListener("click", () => actions.speakItem(btn.dataset.speakItem, Number(btn.dataset.speakRate || 0.92))));
+  root.querySelector("[data-speaking-start]")?.addEventListener("click", actions.startSpeakingRecording);
+  root.querySelector("[data-speaking-stop]")?.addEventListener("click", actions.stopSpeakingRecording);
+  root.querySelectorAll("[data-speaking-complete]").forEach(btn => btn.addEventListener("click", () => actions.completeSpeaking(btn.dataset.speakingComplete)));
   requestAnimationFrame(() => root.querySelector("#answerInput")?.focus());
 }

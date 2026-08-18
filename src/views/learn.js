@@ -34,7 +34,7 @@ export function renderLearn(state) {
   const recommended = getRecommendedLesson([...done]);
   const mastery = state.curriculum.masteredLessons || {};
   return `
-    <section class="page-heading"><div><span class="eyebrow">课程路线 · v15</span><h1>学习</h1><p>课程负责教学，测验负责验证；学习目标、SRS 和记忆复习不再与阶段考试混在一起。</p></div></section>
+    <section class="page-heading"><div><span class="eyebrow">课程路线 · v16</span><h1>学习</h1><p>课程负责教学，测验负责验证；学习目标、SRS 和记忆复习不再与阶段考试混在一起。</p></div></section>
     ${renderAssessmentCards(state)}
     <div class="phase-list">
       ${PHASES.map(phase => {

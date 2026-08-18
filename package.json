@@ -1,6 +1,6 @@
 {
   "name": "japanese-study",
-  "version": "15.0.0",
+  "version": "16.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +11,9 @@
     "smoke": "node scripts/smoke.mjs",
     "smoke:dist": "node scripts/smoke-dist.mjs",
     "smoke:http": "node scripts/http-smoke.mjs",
-    "verify": "npm run content:report && npm run build && npm run check && npm test && npm run smoke && npm run smoke:dist && npm run smoke:http"
+    "verify": "npm run content:build && npm run content:report && npm run build && npm run check && npm test && npm run smoke && npm run smoke:dist && npm run smoke:http",
+    "content:build": "node scripts/content-build.mjs",
+    "serve": "node scripts/serve.mjs",
+    "e2e": "playwright test"
   }
 }

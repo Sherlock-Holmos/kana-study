@@ -2,28 +2,35 @@ import { LEARNING_ITEM_BY_ID, LEARNING_ITEMS } from "../data/content.js";
 import { getLessonProgress } from "../data/curriculum.js";
 import { getSkillsForType } from "../domain/skills.js";
 import { buildAbilityProfile } from "../domain/ability/profile.js";
+import { getQuestionPool } from "./question-bank.js";
 import { randomId, shuffle } from "../core/utils.js";
 import { summarizeSession } from "../learning/session.js";
 import { ASSESSMENT_BY_ID, ASSESSMENT_DEFINITIONS } from "./catalog.js";
 
-function eligibleItems(type) {
-  return LEARNING_ITEMS.filter(item => item.type === type && item.type !== "sentence" && (!item.level || item.level === "N5" || item.level === "kana"));
-}
 function recentQuestionIds(state, assessmentId) {
   return new Set((state?.sessions || [])
     .filter(s => s?.type === "assessment" && s.assessmentId === assessmentId)
-    .slice(-2).flatMap(s => (s.results || []).map(r => r.itemId)));
+    .slice(-3).flatMap(s => (s.results || []).map(r => r.questionId || r.itemId)));
 }
 function makeEntries(type, count, excluded = new Set()) {
-  const base = eligibleItems(type);
-  let pool = shuffle(base.filter(item => !excluded.has(item.id)));
+  const base = getQuestionPool(type).filter(question => !question.level || question.level === "N5" || question.level === "kana");
+  let pool = shuffle(base.filter(question => !excluded.has(question.questionId)));
   if (pool.length < count) pool = shuffle(base);
   if (!pool.length || count <= 0) return [];
   return Array.from({ length: count }, (_, index) => {
-    const item = pool[index % pool.length];
-    const skills = getSkillsForType(item.type);
-    const skill = skills[index % Math.max(1, skills.length)] || "comprehension";
-    return { id: randomId("assessment-question"), kind: "quiz", itemId: item.id, skill, stage: "assessment", replayCount: 0 };
+    const question = pool[index % pool.length];
+    return {
+      id: randomId("assessment-question"),
+      kind: "quiz",
+      itemId: question.itemId,
+      skill: question.skill,
+      questionId: question.questionId,
+      variantType: question.variantType,
+      difficulty: question.difficulty,
+      abilities: question.abilities,
+      stage: "assessment",
+      replayCount: 0
+    };
   });
 }
 
@@ -36,7 +43,7 @@ export function createAssessmentSession(assessmentId, state = null) {
   return {
     id: randomId("assessment"), type: "assessment", assessmentId: definition.id, assessmentKind: definition.kind,
     title: definition.title, passScore: definition.passScore, estimatedMinutes: definition.estimatedMinutes,
-    blueprintVersion: 2, startedAt: new Date().toISOString(), completedAt: null, cursor: 0, queue, results: []
+    blueprintVersion: 3, questionBankVersion: 2, startedAt: new Date().toISOString(), completedAt: null, cursor: 0, queue, results: []
   };
 }
 
@@ -51,7 +58,7 @@ export function summarizeAssessment(session) {
     const type = resultDomain(result);
     domains[type] ||= { correct: 0, total: 0, percent: 0 };
     domains[type].total += 1; if (result.correct) domains[type].correct += 1;
-    for (const tag of item?.pedagogy?.abilities || []) {
+    for (const tag of result.abilities || item?.pedagogy?.abilities || []) {
       abilities[tag] ||= { correct: 0, total: 0, percent: 0 };
       abilities[tag].total += 1; if (result.correct) abilities[tag].correct += 1;
     }
@@ -83,6 +90,6 @@ export function updateDiagnosticState(state) {
   state.abilityProfile = buildAbilityProfile(state);
   const latest = getAssessmentHistory(state)[0];
   if (latest) state.assessment.diagnostics[latest.session.assessmentId] = { at: latest.session.completedAt, summary: latest.summary };
-  state.assessment.recentQuestionIds = (state.sessions || []).filter(s => s?.type === "assessment").slice(-4).flatMap(s => (s.results || []).map(r => r.itemId)).slice(-240);
+  state.assessment.recentQuestionIds = (state.sessions || []).filter(s => s?.type === "assessment").slice(-4).flatMap(s => (s.results || []).map(r => r.questionId || r.itemId)).slice(-360);
   return state;
 }

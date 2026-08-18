@@ -66,10 +66,16 @@ export function mergeStates(localRaw, remoteRaw) {
     abilityProfile: parseTime(remote.abilityProfile?.generatedAt) > parseTime(local.abilityProfile?.generatedAt) ? remote.abilityProfile : local.abilityProfile,
     assessment: {
       diagnostics: { ...(remote.assessment?.diagnostics || {}), ...(local.assessment?.diagnostics || {}) },
-      recentQuestionIds: [...new Set([...(remote.assessment?.recentQuestionIds || []), ...(local.assessment?.recentQuestionIds || [])])].slice(-240)
+      recentQuestionIds: [...new Set([...(remote.assessment?.recentQuestionIds || []), ...(local.assessment?.recentQuestionIds || [])])].slice(-360)
     },
-    sync: {
-      dirtySkillKeys: [...new Set([...(local.sync?.dirtySkillKeys || []), ...(remote.sync?.dirtySkillKeys || [])])],
+    speaking: {
+      attempts: Math.max(Number(local.speaking?.attempts || 0), Number(remote.speaking?.attempts || 0)),
+      completed: Math.max(Number(local.speaking?.completed || 0), Number(remote.speaking?.completed || 0)),
+      retry: Math.max(Number(local.speaking?.retry || 0), Number(remote.speaking?.retry || 0)),
+      totalDurationMs: Math.max(Number(local.speaking?.totalDurationMs || 0), Number(remote.speaking?.totalDurationMs || 0)),
+      lastPracticedAt: parseTime(remote.speaking?.lastPracticedAt) > parseTime(local.speaking?.lastPracticedAt) ? remote.speaking?.lastPracticedAt : local.speaking?.lastPracticedAt
+    },
+    sync: {      dirtySkillKeys: [...new Set([...(local.sync?.dirtySkillKeys || []), ...(remote.sync?.dirtySkillKeys || [])])],
       dirtyDates: [...new Set([...(local.sync?.dirtyDates || []), ...(remote.sync?.dirtyDates || [])])],
       dirtySessionIds: [...new Set([...(local.sync?.dirtySessionIds || []), ...(remote.sync?.dirtySessionIds || [])])],
       fullSyncRequired: Boolean(local.sync?.fullSyncRequired || remote.sync?.fullSyncRequired),

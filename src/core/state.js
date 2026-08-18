@@ -56,6 +56,7 @@ export function createDefaultState() {
     planner: { reviewDebt: { total: 0, remaining: 0, updatedAt: null }, lastPlan: null },
     abilityProfile: { generatedAt: null, abilities: {}, topics: {}, recommendations: [] },
     assessment: { diagnostics: {}, recentQuestionIds: [] },
+    speaking: { attempts: 0, completed: 0, retry: 0, totalDurationMs: 0, lastPracticedAt: null },
     sync: { dirtySkillKeys: [], dirtyDates: [], dirtySessionIds: [], fullSyncRequired: true, resetRequested: false },
     meta: { createdAt: now, updatedAt: now, migratedFrom: null }
   };
@@ -166,7 +167,15 @@ export function sanitizeState(raw) {
     assessment: {
       ...base.assessment, ...(raw.assessment || {}),
       diagnostics: raw.assessment?.diagnostics && typeof raw.assessment.diagnostics === "object" ? raw.assessment.diagnostics : {},
-      recentQuestionIds: Array.isArray(raw.assessment?.recentQuestionIds) ? raw.assessment.recentQuestionIds.slice(-240) : []
+      recentQuestionIds: Array.isArray(raw.assessment?.recentQuestionIds) ? raw.assessment.recentQuestionIds.slice(-360) : []
+    },
+    speaking: {
+      ...base.speaking, ...(raw.speaking || {}),
+      attempts: Math.max(0, Number(raw.speaking?.attempts || 0)),
+      completed: Math.max(0, Number(raw.speaking?.completed || 0)),
+      retry: Math.max(0, Number(raw.speaking?.retry || 0)),
+      totalDurationMs: Math.max(0, Number(raw.speaking?.totalDurationMs || 0)),
+      lastPracticedAt: raw.speaking?.lastPracticedAt || null
     },
     sync: {
       ...base.sync, ...(raw.sync || {}),

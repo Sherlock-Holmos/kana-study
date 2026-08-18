@@ -98,7 +98,7 @@ async function loadNormalized(userId) {
     settings: settingsRes.data?.settings || {},
     curriculum: {
       completedLessons: courseRes.data?.completed_lessons || [],
-      masteredLessons: metaRes.data?.meta?.v15?.masteredLessons || {},
+      masteredLessons: (metaRes.data?.meta?.v16 || metaRes.data?.meta?.v15)?.masteredLessons || {},
       updatedAt: courseRes.data?.updated_at || null
     },
     skills: Object.fromEntries((skillsRes.data || []).map(row => [row.skill_key, row.progress])),
@@ -106,11 +106,12 @@ async function loadNormalized(userId) {
     lifetime: metaRes.data?.lifetime || { devices: {} },
     activeSession: metaRes.data?.active_session || null,
     sessions: (sessionsRes.data || []).map(row => row.payload).filter(Boolean),
-    planner: metaRes.data?.meta?.v15?.planner || undefined,
-    abilityProfile: metaRes.data?.meta?.v15?.abilityProfile || undefined,
-    assessment: metaRes.data?.meta?.v15?.assessment || undefined,
-    sync: metaRes.data?.meta?.v15?.sync || undefined,
-    meta: (() => { const m = { ...(metaRes.data?.meta || {}) }; delete m.v15; return m; })()
+    planner: (metaRes.data?.meta?.v16 || metaRes.data?.meta?.v15)?.planner || undefined,
+    abilityProfile: (metaRes.data?.meta?.v16 || metaRes.data?.meta?.v15)?.abilityProfile || undefined,
+    assessment: (metaRes.data?.meta?.v16 || metaRes.data?.meta?.v15)?.assessment || undefined,
+    speaking: (metaRes.data?.meta?.v16 || metaRes.data?.meta?.v15)?.speaking || undefined,
+    sync: (metaRes.data?.meta?.v16 || metaRes.data?.meta?.v15)?.sync || undefined,
+    meta: (() => { const m = { ...(metaRes.data?.meta || {}) }; delete m.v15; delete m.v16; return m; })()
   };
 }
 
@@ -158,11 +159,12 @@ async function saveNormalized(userId, state) {
   }
   const metaPayload = {
     ...(state.meta || {}),
-    v15: {
+    v16: {
       masteredLessons: state.curriculum?.masteredLessons || {},
       planner: state.planner || {},
       abilityProfile: state.abilityProfile || {},
       assessment: state.assessment || {},
+      speaking: state.speaking || {},
       sync: { ...sync, dirtySkillKeys: [], dirtyDates: [], dirtySessionIds: [], fullSyncRequired: false, resetRequested: false, lastSyncedAt: now }
     }
   };

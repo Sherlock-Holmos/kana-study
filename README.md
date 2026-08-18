@@ -1,21 +1,33 @@
-# Japanese Study v15.0.0
+# Japanese Study v16.0.0
 
-面向中文学习者的 N5 自适应日语学习系统。v15 的定位是 **N5 Learning Quality**：冻结主要产品架构，把重点从“继续增加功能类型”转向学习调度、能力诊断、测验质量、音频抽象、内容治理与同步可靠性。
+面向中文学习者的 N5 自适应日语学习系统。v16 的定位是 **N5 Production Complete**：在 v15 的 Adaptive Planner、Ability Profile、Assessment 2.0、Audio Layer 和增量同步基础上，补齐独立 Question Bank、内容发布管线、口语跟读基础、Audio 3.0 fallback、Schema 14 和真实浏览器 E2E 工作流。
 
-## v15 核心
+## v16 核心变化
 
-- Adaptive Planner 2.0：根据到期风险、近期错题、薄弱项、近期正确率和学习强度生成今日计划。
-- Review Debt：复习积压不会一次全部压给用户，而是按风险分批消化。
-- Ability Profile：把能力拆到词汇主动产出、助词、动词变形、汉字读音、阅读细节、听力时间/数字等子能力。
-- Assessment 2.0：阶段测验与 SRS 分离，尽量避免连续测验重复同一题，并给出能力级诊断。
-- Audio Layer：支持真实音频 URL；未配置时安全回退到浏览器 ja-JP Web Speech。
-- Incremental Sync：记录 dirty skill/date/session；首次 v15 同步为完整同步，之后只上传变化项。
-- 内容治理：`CONTENT_SCHEMA_VERSION`、`CONTENT_RELEASE`、pedagogy tags 与 `npm run content:report`。
-- Hashed Production Build：生产 ES Modules、CSS、Manifest 与图标继续使用内容哈希，避免跨版本缓存混用。
+- **Question Bank 2.0**：学习内容和测验题目不再是一一绑定。当前 1067 个学习内容生成 2351 个独立 question variants，具有 `questionId / skill / variantType / difficulty / abilities / topics`。
+- **Assessment 3.0**：阶段测验按 question variant 组卷，最近题目去重基于 `questionId`，而不是只基于 itemId；测验结果继续与 SRS 分离。
+- **Speaking Foundation**：综合课程中的例句自动插入 Shadowing 卡片。支持播放原句、慢速播放、浏览器麦克风录音、即时回听和“完成 / 需要再练”自评。
+- **隐私边界**：口语录音只存在当前页面内存与 Blob URL，不写 localStorage，不上传 Supabase，不伪造自动发音分数。
+- **Audio 3.0**：音频仓库支持 listening / sentence / vocabulary 的固定音频 URL；没有固定音频时继续使用 Web Speech API fallback。
+- **Content Pipeline 2.0**：`npm run content:build` 生成独立 JSON release bundles，包括 vocabulary、grammar、kanji、reading、listening、sentence、kana 和 `question-bank.json`。
+- **Content Release**：`n5-2026.08-v16`，与 App Version 和 Data Schema 解耦。
+- **Data Schema 14**：新增 `speaking` 学习统计，v15 Schema 13 自动迁移。
+- **Cloud meta v16**：Planner / Ability / Assessment / Speaking / Sync 写入 `user_learning_meta.meta.v16`，加载时继续兼容 v15 meta。
+- **生产构建**：继续使用内容哈希 ES Module graph，避免新旧模块缓存混用。
+- **Browser E2E**：加入 Playwright desktop/mobile 测试与 GitHub Actions `Browser E2E` workflow。
 
-## 内容规模
+## 当前内容规模
 
-当前仍以经过自动结构校验的 N5 核心语料为主：假名、词汇、语法、汉字、例句、阅读、听力和 76 节课程。自动校验不等于专业教师人工审校，`CONTENT-QUALITY-REPORT.md` 会明确显示审核状态。
+- 假名：208
+- 词汇：487
+- 语法：95
+- 汉字：118
+- 例句：111
+- 阅读：24
+- 听力：24
+- 课程：76
+- 阶段测验：6
+- Question variants：2351
 
 ## 本地验证
 
@@ -23,25 +35,39 @@
 npm run verify
 ```
 
-流程：内容报告 → hashed build → 静态检查 → Node 单元测试 → app smoke → production module graph smoke → HTTP smoke。
+完整验证顺序：
 
-## 部署
+```text
+content:build
+→ content:report
+→ build
+→ check
+→ unit tests
+→ source smoke
+→ production module graph smoke
+→ HTTP smoke
+```
 
-这是静态站点。运行 `npm run build` 后，将整个仓库推送到 GitHub Pages 即可。`index.html` 会引用当前构建的 hashed assets。
+真实浏览器 E2E 需要 Playwright：
+
+```bash
+npm install --no-save @playwright/test@1.55.0
+npx playwright install chromium
+npm run e2e
+```
+
+GitHub Actions 会在 `e2e.yml` 中自动安装 Chromium 并执行 desktop/mobile E2E。
 
 ## Supabase
 
-v15 Data Schema 为 13。现有 v12 规范化表继续兼容；`supabase/schema-v15.sql` 提供可选的独立学习画像表。当前前端为了兼容旧项目，会同时把 v15 学习画像写入 `user_learning_meta.meta.v15`。
+Data Schema 为 14，但现有 v12/v15 规范化表仍然兼容。v16 的新增口语统计存入 `user_learning_meta.meta.v16`，不需要为了 v16 强制新建表。
 
-## 音频
+`supabase/schema-v16.sql` 保留可选的 `user_learning_profiles` 扩展定义。不要把 service-role key 放进前端。
 
-听力内容支持：
+## 内容质量说明
 
-```js
-item.audio = {
-  normal: "./assets/audio/example-normal.mp3",
-  slow: "./assets/audio/example-slow.mp3"
-}
-```
+自动 Schema、引用、Pedagogy tags、Question Bank 和构建校验通过，不代表 1067 条日语内容已经由专业教师逐条人工审校。当前 `CONTENT-QUALITY-REPORT.md` 会明确区分 automated validation 和 human review。
 
-如果未配置音频文件，播放器自动回退到 Web Speech API。项目不会把浏览器 TTS 标记为真人录音。
+## 音频说明
+
+v16 完成了固定音频资源层和 Shadowing 交互，但仓库没有伪造“真人录音包”。当前没有 `item.audio.normal` 的条目会使用浏览器 Web Speech API。以后补充真人/高质量 TTS 音频只需要给内容条目增加 audio URL，不需要重写播放器。

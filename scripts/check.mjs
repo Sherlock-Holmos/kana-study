@@ -10,6 +10,7 @@ import { READING_ITEMS } from "../src/data/reading.js";
 import { LISTENING_ITEMS } from "../src/data/listening.js";
 import { CURRICULUM } from "../src/data/curriculum.js";
 import { ASSESSMENT_DEFINITIONS } from "../src/assessment/catalog.js";
+import { QUESTION_BANK } from "../src/assessment/question-bank.js";
 import { CONTENT_RELEASE, CONTENT_SCHEMA_VERSION, SCHEMA_VERSION } from "../src/core/constants.js";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -35,8 +36,10 @@ function uniqueIds(items, label) {
 const sourceJs = walk(join(project, "src")).filter(path => path.endsWith(".js"));
 const testJs = walk(join(project, "test")).filter(path => path.endsWith(".js"));
 const scriptJs = walk(join(project, "scripts")).filter(path => path.endsWith(".mjs"));
+const e2eJs = walk(join(project, "e2e")).filter(path => path.endsWith(".js"));
+const configJs = [join(project, "playwright.config.js")].filter(existsSync);
 const builtJs = walk(join(project, "assets", "js")).filter(path => path.endsWith(".js"));
-for (const file of [...sourceJs, ...testJs, ...scriptJs, ...builtJs]) execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
+for (const file of [...sourceJs, ...testJs, ...scriptJs, ...e2eJs, ...configJs, ...builtJs]) execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
 
 uniqueIds(KANA_ITEMS, "假名");
 uniqueIds(ALL_VOCABULARY_ITEMS, "词汇");
@@ -48,6 +51,7 @@ uniqueIds(LISTENING_ITEMS, "听力");
 uniqueIds(CURRICULUM, "课程");
 uniqueIds(LEARNING_ITEMS, "全部学习内容");
 uniqueIds(ASSESSMENT_DEFINITIONS, "测验定义");
+assert(new Set(QUESTION_BANK.map(q => q.questionId)).size === QUESTION_BANK.length, "Question Bank 存在重复 questionId");
 
 assert(KANA_ITEMS.length === 208, "假名训练项应保持 208");
 assert(ALL_VOCABULARY_ITEMS.length >= 450, "N5 词汇核心库应至少 450 项");
@@ -58,6 +62,7 @@ assert(READING_ITEMS.length >= 20, "N5 阅读应至少 20 篇");
 assert(LISTENING_ITEMS.length >= 20, "N5 听力应至少 20 组");
 assert(CURRICULUM.length >= 70, "课程总数应至少 70 节");
 assert(ASSESSMENT_DEFINITIONS.length >= 5, "至少应提供 5 个诊断/阶段测验");
+assert(QUESTION_BANK.length >= 2000, "Question Bank 题目变体不足 2000");
 
 for (const item of LEARNING_ITEMS) {
   assert(item.source, `${item.id} 缺少 source`);
@@ -105,6 +110,13 @@ for (const file of sourceJs) {
     assert(existsSync(target), `${relative(project, file)} import 不存在：${match[1]}`);
   }
 }
+
+const contentBundleManifestPath = join(project, "content", "generated", "manifest.json");
+assert(existsSync(contentBundleManifestPath), "缺少 content/generated/manifest.json，请先运行 npm run content:build");
+const contentBundleManifest = JSON.parse(readFileSync(contentBundleManifestPath, "utf8"));
+assert(contentBundleManifest.release === CONTENT_RELEASE, "生成内容包 release 与源码不一致");
+assert(Number(contentBundleManifest.questionBank?.total || 0) === QUESTION_BANK.length, "生成 Question Bank 数量不一致");
+for (const info of Object.values(contentBundleManifest.files || {})) assert(existsSync(join(project, info.file)), `生成内容文件不存在：${info.file}`);
 
 const buildManifestPath = join(project, "build-manifest.json");
 assert(existsSync(buildManifestPath), "缺少 build-manifest.json，请先运行 npm run build");
@@ -154,6 +166,7 @@ console.log(`Reading: ${READING_ITEMS.length}`);
 console.log(`Listening: ${LISTENING_ITEMS.length}`);
 console.log(`Lessons: ${CURRICULUM.length}`);
 console.log(`Assessments: ${ASSESSMENT_DEFINITIONS.length}`);
+console.log(`Question variants: ${QUESTION_BANK.length}`);
 console.log(`Content release: ${CONTENT_RELEASE}`);
 console.log(`Production build: ${buildManifest.buildId}`);
 console.log("Content + assessment + hashed module graph: OK");

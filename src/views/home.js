@@ -17,7 +17,7 @@ export function renderHome(state) {
   return `
     <section class="hero panel daily-hero">
       <div>
-        <span class="eyebrow">Japanese Study v15 · Adaptive Planner 2.0</span>
+        <span class="eyebrow">Japanese Study v16 · N5 Production Complete</span>
         <h1>今天学什么，系统会根据你的状态动态安排</h1>
         <p>${escapeHtml(plan.description)}。近期正确率 ${plan.recentAccuracy}%，预计约 ${plan.estimatedMinutes} 分钟。</p>
         <div class="plan-mode-switch" role="group" aria-label="今日学习强度">

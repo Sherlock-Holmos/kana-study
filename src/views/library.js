@@ -43,7 +43,7 @@ export function renderLibrary(state, runtime) {
       <div><span>人工审校</span><strong>${quality.humanReviewed}</strong><small>当前明确标记的人审内容</small></div>
       <div><span>平均置信度</span><strong>${quality.averageConfidence}%</strong><small>内容元数据指标</small></div>
     </section>
-    <p class="content-quality-note">“自动校验通过”不等同于专业教师人工审校。v15 继续明确区分两者；${audioCoverage ? `当前真实音频覆盖 ${audioCoverage.withAudio}/${audioCoverage.total}（${audioCoverage.percent}%），其余听力使用浏览器 TTS fallback。` : ""}</p>
+    <p class="content-quality-note">“自动校验通过”不等同于专业教师人工审校。v16 继续明确区分两者；${audioCoverage ? `当前真实音频覆盖 ${audioCoverage.withAudio}/${audioCoverage.total}（${audioCoverage.percent}%），其余听力使用浏览器 TTS fallback。` : ""}</p>
     <section class="panel library-toolbar">
       <div class="segmented library-segmented">
         ${LIBRARY_TYPES.map(value => `<button class="${type === value ? "active" : ""}" data-library-type="${value}">${TYPE_LABELS[value]}</button>`).join("")}

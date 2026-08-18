@@ -65,11 +65,12 @@ export function renderProgress(state, runtime) {
       <article class="panel metric-card"><span>N5 学习完成度</span><strong>${completion.percent}%</strong><small>能力 ${completion.masteryPercent}% · 课程 ${completion.lessonPercent}%</small></article>
       <article class="panel metric-card"><span>累计练习</span><strong>${total}</strong><small>正确率 ${percent(lifetime.correct,total)}%</small></article>
       <article class="panel metric-card"><span>连续学习</span><strong>${streak}</strong><small>今天 ${today.total} 题 · ${today.accuracy}%</small></article>
+      <article class="panel metric-card"><span>口语跟读</span><strong>${Number(state.speaking?.completed || 0)}</strong><small>累计尝试 ${Number(state.speaking?.attempts || 0)} 次 · 自评需再练 ${Number(state.speaking?.retry || 0)} 次</small></article>
     </section>
     <section class="panel section-block"><div class="section-title-row"><div><span class="eyebrow">能力分布</span><h2>六大学习域</h2></div></div><div class="domain-grid domain-grid-six">${domains.map(d => `<article class="domain-card"><span>${TYPE_LABELS[d.type]}</span><strong>${d.percent}%</strong><div class="progress-track small"><i style="width:${d.percent}%"></i></div><small>${d.mastered}/${d.total} 已掌握</small></article>`).join("")}</div><p class="muted-copy">N5 学习完成度是站内学习指标；阶段测验独立记录，不直接改变 SRS。</p></section>`;
   }
 
-  return `<section class="page-heading"><div><span class="eyebrow">学习数据 · v15</span><h1>进度</h1><p>同时观察课程推进、六大能力域、阶段测验和长期学习活跃度。</p></div></section>
+  return `<section class="page-heading"><div><span class="eyebrow">学习数据 · v16</span><h1>进度</h1><p>同时观察课程推进、六大能力域、阶段测验和长期学习活跃度。</p></div></section>
     <nav class="subnav"><button class="${tab === "overview" ? "active" : ""}" data-progress-tab="overview">总览</button><button class="${tab === "domains" ? "active" : ""}" data-progress-tab="domains">能力</button><button class="${tab === "diagnosis" ? "active" : ""}" data-progress-tab="diagnosis">诊断</button><button class="${tab === "assessments" ? "active" : ""}" data-progress-tab="assessments">测验</button><button class="${tab === "activity" ? "active" : ""}" data-progress-tab="activity">活跃度</button></nav>${body}`;
 }
 
