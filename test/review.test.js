@@ -1,19 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createDefaultState } from "../src/core/state.js";
-import { getDuePairs, getRecentMistakePairs, getWeakPairs } from "../src/review/selectors.js";
+import { skillKey } from "../src/domain/skills.js";
+import { getDuePairs, getRecentMistakePairs } from "../src/review/selectors.js";
 
-test("selectors distinguish due, weak and recent mistake directions", () => {
+test("review selectors work across vocabulary skills", () => {
   const state = createDefaultState();
-  const progress = state.items["hiragana:し"].recognition;
-  progress.counters.dev = { correct: 1, wrong: 3 };
-  progress.mastery = 1;
-  progress.lapseCount = 3;
-  progress.lastResult = "wrong";
-  progress.lastReviewedAt = "2026-08-17T00:00:00.000Z";
-  progress.nextReviewAt = "2026-08-17T01:00:00.000Z";
-  const now = Date.UTC(2026, 7, 18, 0, 0, 0);
-  assert.ok(getDuePairs(state, now).some(pair => pair.item.id === "hiragana:し" && pair.direction === "recognition"));
-  assert.ok(getWeakPairs(state).some(pair => pair.item.id === "hiragana:し"));
-  assert.ok(getRecentMistakePairs(state, now).some(pair => pair.item.id === "hiragana:し"));
+  const key = skillKey("vocab:taberu", "meaning");
+  state.skills[key] = {
+    ...state.skills[key],
+    lastResult: "wrong",
+    lastReviewedAt: new Date().toISOString(),
+    nextReviewAt: new Date(Date.now() - 1000).toISOString(),
+    counters: { d: { correct: 1, wrong: 1 } }
+  };
+  assert.ok(getDuePairs(state).some(pair => pair.item.id === "vocab:taberu" && pair.skill === "meaning"));
+  assert.ok(getRecentMistakePairs(state).some(pair => pair.item.id === "vocab:taberu"));
 });

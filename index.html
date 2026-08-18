@@ -6,53 +6,52 @@
   <meta name="theme-color" content="#f6f7fb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Kana Study">
-  <meta name="description" content="课程制假名学习、双向掌握度、间隔复习与学习进度。">
-  <title>Kana Study · 假名学习系统</title>
-
-  <link rel="manifest" href="./manifest.webmanifest?v=9">
-  <link rel="icon" href="./icons/icon.svg?v=9" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png?v=9">
-  <link rel="stylesheet" href="./css/app.css?v=9">
-  <link rel="stylesheet" href="./css/responsive.css?v=9">
+  <meta name="apple-mobile-web-app-title" content="Japanese Study">
+  <meta name="description" content="假名、词汇、语法、课程、SRS 复习与长期学习进度。">
+  <title>Japanese Study · 日语学习系统</title>
+  <link rel="manifest" href="./manifest.webmanifest?v=10">
+  <link rel="icon" href="./icons/icon.svg?v=10" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png?v=10">
+  <link rel="stylesheet" href="./css/app.css?v=10">
+  <link rel="stylesheet" href="./css/responsive.css?v=10">
 </head>
 <body>
   <div class="app-shell">
     <header class="app-header">
       <button class="brand" type="button" data-route="home" aria-label="返回首页">
-        <span class="brand-mark">あ</span>
-        <span><strong>Kana Study</strong><small>假名学习系统</small></span>
+        <span class="brand-mark">日</span>
+        <span><strong>Japanese Study</strong><small>日语学习系统</small></span>
       </button>
-
       <nav class="top-nav" aria-label="主导航">
         <button class="active" type="button" data-route="home">首页</button>
-        <button type="button" data-route="study">学习</button>
+        <button type="button" data-route="learn">学习</button>
         <button type="button" data-route="review">复习</button>
-        <button type="button" data-route="kana">假名表</button>
+        <button type="button" data-route="library">内容库</button>
         <button type="button" data-route="progress">进度</button>
       </nav>
-
-      <button id="accountTrigger" class="account-trigger" type="button" aria-haspopup="dialog">
-        <span class="account-avatar" data-account-avatar>人</span>
-        <span class="account-name" data-account-text>登录</span>
-        <i id="syncBadge" class="sync-badge" data-state="local" aria-hidden="true"></i>
-      </button>
+      <div class="header-actions">
+        <button id="settingsTrigger" class="icon-button" type="button" title="设置" aria-label="设置">⚙</button>
+        <button id="accountTrigger" class="account-trigger" type="button" aria-haspopup="dialog">
+          <span class="account-avatar" data-account-avatar>人</span>
+          <span class="account-name" data-account-text>登录</span>
+          <i id="syncBadge" class="sync-badge" data-state="local" aria-hidden="true"></i>
+        </button>
+      </div>
     </header>
 
     <main id="viewRoot" class="view-root" aria-live="polite"></main>
 
     <nav class="bottom-nav" aria-label="移动端主导航">
       <button class="active" type="button" data-route="home"><span>⌂</span><small>首页</small></button>
-      <button type="button" data-route="study"><span>学</span><small>学习</small></button>
+      <button type="button" data-route="learn"><span>学</span><small>学习</small></button>
       <button type="button" data-route="review"><span>复</span><small>复习</small></button>
-      <button type="button" data-route="kana"><span>あ</span><small>假名表</small></button>
-      <button type="button" data-route="progress"><span>图</span><small>进度</small></button>
+      <button type="button" data-route="library"><span>庫</span><small>内容库</small></button>
+      <button type="button" data-route="progress"><span>図</span><small>进度</small></button>
     </nav>
   </div>
-
   <div id="modalRoot" class="modal-root" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.111.0"></script>
-  <script type="module" src="./src/app.js?v=9"></script>
+  <script type="module" src="./src/app.js?v=10"></script>
 </body>
 </html>

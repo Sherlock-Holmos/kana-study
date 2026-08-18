@@ -1,5 +1,6 @@
-import { KANA_ITEMS } from "../data/kana.js";
-import { getDirectionTotals, getItemMastery, getItemReviewCount } from "./state.js";
+import { LEARNING_ITEMS } from "../data/content.js";
+import { skillKey, getSkillsForType } from "../domain/skills.js";
+import { getSkillTotals, getItemMastery } from "./state.js";
 import { localDateKey, percent, sumDeviceCounters } from "./utils.js";
 
 export function getDayTotals(state, dateKey) {
@@ -11,12 +12,11 @@ export function getLifetimeTotals(state) {
 }
 
 export function getCurrentStreak(state, now = new Date()) {
-  const todayKey = localDateKey(now);
-  const today = getDayTotals(state, todayKey);
   const cursor = new Date(now);
+  const today = getDayTotals(state, localDateKey(cursor));
   if (today.correct + today.wrong === 0) cursor.setDate(cursor.getDate() - 1);
   let streak = 0;
-  while (streak < 3650) {
+  while (streak < 3660) {
     const totals = getDayTotals(state, localDateKey(cursor));
     if (totals.correct + totals.wrong === 0) break;
     streak += 1;
@@ -25,88 +25,58 @@ export function getCurrentStreak(state, now = new Date()) {
   return streak;
 }
 
-export function getLongestStreak(state, days = 3650) {
-  const cursor = new Date();
-  cursor.setDate(cursor.getDate() - days + 1);
-  let longest = 0;
-  let current = 0;
-  for (let i = 0; i < days; i += 1) {
-    const totals = getDayTotals(state, localDateKey(cursor));
-    if (totals.correct + totals.wrong > 0) {
-      current += 1;
-      longest = Math.max(longest, current);
-    } else {
-      current = 0;
-    }
-    cursor.setDate(cursor.getDate() + 1);
+export function getLongestStreak(state) {
+  const dates = Object.keys(state.activity || {}).filter(date => {
+    const x = getDayTotals(state, date);
+    return x.correct + x.wrong > 0;
+  }).sort();
+  if (!dates.length) return 0;
+  let longest = 1, current = 1;
+  for (let i = 1; i < dates.length; i += 1) {
+    const prev = new Date(`${dates[i - 1]}T12:00:00`);
+    const cur = new Date(`${dates[i]}T12:00:00`);
+    const diff = Math.round((cur - prev) / 86400000);
+    if (diff === 1) current += 1;
+    else current = 1;
+    longest = Math.max(longest, current);
   }
   return longest;
 }
 
-export function getYearStudyDays(state, year = new Date().getFullYear()) {
-  return Object.keys(state.activity || {}).filter(key => {
-    if (!key.startsWith(`${year}-`)) return false;
-    const totals = getDayTotals(state, key);
-    return totals.correct + totals.wrong > 0;
-  }).length;
-}
-
-export function getMasterySummary(state, items = KANA_ITEMS) {
-  let mastered = 0;
-  let learning = 0;
-  let unseen = 0;
-  let recognitionSum = 0;
-  let recallSum = 0;
-  let reviewedItems = 0;
-
+export function getTypeProgress(state, type) {
+  const items = LEARNING_ITEMS.filter(item => item.type === type && type !== "sentence");
+  let mastered = 0, learning = 0, unseen = 0;
+  let masterySum = 0;
   for (const item of items) {
-    const itemState = state.items[item.id];
-    const reviews = getItemReviewCount(itemState);
-    const recognition = Number(itemState?.recognition?.mastery || 0);
-    const recall = Number(itemState?.recall?.mastery || 0);
-    recognitionSum += recognition;
-    recallSum += recall;
-    if (reviews === 0) unseen += 1;
-    else if (recognition >= 4 && recall >= 4) mastered += 1;
+    const skills = getSkillsForType(type);
+    const reviewed = skills.some(skill => {
+      const t = getSkillTotals(state.skills?.[skillKey(item.id, skill)]);
+      return t.correct + t.wrong > 0;
+    });
+    const mastery = getItemMastery(state, item);
+    masterySum += mastery;
+    if (!reviewed) unseen += 1;
+    else if (mastery >= 4) mastered += 1;
     else learning += 1;
-    if (reviews > 0) reviewedItems += 1;
   }
-
-  const total = items.length || 1;
   return {
+    total: items.length,
     mastered,
     learning,
     unseen,
-    reviewedItems,
-    total: items.length,
-    overallPercent: Math.round(((recognitionSum + recallSum) / (total * 10)) * 100),
-    recognitionPercent: Math.round((recognitionSum / (total * 5)) * 100),
-    recallPercent: Math.round((recallSum / (total * 5)) * 100)
+    percent: items.length ? Math.round((masterySum / (items.length * 5)) * 100) : 0
   };
 }
 
-export function getItemDetailMetrics(state, itemId) {
-  const itemState = state.items[itemId];
-  const recognitionCounts = getDirectionTotals(itemState?.recognition);
-  const recallCounts = getDirectionTotals(itemState?.recall);
-  const correct = recognitionCounts.correct + recallCounts.correct;
-  const wrong = recognitionCounts.wrong + recallCounts.wrong;
-  const total = correct + wrong;
-  return {
-    overallMastery: getItemMastery(itemState),
-    recognitionMastery: Number(itemState?.recognition?.mastery || 0),
-    recallMastery: Number(itemState?.recall?.mastery || 0),
-    correct,
-    wrong,
-    total,
-    accuracy: percent(correct, total),
-    lastReviewedAt: [itemState?.recognition?.lastReviewedAt, itemState?.recall?.lastReviewedAt]
-      .filter(Boolean)
-      .sort()
-      .at(-1) || null,
-    nextReviewAt: [itemState?.recognition?.nextReviewAt, itemState?.recall?.nextReviewAt]
-      .filter(Boolean)
-      .sort()
-      .at(0) || null
-  };
+export function getTodaySummary(state) {
+  const totals = getDayTotals(state, localDateKey());
+  const total = totals.correct + totals.wrong;
+  return { ...totals, total, accuracy: percent(totals.correct, total) };
+}
+
+export function getYearStudyDays(state, year = new Date().getFullYear()) {
+  return Object.keys(state.activity || {}).filter(date => date.startsWith(`${year}-`)).filter(date => {
+    const totals = getDayTotals(state, date);
+    return totals.correct + totals.wrong > 0;
+  }).length;
 }

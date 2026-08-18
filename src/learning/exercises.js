@@ -1,0 +1,91 @@
+import { LEARNING_ITEM_BY_ID, LEARNING_ITEMS } from "../data/content.js";
+import { SENTENCE_ITEMS } from "../data/sentences.js";
+import { shuffle } from "../core/utils.js";
+
+function normalize(value) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function distractorsFor(item, field, count = 3) {
+  const pool = LEARNING_ITEMS.filter(candidate => candidate.type === item.type && candidate.id !== item.id);
+  return shuffle(pool.map(candidate => {
+    if (field === "meaning") return candidate.meanings?.[0] || candidate.zh || candidate.title;
+    if (field === "reading") return candidate.reading || candidate.roman || candidate.title;
+    return candidate.expression || candidate.kana || candidate.pattern || candidate.title;
+  }).filter(Boolean)).slice(0, count);
+}
+
+function choice(prompt, answer, distractors, meta = {}) {
+  return {
+    kind: "choice",
+    prompt,
+    options: shuffle([answer, ...distractors.filter(value => value !== answer).slice(0, 3)]),
+    accepted: [answer],
+    ...meta
+  };
+}
+
+function typing(prompt, accepted, meta = {}) {
+  return { kind: "typing", prompt, accepted, ...meta };
+}
+
+export function buildExercise(itemId, skill) {
+  const item = LEARNING_ITEM_BY_ID[itemId];
+  if (!item) throw new Error(`未知学习项：${itemId}`);
+
+  if (item.type === "kana") {
+    if (skill === "recall") {
+      return typing(item.roman, [item.kana], { directionLabel: "罗马音 → 假名", answerLabel: item.kana });
+    }
+    return typing(item.kana, item.aliases || [item.roman], { directionLabel: "假名 → 罗马音", answerLabel: item.roman });
+  }
+
+  if (item.type === "vocabulary") {
+    if (skill === "reading") {
+      return typing(item.expression, [item.reading], { directionLabel: "词汇 → 读音", answerLabel: item.reading });
+    }
+    if (skill === "production") {
+      return typing(item.meanings[0], [item.expression], { directionLabel: "中文 → 日语", answerLabel: item.expression });
+    }
+    return choice(item.expression, item.meanings[0], distractorsFor(item, "meaning"), {
+      directionLabel: "日语 → 中文",
+      answerLabel: item.meanings[0],
+      secondary: item.reading
+    });
+  }
+
+  if (item.type === "grammar") {
+    if (skill === "application") {
+      const matching = SENTENCE_ITEMS.filter(sentence => sentence.grammar?.includes(item.id));
+      const target = matching[0];
+      const otherSentences = shuffle(SENTENCE_ITEMS.filter(sentence => !sentence.grammar?.includes(item.id))).slice(0, 3);
+      if (target) {
+        return choice(
+          `哪一句最能体现「${item.pattern}」？`,
+          target.jp,
+          otherSentences.map(sentence => sentence.jp),
+          { directionLabel: "语法应用", answerLabel: target.jp, secondary: target.zh }
+        );
+      }
+    }
+    return choice(item.pattern, item.meanings[0], distractorsFor(item, "meaning"), {
+      directionLabel: "语法理解",
+      answerLabel: item.meanings[0]
+    });
+  }
+
+  if (item.type === "sentence") {
+    return choice(item.jp, item.zh, shuffle(SENTENCE_ITEMS.filter(s => s.id !== item.id).map(s => s.zh)).slice(0, 3), {
+      directionLabel: "句子理解",
+      answerLabel: item.zh,
+      secondary: item.reading
+    });
+  }
+
+  return typing(item.title || item.id, [item.title || item.id], { answerLabel: item.title || item.id });
+}
+
+export function isExerciseAnswerCorrect(exercise, value) {
+  const candidate = normalize(value);
+  return (exercise.accepted || []).some(answer => normalize(answer) === candidate);
+}

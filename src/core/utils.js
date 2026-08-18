@@ -18,14 +18,8 @@ export function localDateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-export function addDaysIso(days, from = Date.now()) {
-  return new Date(from + days * 86400000).toISOString();
-}
-
 export function randomId(prefix = "id") {
-  if (globalThis.crypto?.randomUUID) {
-    return `${prefix}-${globalThis.crypto.randomUUID()}`;
-  }
+  if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
@@ -38,16 +32,22 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+export function sumDeviceCounters(devices = {}) {
+  return Object.values(devices || {}).reduce((total, item) => ({
+    correct: total.correct + Number(item?.correct || 0),
+    wrong: total.wrong + Number(item?.wrong || 0)
+  }), { correct: 0, wrong: 0 });
+}
+
+export function percent(correct, total) {
+  return total > 0 ? Math.round((correct / total) * 100) : 0;
+}
+
 export function formatDateTime(value) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
+  return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 export function formatRelativeReview(value, now = Date.now()) {
@@ -62,24 +62,15 @@ export function formatRelativeReview(value, now = Date.now()) {
   return `${Math.round(hours / 24)} 天后`;
 }
 
-export function sumDeviceCounters(devices = {}) {
-  return Object.values(devices || {}).reduce(
-    (total, item) => ({
-      correct: total.correct + Number(item?.correct || 0),
-      wrong: total.wrong + Number(item?.wrong || 0)
-    }),
-    { correct: 0, wrong: 0 }
-  );
+export function shuffle(values) {
+  const copy = [...values];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
-export function percent(correct, total) {
-  return total > 0 ? Math.round((correct / total) * 100) : 0;
-}
-
-export function debounce(fn, delay) {
-  let timer = null;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
+export function unique(values) {
+  return [...new Set(values)];
 }

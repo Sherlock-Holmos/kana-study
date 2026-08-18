@@ -10,39 +10,19 @@ function levelForTotal(total) {
 }
 
 export function buildHeatmap(state, days = 365) {
-  const end = new Date();
-  end.setHours(12, 0, 0, 0);
-  const start = new Date(end);
-  start.setDate(start.getDate() - days + 1);
+  const end = new Date(); end.setHours(12, 0, 0, 0);
+  const start = new Date(end); start.setDate(start.getDate() - days + 1);
   const mondayIndex = (start.getDay() + 6) % 7;
   const cells = [];
-
-  for (let i = 0; i < mondayIndex; i += 1) {
-    cells.push('<span class="heatmap-cell placeholder" aria-hidden="true"></span>');
-  }
-
+  for (let i = 0; i < mondayIndex; i += 1) cells.push('<span class="heatmap-cell placeholder"></span>');
   const cursor = new Date(start);
   for (let i = 0; i < days; i += 1) {
     const dateKey = localDateKey(cursor);
     const totals = getDayTotals(state, dateKey);
     const total = totals.correct + totals.wrong;
     const accuracy = percent(totals.correct, total);
-    const level = levelForTotal(total);
-    cells.push(`
-      <button
-        class="heatmap-cell level-${level}"
-        type="button"
-        data-activity-date="${dateKey}"
-        title="${dateKey} · ${total} 题 · ${accuracy}%"
-        aria-label="${dateKey}，练习 ${total} 题，正确率 ${accuracy}%"
-      ></button>
-    `);
+    cells.push(`<button class="heatmap-cell level-${levelForTotal(total)}" type="button" data-activity-date="${dateKey}" title="${dateKey} · ${total} 题 · ${accuracy}%"></button>`);
     cursor.setDate(cursor.getDate() + 1);
   }
-
-  return {
-    html: cells.join(""),
-    yearDays: getYearStudyDays(state),
-    longestStreak: getLongestStreak(state, 3650)
-  };
+  return { html: cells.join(""), yearDays: getYearStudyDays(state), longestStreak: getLongestStreak(state) };
 }

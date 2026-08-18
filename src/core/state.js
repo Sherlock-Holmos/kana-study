@@ -1,13 +1,10 @@
-import {
-  DEFAULT_DAILY_GOAL,
-  DIRECTIONS,
-  MAX_MASTERY,
-  SCHEMA_VERSION
-} from "./constants.js";
+import { DEFAULT_DAILY_GOAL, DEFAULT_NEW_ITEMS_PER_DAY, MAX_MASTERY, SCHEMA_VERSION } from "./constants.js";
 import { KANA_ITEMS } from "../data/kana.js";
+import { LEARNING_ITEMS } from "../data/content.js";
+import { getSkillsForType, skillKey } from "../domain/skills.js";
 import { nowIso, sumDeviceCounters } from "./utils.js";
 
-export function createDirectionState() {
+export function createSkillState() {
   return {
     mastery: 0,
     stabilityDays: 0,
@@ -22,45 +19,38 @@ export function createDirectionState() {
   };
 }
 
-export function createItemState() {
-  return {
-    recognition: createDirectionState(),
-    recall: createDirectionState()
-  };
+export function createDefaultSkills() {
+  const skills = {};
+  for (const item of LEARNING_ITEMS) {
+    if (item.type === "sentence") continue;
+    for (const skill of getSkillsForType(item.type)) skills[skillKey(item.id, skill)] = createSkillState();
+  }
+  return skills;
 }
 
 export function createDefaultState() {
-  const items = {};
-  for (const item of KANA_ITEMS) items[item.id] = createItemState();
   const now = nowIso();
   return {
     schemaVersion: SCHEMA_VERSION,
     settings: {
       dailyGoal: DEFAULT_DAILY_GOAL,
-      answerMode: "input",
+      newItemsPerDay: DEFAULT_NEW_ITEMS_PER_DAY,
       autoAdvance: true,
-      preferredDirection: "mixed",
+      answerMode: "input",
       updatedAt: now
     },
-    curriculum: {
-      completedLessons: [],
-      updatedAt: now
-    },
-    items,
+    curriculum: { completedLessons: [], updatedAt: now },
+    skills: createDefaultSkills(),
     activity: {},
     lifetime: { devices: {} },
     sessions: [],
     activeSession: null,
-    meta: {
-      createdAt: now,
-      updatedAt: now,
-      migratedFrom: null
-    }
+    meta: { createdAt: now, updatedAt: now, migratedFrom: null }
   };
 }
 
-function cloneDirection(source) {
-  const base = createDirectionState();
+function cloneSkill(source) {
+  const base = createSkillState();
   if (!source || typeof source !== "object") return base;
   return {
     ...base,
@@ -70,23 +60,68 @@ function cloneDirection(source) {
     stabilityDays: Math.max(0, Number(source.stabilityDays || 0)),
     correctStreak: Math.max(0, Number(source.correctStreak || 0)),
     lapseCount: Math.max(0, Number(source.lapseCount || 0)),
-    counters: typeof source.counters === "object" && source.counters ? source.counters : {}
+    counters: source.counters && typeof source.counters === "object" ? source.counters : {}
   };
+}
+
+function migrateV9(raw) {
+  const next = createDefaultState();
+  next.meta.migratedFrom = 9;
+  next.settings = { ...next.settings, ...(raw.settings || {}), updatedAt: nowIso() };
+  next.curriculum.completedLessons = Array.isArray(raw.curriculum?.completedLessons) ? [...new Set(raw.curriculum.completedLessons)] : [];
+  next.activity = raw.activity && typeof raw.activity === "object" ? raw.activity : {};
+  next.lifetime = raw.lifetime && typeof raw.lifetime === "object" ? raw.lifetime : next.lifetime;
+  next.sessions = Array.isArray(raw.sessions) ? raw.sessions.slice(-180) : [];
+  for (const item of KANA_ITEMS) {
+    const old = raw.items?.[item.id];
+    if (!old) continue;
+    next.skills[skillKey(item.id, "recognition")] = cloneSkill(old.recognition);
+    next.skills[skillKey(item.id, "recall")] = cloneSkill(old.recall);
+  }
+  return next;
+}
+
+function migrateV8OrEarlier(raw) {
+  const next = createDefaultState();
+  next.meta.migratedFrom = Number(raw?.version || raw?.storageVersion || raw?.schemaVersion || 5);
+  next.settings.dailyGoal = Number(raw.dailyGoal || raw.settings?.dailyGoal || DEFAULT_DAILY_GOAL);
+  next.settings.autoAdvance = raw.autoAdvance === "off" ? false : raw.autoAdvance === "on" ? true : typeof raw.autoAdvance === "boolean" ? raw.autoAdvance : true;
+  const byKana = Object.fromEntries(KANA_ITEMS.filter(item => item.script === "hiragana" && item.category === "basic").map(item => [item.kana, item]));
+  for (const [kana, legacy] of Object.entries(raw.kanaStats || {})) {
+    const item = byKana[kana];
+    if (!item) continue;
+    const migrated = {
+      ...createSkillState(),
+      mastery: Math.min(MAX_MASTERY, Math.max(0, Number(legacy.mastery || 0))),
+      stabilityDays: Math.max(0, Number(legacy.mastery || 0) * 0.8),
+      difficulty: legacy.lastResult === "wrong" ? 3.8 : 3,
+      correctStreak: Number(legacy.streak || 0),
+      lapseCount: Number(legacy.wrong || 0),
+      lastResult: legacy.lastResult || null,
+      lastReviewedAt: legacy.lastReviewedAt || null,
+      nextReviewAt: legacy.nextReviewAt || null,
+      updatedAt: legacy.lastReviewedAt || null,
+      counters: { legacy: { correct: Number(legacy.correct || 0), wrong: Number(legacy.wrong || 0) } }
+    };
+    next.skills[skillKey(item.id, "recognition")] = cloneSkill(migrated);
+    next.skills[skillKey(item.id, "recall")] = cloneSkill(migrated);
+  }
+  if (raw.dailyCounters && typeof raw.dailyCounters === "object") {
+    for (const [date, devices] of Object.entries(raw.dailyCounters)) next.activity[date] = { devices };
+  }
+  if (raw.stats) next.lifetime.devices.legacy = { correct: Number(raw.stats.correct || 0), wrong: Number(raw.stats.wrong || 0) };
+  return next;
 }
 
 export function sanitizeState(raw) {
   if (!raw || typeof raw !== "object") return createDefaultState();
-  if (Number(raw.schemaVersion || 0) < SCHEMA_VERSION) return migrateLegacyState(raw);
+  const version = Number(raw.schemaVersion || 0);
+  if (version === 9) return sanitizeState(migrateV9(raw));
+  if (version < 9) return sanitizeState(migrateV8OrEarlier(raw));
 
   const base = createDefaultState();
-  const items = {};
-  for (const item of KANA_ITEMS) {
-    const source = raw.items?.[item.id];
-    items[item.id] = {
-      recognition: cloneDirection(source?.recognition),
-      recall: cloneDirection(source?.recall)
-    };
-  }
+  const skills = { ...base.skills };
+  for (const key of Object.keys(skills)) skills[key] = cloneSkill(raw.skills?.[key]);
 
   return {
     ...base,
@@ -96,147 +131,24 @@ export function sanitizeState(raw) {
     curriculum: {
       ...base.curriculum,
       ...(raw.curriculum || {}),
-      completedLessons: Array.isArray(raw.curriculum?.completedLessons)
-        ? Array.from(new Set(raw.curriculum.completedLessons))
-        : []
+      completedLessons: Array.isArray(raw.curriculum?.completedLessons) ? [...new Set(raw.curriculum.completedLessons)] : []
     },
-    items,
-    activity: typeof raw.activity === "object" && raw.activity ? raw.activity : {},
-    lifetime: {
-      devices: typeof raw.lifetime?.devices === "object" && raw.lifetime.devices
-        ? raw.lifetime.devices
-        : {}
-    },
-    sessions: Array.isArray(raw.sessions) ? raw.sessions.slice(-120) : [],
+    skills,
+    activity: raw.activity && typeof raw.activity === "object" ? raw.activity : {},
+    lifetime: { devices: raw.lifetime?.devices && typeof raw.lifetime.devices === "object" ? raw.lifetime.devices : {} },
+    sessions: Array.isArray(raw.sessions) ? raw.sessions.slice(-180) : [],
     activeSession: raw.activeSession && typeof raw.activeSession === "object" ? raw.activeSession : null,
     meta: { ...base.meta, ...(raw.meta || {}) }
   };
 }
 
-function normalizeLegacyGroups(value) {
-  if (Array.isArray(value)) return value;
-  if (value instanceof Set) return Array.from(value);
-  return [];
+export function getSkillTotals(skillState) {
+  return sumDeviceCounters(skillState?.counters || {});
 }
 
-function convertLegacyDaily(rawDaily, target) {
-  if (!rawDaily || typeof rawDaily !== "object") return;
-  for (const [date, devices] of Object.entries(rawDaily)) {
-    if (!devices || typeof devices !== "object") continue;
-    target[date] ||= { devices: {} };
-    for (const [deviceId, counts] of Object.entries(devices)) {
-      target[date].devices[deviceId] = {
-        correct: Number(counts?.correct || 0),
-        wrong: Number(counts?.wrong || 0)
-      };
-    }
-  }
-}
-
-function mapLegacyKanaStats(rawKanaStats, state) {
-  if (!rawKanaStats || typeof rawKanaStats !== "object") return;
-  for (const item of KANA_ITEMS) {
-    if (item.script !== "hiragana" || item.category !== "basic") continue;
-    const legacy = rawKanaStats[item.kana];
-    if (!legacy) continue;
-    const counters = {
-      legacy: {
-        correct: Number(legacy.correct || 0),
-        wrong: Number(legacy.wrong || 0)
-      }
-    };
-    for (const direction of [DIRECTIONS.RECOGNITION, DIRECTIONS.RECALL]) {
-      state.items[item.id][direction] = {
-        ...createDirectionState(),
-        mastery: Math.min(MAX_MASTERY, Math.max(0, Number(legacy.mastery || 0))),
-        stabilityDays: Math.max(0, Number(legacy.mastery || 0) * 0.8),
-        difficulty: legacy.lastResult === "wrong" ? 3.8 : 3,
-        correctStreak: Number(legacy.streak || 0),
-        lapseCount: Number(legacy.wrong || 0),
-        lastResult: legacy.lastResult || null,
-        lastReviewedAt: legacy.lastReviewedAt || null,
-        nextReviewAt: legacy.nextReviewAt || null,
-        updatedAt: legacy.lastReviewedAt || null,
-        counters
-      };
-    }
-  }
-}
-
-function mapLegacyLifetime(raw, state) {
-  const devices = {};
-  if (raw.syncCounters && typeof raw.syncCounters === "object") {
-    for (const perKana of Object.values(raw.syncCounters)) {
-      if (!perKana || typeof perKana !== "object") continue;
-      for (const [deviceId, counts] of Object.entries(perKana)) {
-        devices[deviceId] ||= { correct: 0, wrong: 0 };
-        devices[deviceId].correct += Number(counts?.correct || 0);
-        devices[deviceId].wrong += Number(counts?.wrong || 0);
-      }
-    }
-  }
-  if (Object.keys(devices).length === 0) {
-    devices.legacy = {
-      correct: Number(raw.stats?.correct || 0),
-      wrong: Number(raw.stats?.wrong || 0)
-    };
-  }
-  state.lifetime.devices = devices;
-}
-
-export function migrateLegacyState(raw) {
-  const state = createDefaultState();
-  const legacyVersion = Number(raw?.version || raw?.storageVersion || raw?.schemaVersion || 5);
-  state.meta.migratedFrom = legacyVersion;
-
-  const selectedGroups = normalizeLegacyGroups(raw.selectedGroups);
-  state.settings = {
-    ...state.settings,
-    dailyGoal: Number(raw.dailyGoal || raw.settings?.dailyGoal || DEFAULT_DAILY_GOAL),
-    answerMode: raw.answerMode || raw.settings?.answerMode || "input",
-    autoAdvance:
-      raw.autoAdvance === "off" ? false :
-      raw.autoAdvance === "on" ? true :
-      typeof raw.autoAdvance === "boolean" ? raw.autoAdvance :
-      typeof raw.settings?.autoAdvance === "boolean" ? raw.settings.autoAdvance : true,
-    preferredDirection:
-      raw.mode === "kanaToRoman" ? "recognition" :
-      raw.mode === "romanToKana" ? "recall" : "mixed",
-    updatedAt: raw.settingsUpdatedAt || nowIso()
-  };
-
-  mapLegacyKanaStats(raw.kanaStats, state);
-  convertLegacyDaily(raw.dailyCounters, state.activity);
-  mapLegacyLifetime(raw, state);
-
-  if (selectedGroups.length) {
-    state.meta.legacySelectedGroups = selectedGroups;
-  }
-
-  state.meta.updatedAt = nowIso();
-  return state;
-}
-
-export function getDirectionTotals(directionState) {
-  return sumDeviceCounters(directionState?.counters || {});
-}
-
-export function getItemMastery(itemState) {
-  if (!itemState) return 0;
-  return Math.round((Number(itemState.recognition?.mastery || 0) + Number(itemState.recall?.mastery || 0)) / 2);
-}
-
-export function getItemReviewCount(itemState) {
-  if (!itemState) return 0;
-  const a = getDirectionTotals(itemState.recognition);
-  const b = getDirectionTotals(itemState.recall);
-  return a.correct + a.wrong + b.correct + b.wrong;
-}
-
-export function hasMeaningfulProgress(state) {
-  if (!state) return false;
-  const lifetime = sumDeviceCounters(state.lifetime?.devices || {});
-  return lifetime.correct + lifetime.wrong > 0 ||
-    (state.curriculum?.completedLessons?.length || 0) > 0 ||
-    (state.sessions?.length || 0) > 0;
+export function getItemMastery(state, item) {
+  const skills = getSkillsForType(item.type);
+  if (!skills.length) return 0;
+  const values = skills.map(skill => Number(state.skills?.[skillKey(item.id, skill)]?.mastery || 0));
+  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }

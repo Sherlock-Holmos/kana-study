@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Japanese Study Grammar Item",
+  "type": "object",
+  "required": ["id", "type", "pattern", "meanings", "formation", "level", "explanation"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^grammar:" },
+    "type": { "const": "grammar" },
+    "pattern": { "type": "string", "minLength": 1 },
+    "meanings": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "formation": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "level": { "type": "string" },
+    "explanation": { "type": "string", "minLength": 1 }
+  }
+}

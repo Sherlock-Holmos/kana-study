@@ -1,113 +1,188 @@
-# Kana Study v9.0
+# Japanese Study v10
 
-一个纯静态、可直接部署到 GitHub Pages 的日语假名学习系统。v9 将原来的“五十音抽认卡”升级为完整学习闭环：课程 → 学习会话 → 双向掌握度 → SRS 复习 → 假名表 → 长期进度。
+一个从 Kana Study 重构而来的离线优先日语学习系统。产品层不再把“假名、词汇、语法”做成三个互不相关的小工具，而是使用统一的课程、技能、练习、SRS、Session 和进度模型。
 
-## 主要功能
+## 当前包含
 
-- 5 个一级页面：首页 / 学习 / 复习 / 假名表 / 进度
-- 平假名与片假名，各 104 个可训练项目
-  - 46 个基础清音
-  - 25 个浊音 / 半浊音
-  - 33 个拗音
-- 促音与长音规则课
-- 课程制学习：认识 → 识别 → 主动回忆 → 混合测试
-- 每个假名分开记录：
-  - recognition：假名 → 罗马音
-  - recall：罗马音 → 假名
-- 自定义 SRS 调度：稳定度、难度、连续正确、lapse、下次复习时间
-- 答错后约 3–5 题短期重现，最多再强化 2 次
-- 到期复习 / 薄弱强化 / 最近 14 天错题 / 自由复习
-- Session 总结：题数、正确率、用时、错题
-- 假名详情：两个方向掌握度、累计表现、最近/下次复习、单项专项练习
-- 365 天 GitHub 风格学习活跃度热力图
-- 每日目标、连续学习、累计统计
-- Supabase Auth + `user_progress` JSONB 云同步
-- 游客 / 账号数据隔离与首次登录迁移
-- v5/v8 旧数据自动迁移为 v9 Schema
-- JSON 导出 / 导入（合并而非直接覆盖）
-- PWA / 离线 App Shell
-- ES Modules
-- Node 内置测试 + GitHub Actions CI
+- 208 个假名训练项：平假名 104 + 片假名 104
+- 135 个基础词汇
+- 36 条 N5 / N4 入门语法
+- 40 条关联例句
+- 58 节课程
+  - 42 节假名课程/规则课
+  - 16 节综合日语课程
+- 统一 SRS：假名、词汇、语法共享调度引擎
+- 多技能掌握度
+  - 假名：识别 / 主动回忆
+  - 词汇：词义 / 读音 / 中→日
+  - 语法：理解 / 应用
+- 到期复习、薄弱强化、最近 14 天错题
+- 错题 3–5 题后短期重现
+- 课程 Session、完成总结
+- 内容库：假名 / 词汇 / 语法搜索与详情
+- GitHub 风格 365 天学习活跃度
+- PWA / 离线缓存
+- Supabase 登录和多设备同步
+- v8 / v9 学习记录迁移
+- 数据导入 / 导出
+- GitHub Actions 自动检查与测试
+
+> 当前项目已经完成“完整学习平台”的代码结构，但内容语料不是完整 JLPT N1 全量词库/语法库。当前内置的是可实际使用的 N5 主体 + N4 入门种子内容。后续扩充内容只需新增 `src/data/` 数据，不需要再次推翻学习引擎。
+
+## 一级页面
+
+- 首页：今日目标、待复习、推荐课程、能力概览
+- 学习：课程路线
+- 复习：到期 / 薄弱 / 最近错题 / 分类专项
+- 内容库：假名 / 词汇 / 语法
+- 进度：总览 / 能力 / 365 天活跃度
+
+答题过程使用独立的 `#study` 页面，不占主导航名额。
 
 ## 项目结构
 
 ```text
-kana-study/
+japanese-study/
 ├── index.html
-├── CNAME
 ├── manifest.webmanifest
 ├── sw.js
-├── package.json
+├── CNAME
 ├── css/
 ├── icons/
+├── schemas/
 ├── src/
 │   ├── core/
 │   ├── data/
+│   ├── domain/
 │   ├── learning/
 │   ├── review/
 │   ├── sync/
 │   ├── components/
-│   ├── views/
-│   └── ui/
-├── test/
+│   ├── ui/
+│   └── views/
+├── supabase/
 ├── scripts/
-├── supabase/schema.sql
-└── .github/workflows/ci.yml
+├── test/
+└── .github/workflows/
 ```
 
-## 本地运行
+## 本地检查
 
-因为 v9 使用原生 ES Modules，不要直接双击 `index.html` 用 `file://` 打开。任选一个本地静态服务器：
+只需要 Node.js 22+：
 
 ```bash
-python -m http.server 8000
+npm run verify
 ```
 
-然后访问 `http://localhost:8000/`。
-
-## 检查
+等价于：
 
 ```bash
 npm run check
 npm test
 ```
 
-项目没有构建步骤，也不需要安装 npm 依赖。
+项目本身仍是纯静态站点，不需要 npm build。
 
 ## Supabase
 
-沿用现有 Supabase 项目与 `public.user_progress` 表。若从零部署，可执行：
+### 推荐：v10 规范化表
+
+在 Supabase SQL Editor 执行：
 
 ```text
-supabase/schema.sql
+supabase/schema-v10.sql
 ```
 
-浏览器内只使用 Publishable Key；不要把 `service_role` / secret key 放进仓库。
+会创建：
 
-## GitHub Pages
+- `user_settings`
+- `user_course_progress`
+- `user_item_progress`
+- `user_daily_stats`
+- `user_learning_meta`
+- `study_sessions`
 
-仓库仍可直接从根目录发布。`CNAME` 保留为：
+并开启 RLS，每个用户只能访问自己的记录。
+
+### 兼容旧项目
+
+如果你暂时没有执行 `schema-v10.sql`，代码会自动回退到旧的：
+
+```text
+public.user_progress
+```
+
+因此可以先直接部署，再决定什么时候执行数据库升级。
+
+当规范化表存在但还没有数据时，应用会继续读取旧 `user_progress`；下一次同步会写入 v10 表，从而完成渐进迁移。
+
+## 部署
+
+这是 GitHub Pages 兼容的静态项目。保持仓库根目录发布即可。
+
+自定义域名仍使用：
 
 ```text
 nihongo.jokersh.site
 ```
 
-## v9 数据模型
+## 内容扩展
 
-顶层 `schemaVersion` 为 `9`。核心结构：
+核心内容位于：
 
-```json
-{
-  "schemaVersion": 9,
-  "settings": {},
-  "curriculum": {},
-  "items": {},
-  "activity": {},
-  "lifetime": {},
-  "sessions": [],
-  "activeSession": null,
-  "meta": {}
-}
+```text
+src/data/vocabulary.js
+src/data/grammar.js
+src/data/sentences.js
+src/data/japanese-lessons.js
 ```
 
-每个假名的两个方向单独记录 SRS 状态，并使用设备级单调计数器降低多设备合并时丢计数的风险。
+内容约束参考：
+
+```text
+schemas/vocabulary.schema.json
+schemas/grammar.schema.json
+schemas/lesson.schema.json
+```
+
+`scripts/check.mjs` 会验证：
+
+- ID 是否重复
+- 课程引用是否存在
+- 例句引用的词汇/语法是否存在
+- ES Module 相对 import 是否存在
+- 所有 JS 是否能通过语法检查
+
+因此后续可以让 Agent 批量扩充 N5/N4/N3 内容，同时由 CI 阻止明显的数据结构错误进入 main。
+
+## 数据模型
+
+学习进度不是一个 `mastery` 数字，而是按技能维度存储，例如：
+
+```text
+vocab:taberu::meaning
+vocab:taberu::reading
+vocab:taberu::production
+
+grammar:teiru::meaning
+grammar:teiru::application
+
+hiragana:し::recognition
+hiragana:し::recall
+```
+
+每个技能独立保存：
+
+```text
+mastery
+stabilityDays
+difficulty
+correctStreak
+lapseCount
+lastResult
+lastReviewedAt
+nextReviewAt
+counters
+```
+
+这使以后加入汉字、听力、阅读时无需再重写 SRS。

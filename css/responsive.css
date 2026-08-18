@@ -1,49 +1,27 @@
 @media (max-width: 900px) {
-  .app-header { grid-template-columns:1fr auto; padding:10px 18px; min-height:64px; }
-  .top-nav { display:none; }
-  .brand small, .account-name { display:none; }
-  .view-root { width:min(100% - 28px, 760px); padding:26px 0 92px; }
-  .bottom-nav { position:fixed; z-index:45; left:12px; right:12px; bottom:max(10px, env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(5,1fr); padding:6px; border:1px solid rgba(228,231,239,.9); border-radius:20px; background:rgba(255,255,255,.94); backdrop-filter:blur(18px); box-shadow:0 16px 45px rgba(20,25,35,.16); }
-  .bottom-nav button { border:0; background:transparent; border-radius:14px; padding:7px 3px; color:var(--muted); font-weight:800; }
-  .bottom-nav button.active { background:var(--primary-soft); color:var(--primary); }
-  .bottom-nav span, .bottom-nav small { display:block; }.bottom-nav span { font-size:16px; }.bottom-nav small { font-size:9px; margin-top:2px; }
-  .review-grid { grid-template-columns:1fr; }
-  .free-review-actions { grid-template-columns:1fr 1fr; }
-  .kana-grid { grid-template-columns:repeat(7,minmax(0,1fr)); }
-  .compact-grid { grid-template-columns:repeat(8,minmax(0,1fr)); }
-  .result-grid { grid-template-columns:repeat(3,1fr); }
+  .app-header { grid-template-columns: 1fr auto; padding: 12px 16px; }
+  .top-nav { display: none; }
+  .brand small, .account-name { display: none; }
+  .view-root { width: min(100% - 24px, 760px); margin-top: 20px; margin-bottom: 92px; }
+  .bottom-nav { position: fixed; z-index: 30; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5,1fr); padding: 7px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.92); box-shadow: 0 18px 50px rgba(20,24,34,.16); backdrop-filter: blur(18px); }
+  .bottom-nav button { border: 0; background: transparent; border-radius: 13px; padding: 7px 3px; color: var(--muted); }
+  .bottom-nav button.active { background: var(--text); color: white; }
+  .bottom-nav span,.bottom-nav small { display:block; }.bottom-nav span{font-size:18px}.bottom-nav small{font-size:10px;margin-top:2px}
+  .dashboard-grid, .review-grid, .domain-progress-list { grid-template-columns: 1fr; }
+  .domain-grid { grid-template-columns: repeat(3,1fr); }
+  .library-grid { grid-template-columns: repeat(2,1fr); }
 }
 
-@media (max-width: 620px) {
-  .view-root { width:calc(100% - 20px); padding-top:20px; }
-  .brand strong { font-size:13px; }.brand-mark { width:36px; height:36px; font-size:21px; }
-  .account-trigger { padding:5px; }.account-avatar { width:34px; height:34px; }
-  .page-heading { display:block; margin-bottom:18px; }
-  .page-heading h2 { font-size:29px; }.page-heading p { font-size:13px; }
-  .page-heading > button { width:100%; margin-top:16px; }
-  .dashboard-grid, .progress-grid { grid-template-columns:1fr; gap:12px; }
-  .span-2 { grid-column:auto; }
-  .goal-panel, .course-card, .resume-card, .phase-card, .mastery-hero, .result-panel, .kana-reference-panel, .mastery-panel, .activity-panel { padding:17px; }
-  .section-title-row { gap:10px; }.big-stat { font-size:24px; }
-  .inline-stats { gap:11px; display:grid; grid-template-columns:1fr 1fr; }
-  .task-card { grid-template-columns:auto 1fr; }.task-card button { grid-column:1/-1; }
-  .resume-card { display:block; }.resume-card button { width:100%; margin-top:14px; }
-  .lesson-row { grid-template-columns:40px 1fr; }.lesson-status { grid-column:2; }
-  .study-session-card { padding:18px 15px; }.study-symbol { margin-top:27px; }
-  .quiz-topline { display:grid; justify-items:start; gap:4px; }
-  .answer-form { grid-template-columns:1fr 1fr; }.answer-form input { grid-column:1/-1; }.answer-form .primary-button, .answer-form .ghost-button { width:100%; }
-  .self-actions { display:grid; grid-template-columns:1fr 1fr; }
-  .summary-grid, .detail-stats { grid-template-columns:1fr 1fr; }
-  .summary-actions { display:grid; }.session-summary { padding:18px; }
-  .free-review-actions { grid-template-columns:1fr; }
-  .segmented { display:grid; grid-template-columns:1fr 1fr; width:100%; margin:0; }.segmented.secondary { grid-template-columns:repeat(3,1fr); }
-  .kana-grid { grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }.compact-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
-  .kana-tile { min-height:69px; }.kana-tile strong { font-size:23px; }
-  .mastery-ring { width:92px; height:92px; }
-  .ability-bars > div { grid-template-columns:64px 1fr 38px; }
-  .result-grid { grid-template-columns:1fr 1fr; }
-  .activity-summary { display:grid; gap:3px; }
-  .modal-root { align-items:end; padding:0; }.modal-card, .modal-card.wide { width:100%; max-height:90vh; border-radius:24px 24px 0 0; padding:22px 16px max(22px, env(safe-area-inset-bottom)); }
-  .kana-detail-heading { grid-template-columns:82px 1fr; gap:13px; }.kana-detail-symbol { font-size:46px; }.kana-detail-heading h2 { font-size:28px; }
-  .direction-detail-grid { grid-template-columns:1fr; }
+@media (max-width: 640px) {
+  .page-heading, .hero { display: block; }
+  .hero { padding: 24px; }.hero .big { width: 100%; margin-top: 20px; }
+  .domain-grid { grid-template-columns: 1fr; }
+  .library-toolbar { display: grid; }.library-toolbar input { width: 100%; }
+  .library-grid { grid-template-columns: 1fr; }
+  .phase-card { padding: 17px; }.lesson-row { grid-template-columns: 38px 1fr auto; padding: 11px; }
+  .study-card { min-height: 390px; padding: 24px 18px; }.study-glyph{font-size:100px}.study-word{font-size:48px}.study-pattern{font-size:34px}
+  .choice-grid { grid-template-columns: 1fr; }.answer-form { grid-template-columns: 1fr 1fr; }.answer-form input { grid-column: 1 / -1; }
+  .summary-grid { grid-template-columns: repeat(2,1fr); }.summary-actions{display:grid}.summary-actions button{width:100%}
+  .section-title-row { align-items:flex-start; }.summary-pills { display:grid; }.account-trigger { padding-right:5px; }
+  .modal-card { padding: 24px 18px; }.item-modal-title{font-size:34px}
 }

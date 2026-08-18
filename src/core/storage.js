@@ -1,8 +1,4 @@
-import {
-  DEVICE_ID_KEY,
-  STORAGE_KEY,
-  USER_STORAGE_PREFIX
-} from "./constants.js";
+import { DEVICE_ID_KEY, LEGACY_STORAGE_KEYS, STORAGE_KEY, USER_STORAGE_PREFIX } from "./constants.js";
 import { createDefaultState, sanitizeState } from "./state.js";
 import { randomId } from "./utils.js";
 
@@ -22,7 +18,13 @@ export function storageKeyForUser(userId) {
 export function loadLocalState(userId = null) {
   const key = storageKeyForUser(userId);
   try {
-    const raw = localStorage.getItem(key);
+    let raw = localStorage.getItem(key);
+    if (!raw && !userId) {
+      for (const legacyKey of LEGACY_STORAGE_KEYS) {
+        raw = localStorage.getItem(legacyKey);
+        if (raw) break;
+      }
+    }
     if (!raw) return { state: createDefaultState(), existed: false };
     return { state: sanitizeState(JSON.parse(raw)), existed: true };
   } catch (error) {
@@ -32,8 +34,7 @@ export function loadLocalState(userId = null) {
 }
 
 export function saveLocalState(state, userId = null) {
-  const key = storageKeyForUser(userId);
-  localStorage.setItem(key, JSON.stringify(state));
+  localStorage.setItem(storageKeyForUser(userId), JSON.stringify(state));
 }
 
 export function removeGuestState() {
@@ -45,7 +46,7 @@ export function exportStateFile(state) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kana-study-v9-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `japanese-study-v10-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();

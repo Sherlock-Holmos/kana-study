@@ -1,10 +1,11 @@
 {
-  "name": "kana-study",
-  "version": "9.0.0",
+  "name": "japanese-study",
+  "version": "10.0.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "node scripts/check.mjs",
     "test": "node --test test/*.test.js",
-    "check": "node scripts/check.mjs"
+    "verify": "npm run check && npm test"
   }
 }

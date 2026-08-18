@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Japanese Study Integrated Lesson",
+  "type": "object",
+  "required": ["id", "phase", "title", "description"],
+  "properties": {
+    "id": { "type": "string" },
+    "phase": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "vocabulary": { "type": "array", "items": { "type": "string", "pattern": "^vocab:" } },
+    "grammar": { "type": "array", "items": { "type": "string", "pattern": "^grammar:" } },
+    "sentences": { "type": "array", "items": { "type": "string", "pattern": "^sentence:" } }
+  }
+}
