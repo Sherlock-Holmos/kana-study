@@ -50,3 +50,13 @@ export function getRecentMistakePairs(state, now = Date.now(), days = 14, limit 
     .sort((a, b) => parseTime(b.skillState.lastReviewedAt) - parseTime(a.skillState.lastReviewedAt))
     .slice(0, limit);
 }
+
+export function getSlowPairs(state, limit = 48, type = null, thresholdMs = 9000) {
+  return Object.entries(state.skills || {})
+    .map(([key, skillState]) => pairFromEntry(key, skillState))
+    .filter(Boolean)
+    .filter(pair => !type || pair.item.type === type)
+    .filter(pair => Number(pair.skillState.reviewCount || 0) >= 2 && Number(pair.skillState.averageResponseMs || 0) >= thresholdMs)
+    .sort((a, b) => Number(b.skillState.averageResponseMs || 0) - Number(a.skillState.averageResponseMs || 0))
+    .slice(0, limit);
+}

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { sanitizeState } from "../src/core/state.js";
 import { skillKey } from "../src/domain/skills.js";
 
-test("v5-style hiragana progress migrates into v12 skills", () => {
+test("v5-style hiragana progress migrates into v15 skills", () => {
   const legacy = {
     stats: { correct: 10, wrong: 2 },
     kanaStats: {
@@ -23,7 +23,7 @@ test("v5-style hiragana progress migrates into v12 skills", () => {
   };
 
   const state = sanitizeState(legacy);
-  assert.equal(state.schemaVersion, 12);
+  assert.equal(state.schemaVersion, 13);
 
   const recognition = state.skills[skillKey("hiragana:し", "recognition")];
   const recall = state.skills[skillKey("hiragana:し", "recall")];

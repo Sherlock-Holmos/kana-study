@@ -1,113 +1,88 @@
-import { LEARNING_ITEMS } from "../data/content.js";
+import { LEARNING_ITEM_BY_ID, LEARNING_ITEMS } from "../data/content.js";
 import { getLessonProgress } from "../data/curriculum.js";
 import { getSkillsForType } from "../domain/skills.js";
+import { buildAbilityProfile } from "../domain/ability/profile.js";
 import { randomId, shuffle } from "../core/utils.js";
 import { summarizeSession } from "../learning/session.js";
 import { ASSESSMENT_BY_ID, ASSESSMENT_DEFINITIONS } from "./catalog.js";
 
 function eligibleItems(type) {
-  return LEARNING_ITEMS.filter(item => {
-    if (item.type !== type) return false;
-    if (item.type === "kana") return true;
-    if (item.type === "sentence") return false;
-    return !item.level || item.level === "N5" || item.level === "kana";
-  });
+  return LEARNING_ITEMS.filter(item => item.type === type && item.type !== "sentence" && (!item.level || item.level === "N5" || item.level === "kana"));
 }
-
-function makeEntries(type, count) {
-  const pool = shuffle(eligibleItems(type));
+function recentQuestionIds(state, assessmentId) {
+  return new Set((state?.sessions || [])
+    .filter(s => s?.type === "assessment" && s.assessmentId === assessmentId)
+    .slice(-2).flatMap(s => (s.results || []).map(r => r.itemId)));
+}
+function makeEntries(type, count, excluded = new Set()) {
+  const base = eligibleItems(type);
+  let pool = shuffle(base.filter(item => !excluded.has(item.id)));
+  if (pool.length < count) pool = shuffle(base);
   if (!pool.length || count <= 0) return [];
-  const result = [];
-  for (let index = 0; index < count; index += 1) {
+  return Array.from({ length: count }, (_, index) => {
     const item = pool[index % pool.length];
     const skills = getSkillsForType(item.type);
     const skill = skills[index % Math.max(1, skills.length)] || "comprehension";
-    result.push({
-      id: randomId("assessment-question"),
-      kind: "quiz",
-      itemId: item.id,
-      skill,
-      stage: "assessment",
-      replayCount: 0
-    });
-  }
-  return shuffle(result);
+    return { id: randomId("assessment-question"), kind: "quiz", itemId: item.id, skill, stage: "assessment", replayCount: 0 };
+  });
 }
 
-export function createAssessmentSession(assessmentId) {
+export function createAssessmentSession(assessmentId, state = null) {
   const definition = ASSESSMENT_BY_ID[assessmentId];
   if (!definition) throw new Error(`未知测验：${assessmentId}`);
-  const queue = Object.entries(definition.blueprint || {}).flatMap(([type, count]) => makeEntries(type, Number(count || 0)));
+  const excluded = recentQuestionIds(state, assessmentId);
+  const queue = shuffle(Object.entries(definition.blueprint || {}).flatMap(([type, count]) => makeEntries(type, Number(count || 0), excluded)));
   if (!queue.length) throw new Error(`测验 ${assessmentId} 没有可用题目`);
   return {
-    id: randomId("assessment"),
-    type: "assessment",
-    assessmentId: definition.id,
-    assessmentKind: definition.kind,
-    title: definition.title,
-    passScore: definition.passScore,
-    estimatedMinutes: definition.estimatedMinutes,
-    startedAt: new Date().toISOString(),
-    completedAt: null,
-    cursor: 0,
-    queue,
-    results: []
+    id: randomId("assessment"), type: "assessment", assessmentId: definition.id, assessmentKind: definition.kind,
+    title: definition.title, passScore: definition.passScore, estimatedMinutes: definition.estimatedMinutes,
+    blueprintVersion: 2, startedAt: new Date().toISOString(), completedAt: null, cursor: 0, queue, results: []
   };
 }
 
-function resultDomain(result) {
-  return LEARNING_ITEMS.find(item => item.id === result.itemId)?.type || "unknown";
-}
-
+function resultDomain(result) { return LEARNING_ITEM_BY_ID[result.itemId]?.type || "unknown"; }
 export function summarizeAssessment(session) {
   const base = summarizeSession(session);
   const definition = ASSESSMENT_BY_ID[session?.assessmentId] || null;
   const domains = {};
+  const abilities = {};
   for (const result of session?.results || []) {
+    const item = LEARNING_ITEM_BY_ID[result.itemId];
     const type = resultDomain(result);
     domains[type] ||= { correct: 0, total: 0, percent: 0 };
-    domains[type].total += 1;
-    if (result.correct) domains[type].correct += 1;
+    domains[type].total += 1; if (result.correct) domains[type].correct += 1;
+    for (const tag of item?.pedagogy?.abilities || []) {
+      abilities[tag] ||= { correct: 0, total: 0, percent: 0 };
+      abilities[tag].total += 1; if (result.correct) abilities[tag].correct += 1;
+    }
   }
-  for (const value of Object.values(domains)) value.percent = value.total ? Math.round(value.correct / value.total * 100) : 0;
+  for (const bucket of [domains, abilities]) for (const value of Object.values(bucket)) value.percent = value.total ? Math.round(value.correct / value.total * 100) : 0;
   const passScore = Number(session?.passScore || definition?.passScore || 70);
-  return {
-    ...base,
-    assessmentId: session?.assessmentId || null,
-    title: definition?.title || session?.title || "阶段测验",
-    passScore,
-    passed: base.accuracy >= passScore,
-    domains
-  };
+  const weakestAbilities = Object.entries(abilities).filter(([,v]) => v.total >= 2).sort((a,b) => a[1].percent - b[1].percent).slice(0,3);
+  return { ...base, assessmentId: session?.assessmentId || null, title: definition?.title || session?.title || "阶段测验", passScore, passed: base.accuracy >= passScore, domains, abilities, weakestAbilities };
 }
 
 export function getAssessmentHistory(state, assessmentId = null) {
-  return (state.sessions || [])
-    .filter(session => session?.type === "assessment" && session.completedAt)
-    .filter(session => !assessmentId || session.assessmentId === assessmentId)
+  return (state.sessions || []).filter(s => s?.type === "assessment" && s.completedAt).filter(s => !assessmentId || s.assessmentId === assessmentId)
     .map(session => ({ session, summary: summarizeAssessment(session) }))
-    .sort((a, b) => Date.parse(b.session.completedAt || b.session.startedAt || 0) - Date.parse(a.session.completedAt || a.session.startedAt || 0));
+    .sort((a,b) => Date.parse(b.session.completedAt || b.session.startedAt || 0) - Date.parse(a.session.completedAt || a.session.startedAt || 0));
 }
-
-export function getLatestAssessmentResult(state, assessmentId) {
-  return getAssessmentHistory(state, assessmentId)[0] || null;
-}
-
+export function getLatestAssessmentResult(state, assessmentId) { return getAssessmentHistory(state, assessmentId)[0] || null; }
 export function getAssessmentReadiness(state, definition) {
   const phases = definition?.recommendedAfterPhases || [];
   if (!phases.length) return { percent: 100, ready: true, completed: 0, total: 0 };
-  const completedLessons = state.curriculum?.completedLessons || [];
-  const values = phases.map(phaseId => getLessonProgress(completedLessons, phaseId));
-  const total = values.reduce((sum, item) => sum + item.total, 0);
-  const completed = values.reduce((sum, item) => sum + item.completed, 0);
+  const values = phases.map(id => getLessonProgress(state.curriculum?.completedLessons || [], id));
+  const total = values.reduce((s,x) => s+x.total,0), completed = values.reduce((s,x) => s+x.completed,0);
   const percent = total ? Math.round(completed / total * 100) : 0;
   return { percent, ready: percent >= 70, completed, total };
 }
-
 export function getAssessmentOverview(state) {
-  return ASSESSMENT_DEFINITIONS.map(definition => ({
-    definition,
-    readiness: getAssessmentReadiness(state, definition),
-    latest: getLatestAssessmentResult(state, definition.id)
-  }));
+  return ASSESSMENT_DEFINITIONS.map(definition => ({ definition, readiness: getAssessmentReadiness(state, definition), latest: getLatestAssessmentResult(state, definition.id) }));
+}
+export function updateDiagnosticState(state) {
+  state.abilityProfile = buildAbilityProfile(state);
+  const latest = getAssessmentHistory(state)[0];
+  if (latest) state.assessment.diagnostics[latest.session.assessmentId] = { at: latest.session.completedAt, summary: latest.summary };
+  state.assessment.recentQuestionIds = (state.sessions || []).filter(s => s?.type === "assessment").slice(-4).flatMap(s => (s.results || []).map(r => r.itemId)).slice(-240);
+  return state;
 }

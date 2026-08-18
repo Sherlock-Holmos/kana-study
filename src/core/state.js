@@ -20,7 +20,9 @@ export function createSkillState() {
     evidenceScore: 0,
     averageResponseMs: 0,
     lastResponseMs: 0,
-    lastQuality: 1
+    lastQuality: 1,
+    revision: 0,
+    lastDeviceId: null
   };
 }
 
@@ -45,12 +47,16 @@ export function createDefaultState() {
       dailyPlanMode: DEFAULT_DAILY_PLAN_MODE,
       updatedAt: now
     },
-    curriculum: { completedLessons: [], updatedAt: now },
+    curriculum: { completedLessons: [], masteredLessons: {}, updatedAt: now },
     skills: createDefaultSkills(),
     activity: {},
     lifetime: { devices: {} },
     sessions: [],
     activeSession: null,
+    planner: { reviewDebt: { total: 0, remaining: 0, updatedAt: null }, lastPlan: null },
+    abilityProfile: { generatedAt: null, abilities: {}, topics: {}, recommendations: [] },
+    assessment: { diagnostics: {}, recentQuestionIds: [] },
+    sync: { dirtySkillKeys: [], dirtyDates: [], dirtySessionIds: [], fullSyncRequired: true, resetRequested: false },
     meta: { createdAt: now, updatedAt: now, migratedFrom: null }
   };
 }
@@ -71,6 +77,8 @@ function cloneSkill(source) {
     averageResponseMs: Math.max(0, Number(source.averageResponseMs || 0)),
     lastResponseMs: Math.max(0, Number(source.lastResponseMs || 0)),
     lastQuality: Math.max(0.45, Math.min(1.25, Number(source.lastQuality || 1))),
+    revision: Math.max(0, Number(source.revision || 0)),
+    lastDeviceId: source.lastDeviceId || null,
     counters: source.counters && typeof source.counters === "object" ? source.counters : {}
   };
 }
@@ -142,13 +150,32 @@ export function sanitizeState(raw) {
     curriculum: {
       ...base.curriculum,
       ...(raw.curriculum || {}),
-      completedLessons: Array.isArray(raw.curriculum?.completedLessons) ? [...new Set(raw.curriculum.completedLessons)] : []
+      completedLessons: Array.isArray(raw.curriculum?.completedLessons) ? [...new Set(raw.curriculum.completedLessons)] : [],
+      masteredLessons: raw.curriculum?.masteredLessons && typeof raw.curriculum.masteredLessons === "object" ? raw.curriculum.masteredLessons : {}
     },
     skills,
     activity: raw.activity && typeof raw.activity === "object" ? raw.activity : {},
     lifetime: { devices: raw.lifetime?.devices && typeof raw.lifetime.devices === "object" ? raw.lifetime.devices : {} },
-    sessions: Array.isArray(raw.sessions) ? raw.sessions.slice(-180) : [],
+    sessions: Array.isArray(raw.sessions) ? raw.sessions.slice(-240) : [],
     activeSession: raw.activeSession && typeof raw.activeSession === "object" ? raw.activeSession : null,
+    planner: {
+      ...base.planner, ...(raw.planner || {}),
+      reviewDebt: { ...base.planner.reviewDebt, ...(raw.planner?.reviewDebt || {}) }
+    },
+    abilityProfile: raw.abilityProfile && typeof raw.abilityProfile === "object" ? raw.abilityProfile : base.abilityProfile,
+    assessment: {
+      ...base.assessment, ...(raw.assessment || {}),
+      diagnostics: raw.assessment?.diagnostics && typeof raw.assessment.diagnostics === "object" ? raw.assessment.diagnostics : {},
+      recentQuestionIds: Array.isArray(raw.assessment?.recentQuestionIds) ? raw.assessment.recentQuestionIds.slice(-240) : []
+    },
+    sync: {
+      ...base.sync, ...(raw.sync || {}),
+      dirtySkillKeys: Array.isArray(raw.sync?.dirtySkillKeys) ? [...new Set(raw.sync.dirtySkillKeys)] : [],
+      dirtyDates: Array.isArray(raw.sync?.dirtyDates) ? [...new Set(raw.sync.dirtyDates)] : [],
+      dirtySessionIds: Array.isArray(raw.sync?.dirtySessionIds) ? [...new Set(raw.sync.dirtySessionIds)] : [],
+      fullSyncRequired: Boolean(raw.sync?.fullSyncRequired ?? (version < 13)),
+      resetRequested: Boolean(raw.sync?.resetRequested)
+    },
     meta: { ...base.meta, ...(raw.meta || {}) }
   };
 }

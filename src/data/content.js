@@ -9,6 +9,7 @@ import { KANJI_ITEMS } from "./kanji.js";
 import { READING_ITEMS } from "./reading.js";
 import { LISTENING_ITEMS } from "./listening.js";
 import { enrichContentItem } from "./content-meta.js";
+import { enrichPedagogy } from "./pedagogy.js";
 
 const normalizedKana = KANA_ITEMS.map(item => ({
   ...item,
@@ -33,7 +34,7 @@ const rawItems = [
   ...LISTENING_ITEMS
 ];
 
-export const LEARNING_ITEMS = rawItems.map(enrichContentItem);
+export const LEARNING_ITEMS = rawItems.map(enrichContentItem).map(enrichPedagogy);
 export const LEARNING_ITEM_BY_ID = Object.fromEntries(LEARNING_ITEMS.map(item => [item.id, item]));
 
 export function getLearningItem(id) {

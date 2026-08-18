@@ -2,6 +2,7 @@ import { getLearningItem } from "../data/content.js";
 import { buildExercise } from "../learning/exercises.js";
 import { summarizeSession } from "../learning/session.js";
 import { summarizeAssessment } from "../assessment/engine.js";
+import { abilityLabel } from "../domain/ability/profile.js";
 import { TYPE_LABELS } from "../core/constants.js";
 import { escapeHtml } from "../core/utils.js";
 
@@ -65,13 +66,15 @@ function formatDuration(seconds) {
 function renderAssessmentSummary(session) {
   const summary = summarizeAssessment(session);
   const domainRows = Object.entries(summary.domains).map(([type, result]) => `<div class="assessment-domain-row"><span>${escapeHtml(TYPE_LABELS[type] || type)}</span><strong>${result.percent}%</strong><small>${result.correct}/${result.total}</small></div>`).join("");
+  const weakRows = (summary.weakestAbilities || []).map(([key, result]) => `<span class="pill">${escapeHtml(abilityLabel(key))} · ${result.percent}%</span>`).join("");
   return `<section class="session-summary panel assessment-summary">
     <span class="eyebrow">阶段测验完成</span>
     <h1>${escapeHtml(summary.title)}</h1>
     <div class="assessment-result-badge ${summary.passed ? "passed" : "failed"}">${summary.passed ? "通过" : "未通过"} · ${summary.accuracy}%</div>
     <div class="summary-grid"><div><span>得分</span><strong>${summary.accuracy}%</strong></div><div><span>通过线</span><strong>${summary.passScore}%</strong></div><div><span>题目</span><strong>${summary.total}</strong></div><div><span>耗时</span><strong>${formatDuration(summary.durationSeconds)}</strong></div></div>
     <div class="assessment-domain-results">${domainRows}</div>
-    <p class="muted-copy">本次测验结果不会修改 SRS 掌握度。若某个领域较弱，可以回到复习中心或对应课程继续训练。</p>
+    ${weakRows ? `<div class="detail-block"><strong>优先关注</strong><div class="chip-actions">${weakRows}</div></div>` : ""}
+    <p class="muted-copy">本次测验结果不会修改 SRS 掌握度，但会进入 Ability Profile，影响后续诊断与今日计划。</p>
     <div class="summary-actions"><button class="primary" data-finish-route="progress">保存结果并查看进度</button><button data-finish-route="learn">保存并返回课程</button></div>
   </section>`;
 }

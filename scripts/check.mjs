@@ -10,7 +10,7 @@ import { READING_ITEMS } from "../src/data/reading.js";
 import { LISTENING_ITEMS } from "../src/data/listening.js";
 import { CURRICULUM } from "../src/data/curriculum.js";
 import { ASSESSMENT_DEFINITIONS } from "../src/assessment/catalog.js";
-import { SCHEMA_VERSION } from "../src/core/constants.js";
+import { CONTENT_RELEASE, CONTENT_SCHEMA_VERSION, SCHEMA_VERSION } from "../src/core/constants.js";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(readFileSync(join(project, "package.json"), "utf8"));
@@ -64,6 +64,10 @@ for (const item of LEARNING_ITEMS) {
   assert(CONTENT_REVIEW_STATUSES.includes(item.reviewStatus), `${item.id} reviewStatus 非法：${item.reviewStatus}`);
   assert(Number(item.contentVersion) >= 1, `${item.id} 缺少 contentVersion`);
   assert(Number(item.confidence) > 0 && Number(item.confidence) <= 1, `${item.id} confidence 非法`);
+  assert(item.pedagogy?.schemaVersion === CONTENT_SCHEMA_VERSION, `${item.id} pedagogy schema 非法`);
+  assert(item.pedagogy?.release === CONTENT_RELEASE, `${item.id} content release 非法`);
+  assert(Array.isArray(item.pedagogy?.topics) && item.pedagogy.topics.length > 0, `${item.id} 缺少 topic tags`);
+  if (item.type !== "sentence") assert(Array.isArray(item.pedagogy?.abilities) && item.pedagogy.abilities.length > 0, `${item.id} 缺少 ability tags`);
 }
 for (const lesson of CURRICULUM) {
   assert(Array.isArray(lesson.objectives) && lesson.objectives.length > 0, `课程 ${lesson.id} 缺少 objectives`);
@@ -150,5 +154,6 @@ console.log(`Reading: ${READING_ITEMS.length}`);
 console.log(`Listening: ${LISTENING_ITEMS.length}`);
 console.log(`Lessons: ${CURRICULUM.length}`);
 console.log(`Assessments: ${ASSESSMENT_DEFINITIONS.length}`);
+console.log(`Content release: ${CONTENT_RELEASE}`);
 console.log(`Production build: ${buildManifest.buildId}`);
 console.log("Content + assessment + hashed module graph: OK");

@@ -32,8 +32,9 @@ function renderAssessmentCards(state) {
 export function renderLearn(state) {
   const done = new Set(state.curriculum.completedLessons || []);
   const recommended = getRecommendedLesson([...done]);
+  const mastery = state.curriculum.masteredLessons || {};
   return `
-    <section class="page-heading"><div><span class="eyebrow">课程路线 · v14</span><h1>学习</h1><p>课程负责教学，测验负责验证；学习目标、SRS 和记忆复习不再与阶段考试混在一起。</p></div></section>
+    <section class="page-heading"><div><span class="eyebrow">课程路线 · v15</span><h1>学习</h1><p>课程负责教学，测验负责验证；学习目标、SRS 和记忆复习不再与阶段考试混在一起。</p></div></section>
     ${renderAssessmentCards(state)}
     <div class="phase-list">
       ${PHASES.map(phase => {
@@ -47,13 +48,15 @@ export function renderLearn(state) {
             ${lessons.map((lesson, index) => {
               const isDone = done.has(lesson.id);
               const isRecommended = recommended?.id === lesson.id;
-              return `<button class="lesson-row ${isDone ? "done" : ""} ${isRecommended ? "recommended" : ""}" type="button" data-lesson="${escapeHtml(lesson.id)}">
-                <span class="lesson-index">${isDone ? "✓" : String(index + 1).padStart(2,"0")}</span>
+              const masteryInfo = mastery[lesson.id];
+              const isMastered = Boolean(masteryInfo?.mastered);
+              return `<button class="lesson-row ${isDone ? "done" : ""} ${isMastered ? "mastered" : ""} ${isRecommended ? "recommended" : ""}" type="button" data-lesson="${escapeHtml(lesson.id)}">
+                <span class="lesson-index">${isMastered ? "★" : isDone ? "✓" : String(index + 1).padStart(2,"0")}</span>
                 <span>
                   <strong>${escapeHtml(lesson.title)}${isRecommended ? ` <em class="recommended-badge">推荐</em>` : ""}</strong>
                   <small>${escapeHtml(lesson.description || "")}</small>
                   ${renderObjectives(lesson)}
-                  <span class="lesson-meta-line"><span>${lesson.estimatedMinutes} 分钟</span><span>${escapeHtml(lesson.difficulty)}</span><span>掌握目标 ${lesson.masteryRequirement}%</span></span>
+                  <span class="lesson-meta-line"><span>${lesson.estimatedMinutes} 分钟</span><span>${escapeHtml(lesson.difficulty)}</span><span>掌握目标 ${lesson.masteryRequirement}%</span>${masteryInfo ? `<span>${masteryInfo.mastered ? "已掌握" : `需巩固 ${masteryInfo.score}%`}</span>` : ""}</span>
                 </span>
                 <i>›</i>
               </button>`;

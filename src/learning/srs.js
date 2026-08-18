@@ -34,6 +34,8 @@ export function updateSkillAfterAnswer(
   next.updatedAt = new Date(now).toISOString();
   next.lastReviewedAt = next.updatedAt;
   next.lastResult = isCorrect ? "correct" : "wrong";
+  next.revision = Number(next.revision || 0) + 1;
+  next.lastDeviceId = deviceId || null;
 
   if (!isCorrect) {
     next.correctStreak = 0;

@@ -98,6 +98,7 @@ async function loadNormalized(userId) {
     settings: settingsRes.data?.settings || {},
     curriculum: {
       completedLessons: courseRes.data?.completed_lessons || [],
+      masteredLessons: metaRes.data?.meta?.v15?.masteredLessons || {},
       updatedAt: courseRes.data?.updated_at || null
     },
     skills: Object.fromEntries((skillsRes.data || []).map(row => [row.skill_key, row.progress])),
@@ -105,7 +106,11 @@ async function loadNormalized(userId) {
     lifetime: metaRes.data?.lifetime || { devices: {} },
     activeSession: metaRes.data?.active_session || null,
     sessions: (sessionsRes.data || []).map(row => row.payload).filter(Boolean),
-    meta: metaRes.data?.meta || {}
+    planner: metaRes.data?.meta?.v15?.planner || undefined,
+    abilityProfile: metaRes.data?.meta?.v15?.abilityProfile || undefined,
+    assessment: metaRes.data?.meta?.v15?.assessment || undefined,
+    sync: metaRes.data?.meta?.v15?.sync || undefined,
+    meta: (() => { const m = { ...(metaRes.data?.meta || {}) }; delete m.v15; return m; })()
   };
 }
 
@@ -140,39 +145,54 @@ function meaningfulSkill(progress) {
 async function saveNormalized(userId, state) {
   const supabase = getSupabaseClient();
   const now = new Date().toISOString();
+  const sync = state.sync || {};
+  const full = Boolean(sync.fullSyncRequired);
+  if (sync.resetRequested) {
+    const resets = await Promise.all([
+      supabase.from("user_item_progress").delete().eq("user_id", userId),
+      supabase.from("user_daily_stats").delete().eq("user_id", userId),
+      supabase.from("study_sessions").delete().eq("user_id", userId)
+    ]);
+    const resetError = resets.find(result => result.error)?.error;
+    if (resetError) throw resetError;
+  }
+  const metaPayload = {
+    ...(state.meta || {}),
+    v15: {
+      masteredLessons: state.curriculum?.masteredLessons || {},
+      planner: state.planner || {},
+      abilityProfile: state.abilityProfile || {},
+      assessment: state.assessment || {},
+      sync: { ...sync, dirtySkillKeys: [], dirtyDates: [], dirtySessionIds: [], fullSyncRequired: false, resetRequested: false, lastSyncedAt: now }
+    }
+  };
 
   const baseWrites = await Promise.all([
     supabase.from("user_settings").upsert({ user_id: userId, settings: state.settings, updated_at: now }, { onConflict: "user_id" }),
     supabase.from("user_course_progress").upsert({ user_id: userId, completed_lessons: state.curriculum?.completedLessons || [], updated_at: now }, { onConflict: "user_id" }),
-    supabase.from("user_learning_meta").upsert({ user_id: userId, lifetime: state.lifetime || { devices: {} }, active_session: state.activeSession || null, meta: state.meta || {}, updated_at: now }, { onConflict: "user_id" })
+    supabase.from("user_learning_meta").upsert({ user_id: userId, lifetime: state.lifetime || { devices: {} }, active_session: state.activeSession || null, meta: metaPayload, updated_at: now }, { onConflict: "user_id" })
   ]);
   const baseError = baseWrites.find(result => result.error)?.error;
   if (baseError) throw baseError;
 
-  const skillDelete = await supabase.from("user_item_progress").delete().eq("user_id", userId);
-  if (skillDelete.error) throw skillDelete.error;
-  const skillRows = Object.entries(state.skills || {}).filter(([, progress]) => meaningfulSkill(progress)).map(([skillKey, progress]) => ({ user_id: userId, skill_key: skillKey, progress, updated_at: now }));
+  const skillKeys = full ? Object.keys(state.skills || {}) : (sync.dirtySkillKeys || []);
+  const skillRows = skillKeys.map(key => [key, state.skills?.[key]]).filter(([, progress]) => meaningfulSkill(progress))
+    .map(([skillKey, progress]) => ({ user_id: userId, skill_key: skillKey, progress, updated_at: now }));
   if (skillRows.length) {
     const { error } = await supabase.from("user_item_progress").upsert(skillRows, { onConflict: "user_id,skill_key" });
     if (error) throw error;
   }
 
-  const dailyDelete = await supabase.from("user_daily_stats").delete().eq("user_id", userId);
-  if (dailyDelete.error) throw dailyDelete.error;
-  const dailyRows = Object.entries(state.activity || {}).map(([date, entry]) => ({ user_id: userId, study_date: date, devices: entry.devices || {}, updated_at: now }));
+  const dates = full ? Object.keys(state.activity || {}) : (sync.dirtyDates || []);
+  const dailyRows = dates.filter(date => state.activity?.[date]).map(date => ({ user_id: userId, study_date: date, devices: state.activity[date].devices || {}, updated_at: now }));
   if (dailyRows.length) {
     const { error } = await supabase.from("user_daily_stats").upsert(dailyRows, { onConflict: "user_id,study_date" });
     if (error) throw error;
   }
 
-  const sessionDelete = await supabase.from("study_sessions").delete().eq("user_id", userId);
-  if (sessionDelete.error) throw sessionDelete.error;
-  const sessionRows = (state.sessions || []).slice(-180).filter(session => session?.id).map(session => ({
-    user_id: userId,
-    session_id: session.id,
-    started_at: session.startedAt || now,
-    completed_at: session.completedAt || null,
-    payload: session
+  const sessionIds = new Set(full ? (state.sessions || []).map(s => s?.id).filter(Boolean) : (sync.dirtySessionIds || []));
+  const sessionRows = (state.sessions || []).slice(-240).filter(session => session?.id && sessionIds.has(session.id)).map(session => ({
+    user_id: userId, session_id: session.id, started_at: session.startedAt || now, completed_at: session.completedAt || null, payload: session
   }));
   if (sessionRows.length) {
     const { error } = await supabase.from("study_sessions").upsert(sessionRows, { onConflict: "user_id,session_id" });

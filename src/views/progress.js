@@ -3,6 +3,7 @@ import { buildHeatmap } from "../components/heatmap.js";
 import { getAssessmentHistory, getAssessmentOverview } from "../assessment/engine.js";
 import { PROGRESS_DOMAIN_TYPES, TYPE_LABELS } from "../core/constants.js";
 import { escapeHtml, percent } from "../core/utils.js";
+import { abilityLabel, buildAbilityProfile } from "../domain/ability/profile.js";
 
 function formatCompletedAt(value) {
   const date = new Date(value || "");
@@ -29,6 +30,17 @@ function renderAssessmentProgress(state) {
   </section>`;
 }
 
+
+function renderDiagnosis(state) {
+  const profile = buildAbilityProfile(state);
+  const abilities = Object.entries(profile.abilities || {}).filter(([,v]) => v.total >= 2).sort((a,b) => a[1].percent - b[1].percent);
+  const topics = Object.entries(profile.topics || {}).filter(([,v]) => v.total >= 2).sort((a,b) => a[1].percent - b[1].percent).slice(0,8);
+  return `<section class="panel section-block"><div class="section-title-row"><div><span class="eyebrow">Ability Profile</span><h2>能力诊断</h2></div><span class="muted-copy">结合日常练习与阶段测验</span></div>
+    ${abilities.length ? `<div class="ability-profile-grid">${abilities.map(([key,value]) => `<article class="domain-card"><span>${escapeHtml(abilityLabel(key))}</span><strong>${value.percent}%</strong><div class="progress-track small"><i style="width:${value.percent}%"></i></div><small>${value.total} 个证据</small></article>`).join("")}</div>` : `<div class="empty">学习数据还不够。完成几节课程或一次入门诊断后，这里会开始细分能力。</div>`}
+  </section>
+  <section class="panel section-block"><div class="section-title-row"><div><span class="eyebrow">薄弱主题</span><h2>系统建议关注</h2></div></div><div class="chip-actions">${topics.map(([key,value]) => `<span class="pill">${escapeHtml(key)} · ${value.percent}%</span>`).join("") || `<span class="muted-copy">暂无足够数据</span>`}</div></section>`;
+}
+
 export function renderProgress(state, runtime) {
   const tab = runtime.progressTab || "overview";
   const lifetime = getLifetimeTotals(state);
@@ -46,6 +58,8 @@ export function renderProgress(state, runtime) {
     body = `<section class="domain-progress-list domain-progress-list-six">${domains.map(d => `<article class="panel domain-progress"><div><span class="eyebrow">${TYPE_LABELS[d.type]}</span><h2>${d.percent}%</h2></div><div class="progress-track"><i style="width:${d.percent}%"></i></div><div class="mini-stats"><span>掌握 <b>${d.mastered}</b></span><span>学习中 <b>${d.learning}</b></span><span>未学习 <b>${d.unseen}</b></span></div></article>`).join("")}</section>`;
   } else if (tab === "assessments") {
     body = renderAssessmentProgress(state);
+  } else if (tab === "diagnosis") {
+    body = renderDiagnosis(state);
   } else {
     body = `<section class="dashboard-grid progress-dashboard">
       <article class="panel metric-card"><span>N5 学习完成度</span><strong>${completion.percent}%</strong><small>能力 ${completion.masteryPercent}% · 课程 ${completion.lessonPercent}%</small></article>
@@ -55,8 +69,8 @@ export function renderProgress(state, runtime) {
     <section class="panel section-block"><div class="section-title-row"><div><span class="eyebrow">能力分布</span><h2>六大学习域</h2></div></div><div class="domain-grid domain-grid-six">${domains.map(d => `<article class="domain-card"><span>${TYPE_LABELS[d.type]}</span><strong>${d.percent}%</strong><div class="progress-track small"><i style="width:${d.percent}%"></i></div><small>${d.mastered}/${d.total} 已掌握</small></article>`).join("")}</div><p class="muted-copy">N5 学习完成度是站内学习指标；阶段测验独立记录，不直接改变 SRS。</p></section>`;
   }
 
-  return `<section class="page-heading"><div><span class="eyebrow">学习数据 · v14</span><h1>进度</h1><p>同时观察课程推进、六大能力域、阶段测验和长期学习活跃度。</p></div></section>
-    <nav class="subnav"><button class="${tab === "overview" ? "active" : ""}" data-progress-tab="overview">总览</button><button class="${tab === "domains" ? "active" : ""}" data-progress-tab="domains">能力</button><button class="${tab === "assessments" ? "active" : ""}" data-progress-tab="assessments">测验</button><button class="${tab === "activity" ? "active" : ""}" data-progress-tab="activity">活跃度</button></nav>${body}`;
+  return `<section class="page-heading"><div><span class="eyebrow">学习数据 · v15</span><h1>进度</h1><p>同时观察课程推进、六大能力域、阶段测验和长期学习活跃度。</p></div></section>
+    <nav class="subnav"><button class="${tab === "overview" ? "active" : ""}" data-progress-tab="overview">总览</button><button class="${tab === "domains" ? "active" : ""}" data-progress-tab="domains">能力</button><button class="${tab === "diagnosis" ? "active" : ""}" data-progress-tab="diagnosis">诊断</button><button class="${tab === "assessments" ? "active" : ""}" data-progress-tab="assessments">测验</button><button class="${tab === "activity" ? "active" : ""}" data-progress-tab="activity">活跃度</button></nav>${body}`;
 }
 
 export function bindProgress(root, actions) {

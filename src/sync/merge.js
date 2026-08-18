@@ -22,7 +22,8 @@ function mergeSkill(a = {}, b = {}) {
     ...b,
     ...latest,
     counters: mergeCounterMaps(a.counters, b.counters),
-    lapseCount: Math.max(Number(a.lapseCount || 0), Number(b.lapseCount || 0))
+    lapseCount: Math.max(Number(a.lapseCount || 0), Number(b.lapseCount || 0)),
+    revision: Math.max(Number(a.revision || 0), Number(b.revision || 0))
   };
 }
 
@@ -55,12 +56,26 @@ export function mergeStates(localRaw, remoteRaw) {
     ...local,
     ...remote,
     settings,
-    curriculum: { ...local.curriculum, ...remote.curriculum, completedLessons, updatedAt: new Date().toISOString() },
+    curriculum: { ...local.curriculum, ...remote.curriculum, completedLessons, masteredLessons: { ...(remote.curriculum?.masteredLessons || {}), ...(local.curriculum?.masteredLessons || {}) }, updatedAt: new Date().toISOString() },
     skills,
     activity: mergeActivity(local.activity, remote.activity),
     lifetime: { devices: mergeCounterMaps(local.lifetime?.devices, remote.lifetime?.devices) },
     sessions: mergeSessions(local.sessions, remote.sessions),
     activeSession: parseTime(remote.activeSession?.startedAt) > parseTime(local.activeSession?.startedAt) ? remote.activeSession : local.activeSession,
+    planner: parseTime(remote.planner?.lastPlan?.generatedAt) > parseTime(local.planner?.lastPlan?.generatedAt) ? remote.planner : local.planner,
+    abilityProfile: parseTime(remote.abilityProfile?.generatedAt) > parseTime(local.abilityProfile?.generatedAt) ? remote.abilityProfile : local.abilityProfile,
+    assessment: {
+      diagnostics: { ...(remote.assessment?.diagnostics || {}), ...(local.assessment?.diagnostics || {}) },
+      recentQuestionIds: [...new Set([...(remote.assessment?.recentQuestionIds || []), ...(local.assessment?.recentQuestionIds || [])])].slice(-240)
+    },
+    sync: {
+      dirtySkillKeys: [...new Set([...(local.sync?.dirtySkillKeys || []), ...(remote.sync?.dirtySkillKeys || [])])],
+      dirtyDates: [...new Set([...(local.sync?.dirtyDates || []), ...(remote.sync?.dirtyDates || [])])],
+      dirtySessionIds: [...new Set([...(local.sync?.dirtySessionIds || []), ...(remote.sync?.dirtySessionIds || [])])],
+      fullSyncRequired: Boolean(local.sync?.fullSyncRequired || remote.sync?.fullSyncRequired),
+      resetRequested: Boolean(local.sync?.resetRequested || remote.sync?.resetRequested),
+      lastSyncedAt: remote.sync?.lastSyncedAt || local.sync?.lastSyncedAt || null
+    },
     meta: { ...local.meta, ...remote.meta, updatedAt: new Date().toISOString() }
   });
 }

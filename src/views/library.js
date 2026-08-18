@@ -3,6 +3,7 @@ import { getItemsByType, getSearchText } from "../data/content.js";
 import { getItemMastery } from "../core/state.js";
 import { TYPE_LABELS } from "../core/constants.js";
 import { getContentQualitySummary } from "../data/content-quality.js";
+import { getAudioCoverage } from "../audio/repository.js";
 
 function itemTitle(item) {
   if (item.type === "kana") return `${item.kana} · ${item.roman}`;
@@ -32,6 +33,7 @@ export function renderLibrary(state, runtime) {
     .filter(item => !query || getSearchText(item).toLowerCase().includes(query))
     .slice(0, 500);
   const quality = getContentQualitySummary(type);
+  const audioCoverage = type === "listening" ? getAudioCoverage(getItemsByType("listening")) : null;
 
   return `
     <section class="page-heading"><div><span class="eyebrow">内容库</span><h1>查找学习内容</h1><p>从假名、词汇、语法、汉字到阅读与听力，都可以查看详情并直接练习。</p></div></section>
@@ -41,7 +43,7 @@ export function renderLibrary(state, runtime) {
       <div><span>人工审校</span><strong>${quality.humanReviewed}</strong><small>当前明确标记的人审内容</small></div>
       <div><span>平均置信度</span><strong>${quality.averageConfidence}%</strong><small>内容元数据指标</small></div>
     </section>
-    <p class="content-quality-note">“自动校验通过”不等同于专业教师人工审校。v14 会明确区分两者，避免把结构校验包装成语言学审校。</p>
+    <p class="content-quality-note">“自动校验通过”不等同于专业教师人工审校。v15 继续明确区分两者；${audioCoverage ? `当前真实音频覆盖 ${audioCoverage.withAudio}/${audioCoverage.total}（${audioCoverage.percent}%），其余听力使用浏览器 TTS fallback。` : ""}</p>
     <section class="panel library-toolbar">
       <div class="segmented library-segmented">
         ${LIBRARY_TYPES.map(value => `<button class="${type === value ? "active" : ""}" data-library-type="${value}">${TYPE_LABELS[value]}</button>`).join("")}

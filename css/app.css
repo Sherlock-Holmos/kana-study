@@ -208,7 +208,7 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .content-meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
 .content-meta span { padding: 5px 8px; border-radius: 8px; background: var(--surface-2); color: var(--muted); font-size: 11px; }
 
-/* v14 · production-ready assessment/content quality */
+/* v14+ assessment/content quality */
 .update-banner {
   position: sticky;
   top: 72px;
@@ -318,3 +318,12 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .content-quality-note { margin: 0 0 14px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .content-meta-detailed { flex-wrap: wrap; }
 .account-actions { flex-wrap: wrap; }
+
+/* v15 learning-quality additions */
+.ability-profile-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.lesson-row.mastered { background:#f3f8ff; border-color:#cdd7f4; }
+.lesson-row.mastered .lesson-index { background:#e7edff; color:#4e5fc7; }
+.focus-card { border-color:#dfe3f7; }
+.review-grid > .review-card:nth-child(4) { grid-column:auto; }
+@media (max-width: 900px) { .ability-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width: 560px) { .ability-profile-grid { grid-template-columns:1fr; } }

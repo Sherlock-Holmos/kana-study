@@ -1,75 +1,52 @@
-Japanese Study v14.0.0 - N5 Production Ready
-============================================================
+Japanese Study v15.0.0 — Clean Full-Replacement Build Report
+Date: 2026-08-18
 
-Build
------
-App version: 14.0.0
-Data schema: 12
-Build ID: de2b2f4a4a95c156
-Production entry: ./assets/js/app.777783100ba7.js
-Production stylesheet: ./assets/css/app.8f75552a3fa7.css
-Current production modules: 43
-Old hashed assets retained for rolling-cache compatibility.
+Purpose:
+  This package is prepared for full repository replacement. It contains the complete v15 source tree, tests, CI workflow, schemas, Supabase SQL, and only the current production hashed assets. Old v13/v14/v15 build hashes were removed before the final build.
 
-Learning corpus
----------------
-Kana: 208
-Vocabulary: 487
-Grammar: 95
-Kanji: 118
-Sentences: 111
-Reading: 24
-Listening: 24
-Lessons: 76
-Assessments: 6
+Verification command:
+  npm run verify
 
-v14 features
-------------
-- N5 diagnostic assessment
-- Kana checkpoint
-- N5 foundation checkpoint
-- N5 kanji checkpoint
-- Reading/listening checkpoint
-- N5 core comprehensive mock
-- Assessment scores are stored separately from SRS mastery/stability
-- Assessment questions do not reveal answers immediately
-- Assessment wrong answers do not enter short-term replay
-- Progress page includes assessment history and latest scores
-- Content library exposes automated-validation vs human-review status
-- Password reset email and PASSWORD_RECOVERY flow
-- Logged-in password change
-- Manual cloud sync button
-- PWA new-version-ready reload banner
-- Dynamic build versioning from package.json
-- HTTP production resource smoke test
+Results:
+  App version: 15.0.0
+  Content release: n5-2026.08-v15
+  Data schema: 13
+  Production build ID: 5ac6df5bdd31ba0e
+  Source JS modules: 49
+  Current hashed production JS: 49
+  Current production asset files: 54
+  Unit tests: 43 passed, 0 failed
+  Browserless app smoke: PASS
+  Production hashed module-graph smoke: PASS
+  HTTP production smoke: PASS (58 resources)
 
-Verification
-------------
-Command: npm run verify
+Corpus:
+  Kana: 208
+  Vocabulary: 487
+  Grammar: 95
+  Kanji: 118
+  Sentences: 111
+  Reading: 24
+  Listening: 24
+  Lessons: 76
+  Assessments: 6
 
-Result:
-- Hashed production build: PASS
-- Source/built syntax and content checks: PASS
-- Unit tests: 36 passed, 0 failed
-- Browserless app smoke: PASS
-- Production hashed module graph smoke: PASS
-- HTTP production smoke: PASS (52 current resources returned 200)
+v15 quality features implemented:
+  - Adaptive Planner 2.0
+  - Review Debt / backlog throttling
+  - Adaptive new-content budget
+  - Ability Profile with skill/topic diagnostics
+  - Assessment 2.0 with recent-question avoidance and ability-level results
+  - Lesson completion vs mastery state
+  - Audio abstraction with explicit audio URL support + Web Speech fallback
+  - Slow-response review selector
+  - Incremental cloud sync metadata and dirty tracking
+  - Safe reset path that clears normalized cloud rows before re-upload
+  - Content schema/release metadata and generated quality report
+  - Hashed production build and service-worker update protection
 
-Browser environment note
-------------------------
-A system Chromium --headless --dump-dom run was attempted in this execution
-environment. Chromium did not complete because the container lacks the expected
-DBus/zygote runtime environment and timed out before returning DOM output.
-This result is NOT counted as a passed browser E2E test.
-
-Supabase
---------
-v14 does not require a database schema migration. Assessment history reuses
-study_sessions.payload. Continue using supabase/schema-v12.sql.
-Password reset requires the deployed site URL to be allowed in Supabase Auth
-Redirect URLs.
-
-Security
---------
-Only the Supabase publishable key is present in browser code. No service-role
-or secret key is included.
+Known limits:
+  - Current listening corpus does not bundle professional human recordings. Existing items fall back to browser TTS unless audio URLs are added.
+  - Automated content validation is not professional Japanese-teacher review.
+  - A full Playwright browser suite is not executed in this environment; browserless app smoke, production module graph smoke and HTTP smoke passed.
+  - v15 keeps the runtime corpus in src/data/*.js for backward compatibility.

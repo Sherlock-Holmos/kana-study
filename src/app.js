@@ -1,18 +1,21 @@
 import { CLOUD_SYNC_DELAY_MS, MAX_SESSION_HISTORY, TYPE_LABELS, VIEW_NAMES } from "./core/constants.js";
-import { createAssessmentSession } from "./assessment/engine.js";
+import { createAssessmentSession, updateDiagnosticState } from "./assessment/engine.js";
 import { createDefaultState, sanitizeState } from "./core/state.js";
 import { exportStateFile, getDeviceId, loadLocalState, removeGuestState, saveLocalState } from "./core/storage.js";
 import { localDateKey, nowIso } from "./core/utils.js";
 import { getLearningItem } from "./data/content.js";
+import { LESSON_BY_ID } from "./data/curriculum.js";
 import { skillKey } from "./domain/skills.js";
 import { buildExercise, isExerciseAnswerCorrect } from "./learning/exercises.js";
 import { getAnswerEvidence } from "./learning/evidence.js";
-import { buildDailyPlan } from "./learning/planner.js";
+import { applyPlanSnapshot, buildDailyPlan } from "./learning/planner.js";
 import { updateSkillAfterAnswer } from "./learning/srs.js";
-import { advanceSimpleEntry, createDailySession, createItemSession, createLessonSession, createReviewSession, getCurrentEntry, recordQuizResult } from "./learning/session.js";
-import { getDuePairs, getRecentMistakePairs, getWeakPairs } from "./review/selectors.js";
+import { advanceSimpleEntry, createDailySession, createItemSession, createLessonSession, createReviewSession, getCurrentEntry, recordQuizResult, summarizeSession } from "./learning/session.js";
+import { getDuePairs, getRecentMistakePairs, getSlowPairs, getWeakPairs } from "./review/selectors.js";
 import { mergeStates } from "./sync/merge.js";
 import { getCurrentUser, loadCloudProgress, onAuthStateChange, saveCloudProgress, sendPasswordReset, signIn, signOut, signUp, updatePassword } from "./sync/supabase.js";
+import { markDateDirty, markSessionDirty, markSkillDirty, clearDirtyState } from "./sync/dirty-tracker.js";
+import { playLearningAudio } from "./audio/player.js";
 import { renderHome, bindHome } from "./views/home.js";
 import { renderLearn, bindLearn } from "./views/learn.js";
 import { renderStudy, bindStudy } from "./views/study.js";
@@ -80,6 +83,8 @@ async function syncNow() {
     if (remote) state = mergeStates(state, remote);
     saveLocalState(state, uid);
     await saveCloudProgress(uid, state);
+    clearDirtyState(state);
+    saveLocalState(state, uid);
     syncStatus = { label: "已同步", detail: `最近同步 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`, state: "synced" };
   } catch (error) {
     console.error(error);
@@ -109,38 +114,22 @@ function incrementCounters(isCorrect) {
   state.activity[date].devices[deviceId][isCorrect ? "correct" : "wrong"] += 1;
   state.lifetime.devices[deviceId] ||= { correct: 0, wrong: 0 };
   state.lifetime.devices[deviceId][isCorrect ? "correct" : "wrong"] += 1;
+  markDateDirty(state, date);
 }
 
 function recordLearningResult(entry, isCorrect, quality = 1, responseMs = 0) {
   const key = skillKey(entry.itemId, entry.skill);
   if (!state.skills[key]) return;
   state.skills[key] = updateSkillAfterAnswer(state.skills[key], isCorrect, deviceId, Date.now(), quality, responseMs);
+  markSkillDirty(state, key);
   incrementCounters(isCorrect);
 }
 
-function speakJapanese(text, rate = 0.92) {
-  const value = String(text || "").trim();
-  if (!value) return;
-  if (!globalThis.speechSynthesis || typeof globalThis.SpeechSynthesisUtterance === "undefined") {
-    alert("当前浏览器不支持语音合成。可以在支持 Web Speech API 的 Chrome / Edge / Safari 中使用听力播放。");
-    return;
-  }
-  globalThis.speechSynthesis.cancel();
-  const utterance = new globalThis.SpeechSynthesisUtterance(value);
-  utterance.lang = "ja-JP";
-  utterance.rate = Math.min(1.1, Math.max(0.55, Number(rate || 0.92)));
-  utterance.pitch = 1;
-  const voices = globalThis.speechSynthesis.getVoices?.() || [];
-  const japanese = voices.find(voice => /^ja(?:-|_)/i.test(voice.lang || ""));
-  if (japanese) utterance.voice = japanese;
-  globalThis.speechSynthesis.speak(utterance);
-}
-
-function speakItem(itemId, rate = 0.92) {
+async function speakItem(itemId, rate = 0.92) {
   const item = getLearningItem(itemId);
   if (!item) return;
-  const text = item.type === "listening" ? item.transcript : item.expression || item.character || item.kana || item.jp || "";
-  speakJapanese(text, rate);
+  try { await playLearningAudio(item, Number(rate) < 0.8 ? "slow" : "normal"); }
+  catch (error) { alert(error.message || "音频播放失败。"); }
 }
 
 function resetQuizRuntime() {
@@ -217,7 +206,7 @@ function startLesson(lessonId) {
 function startAssessment(assessmentId) {
   if (!canReplaceSession()) return;
   try {
-    state.activeSession = createAssessmentSession(assessmentId);
+    state.activeSession = createAssessmentSession(assessmentId, state);
     resetQuizRuntime();
     commit(false);
     navigate("study");
@@ -229,6 +218,7 @@ function startAssessment(assessmentId) {
 function reviewPairs(mode, type = null) {
   if (mode === "mistakes") return getRecentMistakePairs(state, Date.now(), 14, 48, type);
   if (mode === "weak") return getWeakPairs(state, 48, type);
+  if (mode === "slow") return getSlowPairs(state, 48, type);
   return getDuePairs(state, Date.now(), 48, type);
 }
 
@@ -239,7 +229,7 @@ function startReview(mode = "due", type = null) {
     alert(type ? `当前没有需要复习的${TYPE_LABELS[type] || type}。` : "当前没有符合条件的复习内容。");
     return;
   }
-  const title = mode === "weak" ? "薄弱强化" : mode === "mistakes" ? "最近错题" : type ? `${TYPE_LABELS[type] || type}到期复习` : "到期复习";
+  const title = mode === "weak" ? "薄弱强化" : mode === "mistakes" ? "最近错题" : mode === "slow" ? "反应速度强化" : type ? `${TYPE_LABELS[type] || type}到期复习` : "到期复习";
   state.activeSession = createReviewSession(mode, pairs, title);
   resetQuizRuntime();
   commit(false);
@@ -249,6 +239,7 @@ function startReview(mode = "due", type = null) {
 function startDaily() {
   if (!canReplaceSession()) return;
   const plan = buildDailyPlan(state);
+  applyPlanSnapshot(state, plan);
   if (!plan.reviewCount && !plan.nextLesson) {
     const weak = getWeakPairs(state, 24);
     if (!weak.length) { alert("今天没有待处理的内容，可以从课程路线自由选择。 "); return; }
@@ -265,8 +256,18 @@ function finishSession(routeOverride = null) {
   const session = state.activeSession;
   if (!session) return;
   if (session.lessonId && session.lessonIncluded !== false && !state.curriculum.completedLessons.includes(session.lessonId)) state.curriculum.completedLessons.push(session.lessonId);
+  if (session.lessonId && session.completedAt && session.type !== "assessment") {
+    const summary = summarizeSession(session);
+    const requirement = Number(LESSON_BY_ID[session.lessonId]?.masteryRequirement || 70);
+    state.curriculum.masteredLessons ||= {};
+    state.curriculum.masteredLessons[session.lessonId] = { score: summary.accuracy, mastered: summary.accuracy >= requirement, requirement, at: session.completedAt };
+  }
   state.curriculum.updatedAt = nowIso();
-  if (session.completedAt) state.sessions = [...state.sessions, session].slice(-MAX_SESSION_HISTORY);
+  if (session.completedAt) {
+    state.sessions = [...state.sessions, session].slice(-MAX_SESSION_HISTORY);
+    markSessionDirty(state, session.id);
+    if (session.type === "assessment") updateDiagnosticState(state);
+  }
   state.activeSession = null;
   resetQuizRuntime();
   if (session.type === "assessment") runtime.progressTab = "assessments";
@@ -318,6 +319,8 @@ async function importData(file) {
 function resetData() {
   if (!confirm("确定重置当前身份的全部学习记录吗？账号本身不会被删除。")) return;
   state = createDefaultState();
+  state.sync.fullSyncRequired = true;
+  state.sync.resetRequested = true;
   commit();
   closeModal();
 }
@@ -430,7 +433,6 @@ const commonActions = {
   advanceSession,
   finishSession,
   practiceItem,
-  speakJapanese,
   speakItem,
   setDailyPlanMode,
   openItem: itemId => openModal("item", { itemId }),
