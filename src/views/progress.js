@@ -1,4 +1,4 @@
-import { getCurrentStreak, getLifetimeTotals, getTodaySummary, getTypeProgress } from "../core/metrics.js";
+import { getCurrentStreak, getLifetimeTotals, getN5Completion, getTodaySummary, getTypeProgress } from "../core/metrics.js";
 import { buildHeatmap } from "../components/heatmap.js";
 import { PROGRESS_DOMAIN_TYPES, TYPE_LABELS } from "../core/constants.js";
 import { percent } from "../core/utils.js";
@@ -10,6 +10,7 @@ export function renderProgress(state, runtime) {
   const today = getTodaySummary(state);
   const streak = getCurrentStreak(state);
   const heatmap = buildHeatmap(state);
+  const completion = getN5Completion(state);
   const domains = PROGRESS_DOMAIN_TYPES.map(type => ({ type, ...getTypeProgress(state, type) }));
 
   let body = "";
@@ -19,14 +20,14 @@ export function renderProgress(state, runtime) {
     body = `<section class="domain-progress-list domain-progress-list-six">${domains.map(d => `<article class="panel domain-progress"><div><span class="eyebrow">${TYPE_LABELS[d.type]}</span><h2>${d.percent}%</h2></div><div class="progress-track"><i style="width:${d.percent}%"></i></div><div class="mini-stats"><span>掌握 <b>${d.mastered}</b></span><span>学习中 <b>${d.learning}</b></span><span>未学习 <b>${d.unseen}</b></span></div></article>`).join("")}</section>`;
   } else {
     body = `<section class="dashboard-grid progress-dashboard">
+      <article class="panel metric-card"><span>N5 学习完成度</span><strong>${completion.percent}%</strong><small>能力 ${completion.masteryPercent}% · 课程 ${completion.lessonPercent}%</small></article>
       <article class="panel metric-card"><span>累计练习</span><strong>${total}</strong><small>正确率 ${percent(lifetime.correct,total)}%</small></article>
-      <article class="panel metric-card"><span>今日练习</span><strong>${today.total}</strong><small>正确率 ${today.accuracy}%</small></article>
-      <article class="panel metric-card"><span>连续学习</span><strong>${streak}</strong><small>天</small></article>
+      <article class="panel metric-card"><span>连续学习</span><strong>${streak}</strong><small>今天 ${today.total} 题 · ${today.accuracy}%</small></article>
     </section>
-    <section class="panel section-block"><div class="section-title-row"><div><span class="eyebrow">能力分布</span><h2>从假名到听力的 N5 学习链</h2></div></div><div class="domain-grid domain-grid-six">${domains.map(d => `<article class="domain-card"><span>${TYPE_LABELS[d.type]}</span><strong>${d.percent}%</strong><div class="progress-track small"><i style="width:${d.percent}%"></i></div><small>${d.mastered}/${d.total} 已掌握</small></article>`).join("")}</div></section>`;
+    <section class="panel section-block"><div class="section-title-row"><div><span class="eyebrow">能力分布</span><h2>六大学习域</h2></div></div><div class="domain-grid domain-grid-six">${domains.map(d => `<article class="domain-card"><span>${TYPE_LABELS[d.type]}</span><strong>${d.percent}%</strong><div class="progress-track small"><i style="width:${d.percent}%"></i></div><small>${d.mastered}/${d.total} 已掌握</small></article>`).join("")}</div><p class="muted-copy">N5 学习完成度是站内学习指标，用于规划学习，不代表官方 JLPT 成绩。</p></section>`;
   }
 
-  return `<section class="page-heading"><div><span class="eyebrow">学习数据</span><h1>进度</h1><p>从总体表现、六个能力域和长期活跃度观察学习状态。</p></div></section>
+  return `<section class="page-heading"><div><span class="eyebrow">学习数据 · v12</span><h1>进度</h1><p>同时观察课程推进、六大能力域和长期学习活跃度。</p></div></section>
     <nav class="subnav"><button class="${tab === "overview" ? "active" : ""}" data-progress-tab="overview">总览</button><button class="${tab === "domains" ? "active" : ""}" data-progress-tab="domains">能力</button><button class="${tab === "activity" ? "active" : ""}" data-progress-tab="activity">活跃度</button></nav>${body}`;
 }
 

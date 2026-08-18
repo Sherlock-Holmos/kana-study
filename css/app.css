@@ -162,7 +162,7 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .fatal-state h1 { margin: 8px 0 10px; }
 .fatal-state p { color: var(--muted); line-height: 1.7; overflow-wrap: anywhere; }
 
-/* v11 · N5 complete learning domains */
+/* v12 · N5 learning domains */
 .domain-grid-six { grid-template-columns: repeat(3, 1fr); }
 .domain-progress-list-six { grid-template-columns: repeat(3, 1fr); }
 .library-segmented { max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
@@ -182,3 +182,28 @@ button:not(.primary):not(.brand):not(.top-nav button):not(.bottom-nav button):no
 .feedback small { display: block; margin-top: 7px; font-weight: 500; line-height: 1.6; }
 .setting-note, .muted-copy { color: var(--muted); font-size: 13px; line-height: 1.6; }
 .review-type-actions button { min-width: 90px; }
+
+/* v12 · daily plan, teaching metadata and listening workflow */
+.daily-hero { align-items: flex-end; }
+.plan-mode-switch { display: inline-flex; gap: 5px; margin-top: 18px; padding: 5px; border-radius: 14px; background: var(--surface-2); }
+.plan-mode-switch button { border: 0 !important; background: transparent !important; color: var(--muted); padding: 8px 13px !important; border-radius: 10px !important; }
+.plan-mode-switch button.active { background: var(--text) !important; color: white; }
+.daily-dashboard { grid-template-columns: 1fr 1fr 1.15fr; }
+.plan-card { padding: 22px; }
+.plan-card .plan-number { display: block; margin: 8px 0 0; font-size: 48px; letter-spacing: -.06em; }
+.plan-card p { margin: 6px 0 10px; color: var(--muted); line-height: 1.55; }
+.plan-card small { color: var(--muted); }
+.lesson-meta-line { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 9px; }
+.lesson-meta-line > span { display: inline-flex; width: auto; padding: 4px 8px; border-radius: 8px; background: var(--surface-2); color: var(--muted); font-size: 11px; }
+.lesson-objective { display: block; margin-top: 7px; color: #555d6c; font-size: 12px; line-height: 1.55; }
+.recommended-badge { display: inline-flex; padding: 2px 6px; margin-left: 5px; border-radius: 7px; background: var(--primary-soft); color: var(--primary); font-style: normal; font-size: 10px; vertical-align: 2px; }
+.lesson-row.recommended { border-color: #bfc0ed; box-shadow: 0 0 0 2px rgba(91,91,214,.06); }
+.n5-completion-card h2 { margin: 4px 0 0; font-size: 44px; letter-spacing: -.05em; }
+.listening-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.listening-reveal { width: min(620px, 100%); margin: 12px auto 0; padding: 16px; border-radius: 14px; background: #f7f7fb; text-align: left; }
+.listening-reveal strong { display: block; margin-bottom: 7px; }
+.listening-reveal p { margin: 0 0 6px; font-size: 18px; line-height: 1.8; }
+.listening-reveal small { color: var(--muted); line-height: 1.6; }
+.study-session-meta { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+.content-meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.content-meta span { padding: 5px 8px; border-radius: 8px; background: var(--surface-2); color: var(--muted); font-size: 11px; }

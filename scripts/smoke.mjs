@@ -73,7 +73,7 @@ Object.defineProperty(globalThis, "navigator", { value: {}, configurable: true }
 await import(`../src/app.js?smoke=${Date.now()}`);
 await new Promise(resolve => setTimeout(resolve, 0));
 
-assert.match(root.innerHTML, /继续你的日语学习/, "首页应该在启动后完成动态渲染");
+assert.match(root.innerHTML, /今天学什么/, "首页应该在启动后完成动态渲染");
 assert.ok(documentListeners.has("click"), "应该通过 document 事件代理绑定全局 data-route 导航");
 
 const routeTrigger = { dataset: { route: "learn" } };

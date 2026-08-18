@@ -20,12 +20,13 @@ function choice(prompt, answer, distractors, meta = {}) {
     prompt,
     options: shuffle([answer, ...distractors.filter(value => value !== answer).slice(0, 3)]),
     accepted: [answer],
+    evidenceType: "recognition-choice",
     ...meta
   };
 }
 
 function typing(prompt, accepted, meta = {}) {
-  return { kind: "typing", prompt, accepted, ...meta };
+  return { kind: "typing", prompt, accepted, evidenceType: "active-recall", ...meta };
 }
 
 export function buildExercise(itemId, skill) {
@@ -33,19 +34,13 @@ export function buildExercise(itemId, skill) {
   if (!item) throw new Error(`未知学习项：${itemId}`);
 
   if (item.type === "kana") {
-    if (skill === "recall") {
-      return typing(item.roman, [item.kana], { directionLabel: "罗马音 → 假名", answerLabel: item.kana });
-    }
+    if (skill === "recall") return typing(item.roman, [item.kana], { directionLabel: "罗马音 → 假名", answerLabel: item.kana });
     return typing(item.kana, item.aliases || [item.roman], { directionLabel: "假名 → 罗马音", answerLabel: item.roman });
   }
 
   if (item.type === "vocabulary") {
-    if (skill === "reading") {
-      return typing(item.expression, [item.reading], { directionLabel: "词汇 → 读音", answerLabel: item.reading });
-    }
-    if (skill === "production") {
-      return typing(item.meanings[0], [item.expression], { directionLabel: "中文 → 日语", answerLabel: item.expression });
-    }
+    if (skill === "reading") return typing(item.expression, [item.reading], { directionLabel: "词汇 → 读音", answerLabel: item.reading });
+    if (skill === "production") return typing(item.meanings[0], [item.expression], { directionLabel: "中文 → 日语", answerLabel: item.expression, evidenceType: "production" });
     return choice(item.expression, item.meanings[0], distractorsFor(item, "meaning"), {
       directionLabel: "日语 → 中文",
       answerLabel: item.meanings[0],
@@ -63,7 +58,7 @@ export function buildExercise(itemId, skill) {
           `哪一句最能体现「${item.pattern}」？`,
           target.jp,
           otherSentences.map(sentence => sentence.jp),
-          { directionLabel: "语法应用", answerLabel: target.jp, secondary: target.zh }
+          { directionLabel: "语法应用", answerLabel: target.jp, secondary: target.zh, evidenceType: "application-choice" }
         );
       }
     }
@@ -98,7 +93,8 @@ export function buildExercise(itemId, skill) {
       accepted: [item.answer],
       answerLabel: item.answer,
       directionLabel: "N5 阅读理解",
-      explanation: item.translation || ""
+      explanation: item.translation || "",
+      evidenceType: "reading-comprehension"
     };
   }
 
@@ -111,7 +107,8 @@ export function buildExercise(itemId, skill) {
       accepted: [item.answer],
       answerLabel: item.answer,
       directionLabel: "N5 听力理解",
-      explanation: item.translation || ""
+      explanation: item.translation || "",
+      evidenceType: "listening-comprehension"
     };
   }
 

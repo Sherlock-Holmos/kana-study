@@ -1,7 +1,7 @@
 {
-  "name": "Japanese Study · 日语学习系统",
+  "name": "Japanese Study v12 · 日语学习系统",
   "short_name": "Japanese Study",
-  "description": "N5 核心路线：假名、词汇、语法、汉字、阅读、听力与 SRS 复习。",
+  "description": "N5 完整学习体验：今日计划、课程目标、SRS 2.0、假名、词汇、语法、汉字、阅读与听力。",
   "start_url": "./#home",
   "scope": "./",
   "display": "standalone",

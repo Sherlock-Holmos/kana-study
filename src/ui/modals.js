@@ -31,9 +31,9 @@ export function renderModal(modal, state, user, syncStatus) {
   if (modal.kind === "settings") {
     return `<div class="modal-backdrop" data-close-modal></div><section class="modal-card"><button class="modal-close" data-close-modal>×</button><span class="eyebrow">偏好设置</span><h2>学习设置</h2>
       <label>每日目标<select id="dailyGoal"><option value="20">20 题</option><option value="30">30 题</option><option value="50">50 题</option><option value="100">100 题</option></select></label>
-      <label>每日新内容<select id="newItems"><option value="5">5 项</option><option value="8">8 项</option><option value="12">12 项</option><option value="16">16 项</option></select></label>
+      <label>默认今日计划<select id="dailyPlanMode"><option value="light">轻松 · 约 10 分钟</option><option value="standard">标准 · 约 20 分钟</option><option value="intensive">强化 · 约 30 分钟以上</option></select></label>
       <label class="switch-row"><input id="autoAdvance" type="checkbox">答对后自动进入下一题</label>
-      <div class="setting-note">听力题使用浏览器 Web Speech API 合成日语语音；不同系统的语音音色可能不同。</div>
+      <div class="setting-note">听力题默认只播放语音，作答后才显示原文。当前仍使用浏览器 Web Speech API，并提供正常/慢速两档。</div>
       <div class="data-actions"><button data-export>导出学习数据</button><label class="button-like">导入学习数据<input id="importFile" type="file" accept="application/json" hidden></label><button class="danger-outline" data-reset>重置当前学习记录</button></div>
     </section>`;
   }
@@ -47,6 +47,7 @@ export function renderModal(modal, state, user, syncStatus) {
       ${item.examples ? `<div class="detail-block"><strong>例词</strong><p>${escapeHtml(item.examples.join(" · "))}</p></div>` : ""}
       ${item.type === "reading" ? `<div class="detail-block"><strong>问题</strong><p>${escapeHtml(item.question)}</p><p class="muted-copy">参考译意：${escapeHtml(item.translation || "")}</p></div>` : ""}
       ${item.type === "listening" ? `<div class="detail-block"><strong>听力原文</strong><p>${escapeHtml(item.transcript)}</p><p class="muted-copy">${escapeHtml(item.translation || "")}</p></div>` : ""}
+      <div class="content-meta"><span>内容版本 v${Number(item.contentVersion || 1)}</span><span>${item.reviewStatus === "automated-validated" ? "已通过自动校验" : escapeHtml(item.reviewStatus || "待校验")}</span></div>
       <div class="skill-list">${skills.map(skill => { const ss=state.skills?.[skillKey(item.id,skill)]; const t=getSkillTotals(ss); const total=t.correct+t.wrong; return `<div class="skill-row"><div><strong>${SKILL_LABELS[skill] || skill}</strong><small>${total} 次 · 下次 ${formatRelativeReview(ss?.nextReviewAt)}</small></div><span>${Number(ss?.mastery || 0)}/5</span></div>`; }).join("")}</div>
       <button class="primary" data-practice-item="${escapeHtml(item.id)}">专项练习</button></section>`;
   }
@@ -63,9 +64,9 @@ export function bindModal(root, actions, state) {
   root.querySelector("[data-reset]")?.addEventListener("click", actions.resetData);
   root.querySelector("[data-practice-item]")?.addEventListener("click", event => actions.practiceItem(event.currentTarget.dataset.practiceItem));
   const daily = root.querySelector("#dailyGoal"); if (daily) daily.value = String(state.settings.dailyGoal || 30);
-  const newItems = root.querySelector("#newItems"); if (newItems) newItems.value = String(state.settings.newItemsPerDay || 8);
+  const planMode = root.querySelector("#dailyPlanMode"); if (planMode) planMode.value = String(state.settings.dailyPlanMode || "standard");
   const auto = root.querySelector("#autoAdvance"); if (auto) auto.checked = Boolean(state.settings.autoAdvance);
   daily?.addEventListener("change", () => actions.updateSettings({ dailyGoal: Number(daily.value) }));
-  newItems?.addEventListener("change", () => actions.updateSettings({ newItemsPerDay: Number(newItems.value) }));
+  planMode?.addEventListener("change", () => actions.updateSettings({ dailyPlanMode: planMode.value }));
   auto?.addEventListener("change", () => actions.updateSettings({ autoAdvance: auto.checked }));
 }

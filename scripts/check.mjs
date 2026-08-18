@@ -53,6 +53,20 @@ assert(READING_ITEMS.length >= 20, "N5 阅读应至少 20 篇");
 assert(LISTENING_ITEMS.length >= 20, "N5 听力应至少 20 组");
 assert(CURRICULUM.length >= 70, "课程总数应至少 70 节");
 
+
+for (const item of LEARNING_ITEMS) {
+  assert(item.source, `${item.id} 缺少 source`);
+  assert(item.reviewStatus, `${item.id} 缺少 reviewStatus`);
+  assert(Number(item.contentVersion) >= 1, `${item.id} 缺少 contentVersion`);
+  assert(Number(item.confidence) > 0 && Number(item.confidence) <= 1, `${item.id} confidence 非法`);
+}
+for (const lesson of CURRICULUM) {
+  assert(Array.isArray(lesson.objectives) && lesson.objectives.length > 0, `课程 ${lesson.id} 缺少 objectives`);
+  assert(Array.isArray(lesson.prerequisites), `课程 ${lesson.id} prerequisites 非法`);
+  assert(Number(lesson.estimatedMinutes) > 0, `课程 ${lesson.id} estimatedMinutes 非法`);
+  assert(Number(lesson.masteryRequirement) >= 50 && Number(lesson.masteryRequirement) <= 100, `课程 ${lesson.id} masteryRequirement 非法`);
+}
+
 for (const item of [...READING_ITEMS, ...LISTENING_ITEMS]) {
   assert(item.options.includes(item.answer), `${item.id} 的正确答案必须存在于选项中`);
 }

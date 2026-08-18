@@ -1,9 +1,10 @@
 import { KANA_CURRICULUM, KANA_PHASES } from "./kana-curriculum.js";
 import { JAPANESE_LESSONS } from "./japanese-lessons.js";
 import { N5_EXPANSION_LESSONS, N5_EXPANSION_PHASES } from "./n5-lessons-extra.js";
+import { enrichCurriculum } from "./lesson-meta.js";
 
 export const ALL_JAPANESE_LESSONS = [...JAPANESE_LESSONS, ...N5_EXPANSION_LESSONS];
-export const CURRICULUM = [...KANA_CURRICULUM, ...ALL_JAPANESE_LESSONS];
+export const CURRICULUM = enrichCurriculum([...KANA_CURRICULUM, ...ALL_JAPANESE_LESSONS]);
 export const LESSON_BY_ID = Object.fromEntries(CURRICULUM.map(item => [item.id, item]));
 
 export const PHASES = [
@@ -20,11 +21,22 @@ export const PHASES = [
   ...N5_EXPANSION_PHASES
 ];
 
+const RECOMMENDATION_PHASE_ORDER = [
+  "hira-basic", "hira-rules", "hira-voiced", "hira-yoon",
+  "n5-foundation", "n5-daily", "kata-basic",
+  "n5-world", "n5-actions", "kata-voiced", "kata-yoon", "kata-rules",
+  "n5-intent", "n5-ability", "n5-shopping", "n5-connect",
+  "n5-campus", "n5-home", "n5-travel-plus", "n5-kanji-core", "n5-comprehension",
+  "n4-entry"
+];
+
 export function getRecommendedLesson(completedLessons = []) {
   const done = new Set(completedLessons);
-  const japanese = ALL_JAPANESE_LESSONS.find(lesson => !done.has(lesson.id));
-  if (japanese) return japanese;
-  return KANA_CURRICULUM.find(lesson => !done.has(lesson.id)) || null;
+  for (const phaseId of RECOMMENDATION_PHASE_ORDER) {
+    const lesson = CURRICULUM.find(item => item.phase === phaseId && !done.has(item.id));
+    if (lesson) return lesson;
+  }
+  return CURRICULUM.find(lesson => !done.has(lesson.id)) || null;
 }
 
 export function getPhaseLessons(phaseId) {
@@ -37,4 +49,11 @@ export function getLessonProgress(completedLessons = [], phaseId) {
   const done = new Set(completedLessons);
   const completed = lessons.filter(lesson => done.has(lesson.id)).length;
   return { completed, total: lessons.length, percent: Math.round(completed / lessons.length * 100) };
+}
+
+export function getOverallLessonProgress(completedLessons = []) {
+  const done = new Set(completedLessons);
+  const n5Lessons = CURRICULUM.filter(lesson => lesson.script || lesson.phase?.startsWith("n5-"));
+  const completed = n5Lessons.filter(lesson => done.has(lesson.id)).length;
+  return { completed, total: n5Lessons.length, percent: n5Lessons.length ? Math.round(completed / n5Lessons.length * 100) : 0 };
 }

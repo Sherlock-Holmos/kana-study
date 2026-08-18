@@ -1,30 +1,36 @@
-Japanese Study v11.0.0 build report
+Japanese Study v12.0.0
+======================
 
-Verification command:
-  npm run verify
+Major changes
+-------------
+1. Daily Planner with light / standard / intensive workload modes.
+2. Daily sessions can combine due review, weak-item reinforcement and a recommended course.
+3. Course metadata: objectives, prerequisites, estimated minutes, difficulty, mastery target.
+4. SRS 2.0 evidence weighting by exercise type and response speed.
+5. Skill state now tracks reviewCount, evidenceScore, averageResponseMs, lastResponseMs and lastQuality.
+6. Listening workflow supports normal/slow playback and reveals transcript only after answering.
+7. N5 completion metric combines six skill domains and curriculum completion.
+8. Content governance metadata and CI validation.
+9. schemaVersion upgraded to 12 with backward migration support.
 
-Result:
-  JS syntax: 47 files OK
-  Kana: 208
-  Vocabulary: 487
-  Grammar: 95
-  Kanji: 118
-  Sentences: 111
-  Reading: 24
-  Listening: 24
-  Lessons: 76
-  Unit tests: 21 passed / 0 failed
-  Browserless smoke: home render + delegated navigation OK
+Content corpus
+--------------
+Kana: 208
+Vocabulary: 487
+Grammar: 95
+Kanji: 118
+Sentences: 111
+Reading: 24
+Listening: 24
+Lessons: 76
 
-Major v11 additions:
-  - Kanji domain and SRS skills
-  - Reading comprehension domain
-  - Listening comprehension domain using Web Speech API
-  - Expanded N5 vocabulary and grammar content packs
-  - 18 new integrated N5 lessons
-  - Six-domain library/review/progress UI
-  - v10 -> v11 state migration compatibility
-  - v11 Service Worker cache/app-shell
+Verification
+------------
+Run: npm run verify
+Expected: syntax/content checks + unit tests + browserless application smoke test.
 
-Note:
-  A real Chromium --dump-dom smoke attempt was made in the artifact environment, but Chromium hung on environment-level DBus/zygote issues and timed out. Browserless application smoke and all Node verification succeeded.
+Important limitations
+---------------------
+- Listening uses browser Web Speech API, not bundled human recordings.
+- Corpus is a project-authored N5 core corpus, not an official JLPT exhaustive list.
+- Automated validation does not mean every language item has been manually reviewed by a professional editor.

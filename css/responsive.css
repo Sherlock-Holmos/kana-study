@@ -40,3 +40,15 @@
   .listening-stage { margin-top: 30px; }
   .study-glyph { font-size: 96px; }
 }
+
+@media (max-width: 900px) {
+  .daily-dashboard { grid-template-columns: 1fr; }
+  .daily-hero { align-items: stretch; }
+}
+
+@media (max-width: 640px) {
+  .plan-mode-switch { width: 100%; display: grid; grid-template-columns: repeat(3,1fr); }
+  .plan-mode-switch button { padding: 9px 4px !important; }
+  .listening-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .lesson-meta-line { gap: 5px; }
+}

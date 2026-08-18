@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 export const STORAGE_KEY = "japaneseStudyState";
 export const LEGACY_STORAGE_KEYS = ["kanaFlashcardState"];
 export const USER_STORAGE_PREFIX = `${STORAGE_KEY}:user:`;
@@ -6,6 +6,7 @@ export const DEVICE_ID_KEY = `${STORAGE_KEY}:device-id`;
 export const MAX_MASTERY = 5;
 export const DEFAULT_DAILY_GOAL = 30;
 export const DEFAULT_NEW_ITEMS_PER_DAY = 8;
+export const DEFAULT_DAILY_PLAN_MODE = "standard";
 export const CLOUD_SYNC_DELAY_MS = 900;
 export const MAX_SESSION_HISTORY = 180;
 
@@ -42,4 +43,4 @@ export const SKILL_LABELS = {
 };
 
 export const PROGRESS_DOMAIN_TYPES = ["kana", "vocabulary", "grammar", "kanji", "reading", "listening"];
-export const REVIEWABLE_TYPES = ["kana", "vocabulary", "grammar", "kanji", "reading", "listening"];
+export const REVIEWABLE_TYPES = [...PROGRESS_DOMAIN_TYPES];

@@ -1,4 +1,4 @@
-import { DEFAULT_DAILY_GOAL, DEFAULT_NEW_ITEMS_PER_DAY, MAX_MASTERY, SCHEMA_VERSION } from "./constants.js";
+import { DEFAULT_DAILY_GOAL, DEFAULT_NEW_ITEMS_PER_DAY, DEFAULT_DAILY_PLAN_MODE, MAX_MASTERY, SCHEMA_VERSION } from "./constants.js";
 import { KANA_ITEMS } from "../data/kana.js";
 import { LEARNING_ITEMS } from "../data/content.js";
 import { getSkillsForType, skillKey } from "../domain/skills.js";
@@ -15,7 +15,12 @@ export function createSkillState() {
     lastReviewedAt: null,
     nextReviewAt: null,
     updatedAt: null,
-    counters: {}
+    counters: {},
+    reviewCount: 0,
+    evidenceScore: 0,
+    averageResponseMs: 0,
+    lastResponseMs: 0,
+    lastQuality: 1
   };
 }
 
@@ -37,6 +42,7 @@ export function createDefaultState() {
       newItemsPerDay: DEFAULT_NEW_ITEMS_PER_DAY,
       autoAdvance: true,
       answerMode: "input",
+      dailyPlanMode: DEFAULT_DAILY_PLAN_MODE,
       updatedAt: now
     },
     curriculum: { completedLessons: [], updatedAt: now },
@@ -60,6 +66,11 @@ function cloneSkill(source) {
     stabilityDays: Math.max(0, Number(source.stabilityDays || 0)),
     correctStreak: Math.max(0, Number(source.correctStreak || 0)),
     lapseCount: Math.max(0, Number(source.lapseCount || 0)),
+    reviewCount: Math.max(0, Number(source.reviewCount || 0)),
+    evidenceScore: Math.max(0, Number(source.evidenceScore || 0)),
+    averageResponseMs: Math.max(0, Number(source.averageResponseMs || 0)),
+    lastResponseMs: Math.max(0, Number(source.lastResponseMs || 0)),
+    lastQuality: Math.max(0.45, Math.min(1.25, Number(source.lastQuality || 1))),
     counters: source.counters && typeof source.counters === "object" ? source.counters : {}
   };
 }

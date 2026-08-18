@@ -2,12 +2,13 @@ import { CLOUD_SYNC_DELAY_MS, MAX_SESSION_HISTORY, TYPE_LABELS, VIEW_NAMES } fro
 import { createDefaultState, sanitizeState } from "./core/state.js";
 import { exportStateFile, getDeviceId, loadLocalState, removeGuestState, saveLocalState } from "./core/storage.js";
 import { localDateKey, nowIso } from "./core/utils.js";
-import { getRecommendedLesson } from "./data/curriculum.js";
 import { getLearningItem } from "./data/content.js";
 import { skillKey } from "./domain/skills.js";
 import { buildExercise, isExerciseAnswerCorrect } from "./learning/exercises.js";
+import { getAnswerEvidence } from "./learning/evidence.js";
+import { buildDailyPlan } from "./learning/planner.js";
 import { updateSkillAfterAnswer } from "./learning/srs.js";
-import { advanceSimpleEntry, createItemSession, createLessonSession, createReviewSession, getCurrentEntry, recordQuizResult } from "./learning/session.js";
+import { advanceSimpleEntry, createDailySession, createItemSession, createLessonSession, createReviewSession, getCurrentEntry, recordQuizResult } from "./learning/session.js";
 import { getDuePairs, getRecentMistakePairs, getWeakPairs } from "./review/selectors.js";
 import { mergeStates } from "./sync/merge.js";
 import { getCurrentUser, loadCloudProgress, onAuthStateChange, saveCloudProgress, signIn, signOut, signUp } from "./sync/supabase.js";
@@ -38,7 +39,8 @@ const runtime = {
   libraryQuery: "",
   progressTab: "overview",
   feedback: null,
-  pendingResult: null
+  pendingResult: null,
+  questionStartedAt: Date.now()
 };
 
 let syncStatus = { label: "仅本地保存", detail: "未登录账号", state: "local" };
@@ -107,14 +109,14 @@ function incrementCounters(isCorrect) {
   state.lifetime.devices[deviceId][isCorrect ? "correct" : "wrong"] += 1;
 }
 
-function recordLearningResult(entry, isCorrect) {
+function recordLearningResult(entry, isCorrect, quality = 1, responseMs = 0) {
   const key = skillKey(entry.itemId, entry.skill);
   if (!state.skills[key]) return;
-  state.skills[key] = updateSkillAfterAnswer(state.skills[key], isCorrect, deviceId);
+  state.skills[key] = updateSkillAfterAnswer(state.skills[key], isCorrect, deviceId, Date.now(), quality, responseMs);
   incrementCounters(isCorrect);
 }
 
-function speakJapanese(text) {
+function speakJapanese(text, rate = 0.92) {
   const value = String(text || "").trim();
   if (!value) return;
   if (!globalThis.speechSynthesis || typeof globalThis.SpeechSynthesisUtterance === "undefined") {
@@ -124,7 +126,7 @@ function speakJapanese(text) {
   globalThis.speechSynthesis.cancel();
   const utterance = new globalThis.SpeechSynthesisUtterance(value);
   utterance.lang = "ja-JP";
-  utterance.rate = 0.82;
+  utterance.rate = Math.min(1.1, Math.max(0.55, Number(rate || 0.92)));
   utterance.pitch = 1;
   const voices = globalThis.speechSynthesis.getVoices?.() || [];
   const japanese = voices.find(voice => /^ja(?:-|_)/i.test(voice.lang || ""));
@@ -132,10 +134,18 @@ function speakJapanese(text) {
   globalThis.speechSynthesis.speak(utterance);
 }
 
+function speakItem(itemId, rate = 0.92) {
+  const item = getLearningItem(itemId);
+  if (!item) return;
+  const text = item.type === "listening" ? item.transcript : item.expression || item.character || item.kana || item.jp || "";
+  speakJapanese(text, rate);
+}
+
 function resetQuizRuntime() {
   clearTimeout(autoAdvanceTimer);
   runtime.feedback = null;
   runtime.pendingResult = null;
+  runtime.questionStartedAt = Date.now();
 }
 
 function submitAnswer(value, forcedKnown = null) {
@@ -152,9 +162,13 @@ function submitAnswer(value, forcedKnown = null) {
     }
     isCorrect = isExerciseAnswerCorrect(exercise, value);
   }
-  recordLearningResult(entry, isCorrect);
-  runtime.pendingResult = { entry, isCorrect, answer: String(value || "") };
-  runtime.feedback = { correct: isCorrect, message: isCorrect ? "✓ 正确" : "✕ 需要再复习一次" };
+  const responseMs = Math.max(0, Date.now() - Number(runtime.questionStartedAt || Date.now()));
+  const quality = getAnswerEvidence(exercise, entry, { responseMs, forcedKnown });
+  recordLearningResult(entry, isCorrect, quality, responseMs);
+  runtime.pendingResult = { entry, isCorrect, answer: String(value || ""), responseMs, quality };
+  const evidenceLabel = entry.skill === "production" || entry.skill === "recall" ? "主动回忆" : exercise.kind === "typing" ? "输入回忆" : exercise.kind === "listening-choice" ? "听力理解" : exercise.kind === "reading-choice" ? "阅读理解" : "识别练习";
+  const responseText = responseMs > 0 ? `作答 ${(responseMs / 1000).toFixed(1)} 秒 · ${evidenceLabel}` : "";
+  runtime.feedback = { correct: isCorrect, message: isCorrect ? "✓ 正确" : "✕ 需要再复习一次", responseText };
   commit();
   if (isCorrect && state.settings.autoAdvance) autoAdvanceTimer = setTimeout(nextAfterFeedback, 700);
 }
@@ -163,7 +177,7 @@ function nextAfterFeedback() {
   clearTimeout(autoAdvanceTimer);
   if (!runtime.pendingResult || !state.activeSession) return;
   const pending = runtime.pendingResult;
-  state.activeSession = recordQuizResult(state.activeSession, pending.isCorrect, pending.answer);
+  state.activeSession = recordQuizResult(state.activeSession, pending.isCorrect, pending.answer, { responseMs: pending.responseMs, quality: pending.quality });
   resetQuizRuntime();
   commit();
 }
@@ -208,29 +222,30 @@ function startReview(mode = "due", type = null) {
 }
 
 function startDaily() {
-  const due = getDuePairs(state, Date.now(), 24);
-  if (due.length) {
-    if (!canReplaceSession()) return;
-    state.activeSession = createReviewSession("daily", due, "今日复习");
-    commit(false);
-    navigate("study");
-    return;
+  if (!canReplaceSession()) return;
+  const plan = buildDailyPlan(state);
+  if (!plan.reviewCount && !plan.nextLesson) {
+    const weak = getWeakPairs(state, 24);
+    if (!weak.length) { alert("今天没有待处理的内容，可以从课程路线自由选择。 "); return; }
+    state.activeSession = createReviewSession("weak", weak, "今日薄弱巩固");
+  } else {
+    state.activeSession = createDailySession(plan);
   }
-  const next = getRecommendedLesson(state.curriculum.completedLessons);
-  if (next) startLesson(next.id);
-  else startReview("weak");
+  resetQuizRuntime();
+  commit(false);
+  navigate("study");
 }
 
 function finishSession() {
   const session = state.activeSession;
   if (!session) return;
-  if (session.lessonId && !state.curriculum.completedLessons.includes(session.lessonId)) state.curriculum.completedLessons.push(session.lessonId);
+  if (session.lessonId && session.lessonIncluded !== false && !state.curriculum.completedLessons.includes(session.lessonId)) state.curriculum.completedLessons.push(session.lessonId);
   state.curriculum.updatedAt = nowIso();
   if (session.completedAt) state.sessions = [...state.sessions, session].slice(-MAX_SESSION_HISTORY);
   state.activeSession = null;
   resetQuizRuntime();
   commit(false);
-  navigate("learn");
+  navigate(session.type === "daily" ? "home" : "learn");
 }
 
 function practiceItem(itemId) {
@@ -241,6 +256,12 @@ function practiceItem(itemId) {
   resetQuizRuntime();
   commit(false);
   navigate("study");
+}
+
+function setDailyPlanMode(mode) {
+  if (!["light", "standard", "intensive"].includes(mode)) return;
+  state.settings = { ...state.settings, dailyPlanMode: mode, updatedAt: nowIso() };
+  commit();
 }
 
 function openModal(kind, payload = {}) {
@@ -341,6 +362,8 @@ const commonActions = {
   finishSession,
   practiceItem,
   speakJapanese,
+  speakItem,
+  setDailyPlanMode,
   openItem: itemId => openModal("item", { itemId }),
   setLibraryType: value => { runtime.libraryType = value; runtime.libraryQuery = ""; render(); },
   setLibraryQuery: value => { runtime.libraryQuery = value; render(); },
@@ -396,4 +419,4 @@ onAuthStateChange(nextUser => { if (!nextUser && user) { user = null; state = lo
 render();
 initializeAuth();
 
-if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=11").catch(console.warn));
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=12").catch(console.warn));

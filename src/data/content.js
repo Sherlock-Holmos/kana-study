@@ -8,6 +8,7 @@ import { N5_SENTENCES_EXTRA } from "./n5-sentences-extra.js";
 import { KANJI_ITEMS } from "./kanji.js";
 import { READING_ITEMS } from "./reading.js";
 import { LISTENING_ITEMS } from "./listening.js";
+import { enrichContentItem } from "./content-meta.js";
 
 const normalizedKana = KANA_ITEMS.map(item => ({
   ...item,
@@ -22,7 +23,7 @@ export const ALL_VOCABULARY_ITEMS = [...VOCABULARY_ITEMS, ...N5_VOCABULARY_EXTRA
 export const ALL_GRAMMAR_ITEMS = [...GRAMMAR_ITEMS, ...N5_GRAMMAR_EXTRA];
 export const ALL_SENTENCE_ITEMS = [...SENTENCE_ITEMS, ...N5_SENTENCES_EXTRA];
 
-export const LEARNING_ITEMS = [
+const rawItems = [
   ...normalizedKana,
   ...ALL_VOCABULARY_ITEMS,
   ...ALL_GRAMMAR_ITEMS,
@@ -32,6 +33,7 @@ export const LEARNING_ITEMS = [
   ...LISTENING_ITEMS
 ];
 
+export const LEARNING_ITEMS = rawItems.map(enrichContentItem);
 export const LEARNING_ITEM_BY_ID = Object.fromEntries(LEARNING_ITEMS.map(item => [item.id, item]));
 
 export function getLearningItem(id) {

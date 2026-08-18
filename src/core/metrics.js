@@ -1,4 +1,5 @@
 import { LEARNING_ITEMS } from "../data/content.js";
+import { getOverallLessonProgress } from "../data/curriculum.js";
 import { skillKey, getSkillsForType } from "../domain/skills.js";
 import { getSkillTotals, getItemMastery } from "./state.js";
 import { localDateKey, percent, sumDeviceCounters } from "./utils.js";
@@ -66,6 +67,22 @@ export function getTypeProgress(state, type) {
     unseen,
     percent: items.length ? Math.round((masterySum / (items.length * 5)) * 100) : 0
   };
+}
+
+export function getN5Completion(state) {
+  const weights = {
+    kana: 0.15,
+    vocabulary: 0.28,
+    grammar: 0.20,
+    kanji: 0.15,
+    reading: 0.11,
+    listening: 0.11
+  };
+  const domains = Object.keys(weights).map(type => ({ type, ...getTypeProgress(state, type) }));
+  const masteryPercent = Math.round(domains.reduce((sum, domain) => sum + domain.percent * weights[domain.type], 0));
+  const lessons = getOverallLessonProgress(state.curriculum?.completedLessons || []);
+  const percent = Math.round(masteryPercent * 0.72 + lessons.percent * 0.28);
+  return { percent, masteryPercent, lessonPercent: lessons.percent, lessons, domains };
 }
 
 export function getTodaySummary(state) {
